@@ -1,102 +1,104 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
-
 import argparse
 import os
+import pandas as pd
 
-from .io_excel import leer_puntos_excel
-from .geometria import deflexion_deg, distancias_tramos, clasificar_por_angulo
+from .catalogos import CONDUCTORES_ACSR, POSTES
+from .io_excel import leer_puntos_xlsx, extraer_listas
+from .geometria import deflexion, distancias_tramos, clasificar_estructura_por_angulo
 from .mecanica import (
-    tension_trabajo_kN,
-    demanda_horizontal_kN,
-    tension_retenida_kN,
-    capacidad_poste_kN,
-    cable_retenida_recomendado,
+    tension_trabajo_kN, demanda_horizontal_H_kN, tension_retenida_kN,
+    fila_resultado
 )
-from .reporte_pdf import generar_reporte_pdf
+from .perfil import analizar_perfil
+from .reporte_pdf import generar_pdf
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("--excel", required=True, help="Ruta del Excel con Punto,X,Y")
-    p.add_argument("--calibre", required=True, help='Ej: "2/0 ACSR"')
-    p.add_argument("--fases", type=int, default=3)
-    p.add_argument("--poste", required=True, help='Ej: "PC-40"')
-    p.add_argument("--out", default="outputs/analisis_mecanico_linea.pdf")
-    args = p.parse_args()
+def resumen_resultados(resultados: list[dict]) -> str:
+    n = len(resultados)
+    n_ok = sum(1 for r in resultados if str(r.get("Cumple poste","")).upper() == "SI")
+    n_no = n - n_ok
+    n_ret = sum(1 for r in resultados if str(r.get("Solución","")).upper() == "RETENIDA")
+    n_auto = sum(1 for r in resultados if str(r.get("Solución","")).upper() == "AUTOSOPORTADO")
+    peor = max((float(r.get("Utiliz. poste (%)", 0)) for r in resultados), default=0.0)
+    return f"Puntos={n} | Cumple={n_ok} | No cumple={n_no} | Retenida={n_ret} | Auto={n_auto} | Peor util={peor:.1f}%"
 
-    df, puntos, etiquetas = leer_puntos_excel(args.excel)
+def correr(ruta_xlsx: str, calibre: str, n_fases: int, tipo_poste: str, out_dir: str):
+    os.makedirs(out_dir, exist_ok=True)
 
-    T = tension_trabajo_kN(args.calibre)
-    Hmax = capacidad_poste_kN(args.poste)
-    cable_ret = cable_retenida_recomendado(args.calibre)
+    df = leer_puntos_xlsx(ruta_xlsx)
+    puntos, etiquetas, espacio = extraer_listas(df)
 
-    resultados = []
+    # Distancias
+    tramos, total_m = distancias_tramos(puntos, etiquetas)
 
-    # Inicio
-    H0 = demanda_horizontal_kN("Remate", T, args.fases, 0.0)
-    resultados.append({
-        "Punto": etiquetas[0],
-        "Deflexión (°)": "-",
-        "Estructura": "Remate",
-        "H (kN)": round(H0, 2),
-        "T_guy (kN)": round(tension_retenida_kN(H0), 2),
-        "Cable Guy": cable_ret,
-        "Poste": args.poste,
-        "Cap (kN)": Hmax,
-        "Cumple": "SI" if H0 <= Hmax else "NO",
-    })
+    # Mecánica base
+    T_work = tension_trabajo_kN(calibre)
+
+    resultados: list[dict] = []
+
+    # Inicio (remate)
+    H0 = demanda_horizontal_H_kN("Remate", T_work, n_fases, 0.0)
+    Tret0 = tension_retenida_kN(H0)
+    resultados.append(fila_resultado(
+        punto=etiquetas[0], defl="-", estructura="Remate", ret=1, espacio_ret=espacio[0],
+        H_kN=H0, Tret_kN=Tret0, calibre=calibre, n_fases=n_fases, tipo_poste=tipo_poste
+    ))
 
     # Intermedios
-    for i in range(1, len(puntos) - 1):
-        ang = deflexion_deg(puntos[i-1], puntos[i], puntos[i+1])
-        tipo, _ret = clasificar_por_angulo(ang)
-        H = demanda_horizontal_kN(tipo, T, args.fases, ang)
-        resultados.append({
-            "Punto": etiquetas[i],
-            "Deflexión (°)": round(ang, 2),
-            "Estructura": tipo,
-            "H (kN)": round(H, 2),
-            "T_guy (kN)": round(tension_retenida_kN(H), 2) if H > 0 else 0.0,
-            "Cable Guy": cable_ret if H > 0 else "-",
-            "Poste": args.poste,
-            "Cap (kN)": Hmax,
-            "Cumple": "SI" if H <= Hmax else "NO",
-        })
+    for i in range(1, len(puntos)-1):
+        ang = deflexion(puntos[i-1], puntos[i], puntos[i+1])
+        estructura, ret = clasificar_estructura_por_angulo(ang)
+        H = demanda_horizontal_H_kN(estructura, T_work, n_fases, ang)
+        Tret = tension_retenida_kN(H)
 
-    # Fin
-    Hf = demanda_horizontal_kN("Remate", T, args.fases, 0.0)
-    resultados.append({
-        "Punto": etiquetas[-1],
-        "Deflexión (°)": "-",
-        "Estructura": "Remate",
-        "H (kN)": round(Hf, 2),
-        "T_guy (kN)": round(tension_retenida_kN(Hf), 2),
-        "Cable Guy": cable_ret,
-        "Poste": args.poste,
-        "Cap (kN)": Hmax,
-        "Cumple": "SI" if Hf <= Hmax else "NO",
-    })
+        resultados.append(fila_resultado(
+            punto=etiquetas[i], defl=round(ang,2), estructura=estructura, ret=ret, espacio_ret=espacio[i],
+            H_kN=H, Tret_kN=Tret, calibre=calibre, n_fases=n_fases, tipo_poste=tipo_poste
+        ))
 
-    tramos, total = distancias_tramos(puntos, etiquetas)
+    # Fin (remate)
+    Hf = demanda_horizontal_H_kN("Remate", T_work, n_fases, 0.0)
+    Tretf = tension_retenida_kN(Hf)
+    resultados.append(fila_resultado(
+        punto=etiquetas[-1], defl="-", estructura="Remate", ret=1, espacio_ret=espacio[-1],
+        H_kN=Hf, Tret_kN=Tretf, calibre=calibre, n_fases=n_fases, tipo_poste=tipo_poste
+    ))
 
-    meta = {
-        "excel": args.excel,
-        "calibre": args.calibre,
-        "fases": args.fases,
-        "poste": args.poste,
-    }
+    # Perfil (si hay Altitude)
+    perfil = analizar_perfil(df, tipo_poste=tipo_poste, calibre=calibre, n_fases=n_fases)
 
-    generar_reporte_pdf(
-        out_pdf=args.out,
-        meta=meta,
-        tabla_resultados=resultados,
-        tramos=tramos,
-        puntos=puntos,
-        etiquetas=etiquetas,
-    )
+    # Export XLSX
+    df_res = pd.DataFrame(resultados)
+    out_xlsx = os.path.join(out_dir, "resultados_analisis_mecanico.xlsx")
+    with pd.ExcelWriter(out_xlsx, engine="openpyxl") as w:
+        df.to_excel(w, sheet_name="Entrada", index=False)
+        df_res.to_excel(w, sheet_name="Resultados", index=False)
+        pd.DataFrame(tramos, columns=["Tramo","Distancia(m)","Acumulado(m)"]).to_excel(w, sheet_name="Tramos", index=False)
+        if perfil is not None:
+            pd.DataFrame(perfil["tabla_vanos"]).to_excel(w, sheet_name="Perfil_Vanos", index=False)
 
-    print(f"✅ PDF generado: {args.out}")
+    # PDF
+    out_pdf = os.path.join(out_dir, "analisis_mecanico.pdf")
+    resumen_linea = f"Conductor={calibre} | Fases={n_fases} | Poste={tipo_poste} | Total={total_m:,.2f} m | {resumen_resultados(resultados)}"
+    generar_pdf(out_pdf, puntos, etiquetas, resultados, tramos, total_m, resumen_linea, perfil=perfil)
+
+    return out_pdf, out_xlsx
+
+def build_parser():
+    p = argparse.ArgumentParser(description="Análisis mecánico de líneas (UTM) - Retenidas/Auto + PDF/XLSX")
+    p.add_argument("--excel", required=True, help="Ruta a puntos.xlsx")
+    p.add_argument("--conductor", required=True, choices=list(CONDUCTORES_ACSR.keys()), help="Calibre ACSR")
+    p.add_argument("--fases", type=int, default=3, choices=[1,2,3], help="Número de fases")
+    p.add_argument("--poste", required=True, choices=list(POSTES.keys()), help="Tipo de poste (ej. PC-40)")
+    p.add_argument("--out", default="outputs", help="Carpeta de salida")
+    return p
+
+def main():
+    args = build_parser().parse_args()
+    out_pdf, out_xlsx = correr(args.excel, args.conductor, args.fases, args.poste, args.out)
+    print(f"✅ PDF:  {out_pdf}")
+    print(f"✅ XLSX: {out_xlsx}")
 
 if __name__ == "__main__":
     main()
-
