@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 import math
 
-from .catalogos import POSTES
+from .norma_postes import altura_poste_m
 from .config import OFFSET_AMARRE_DESDE_PUNTA_M, DESPEJE_MIN_M
 from .geometria import dist_utm, distancias_tramos
 from .mecanica import peso_lineal_kN_m, tension_trabajo_kN
@@ -26,7 +26,7 @@ def altura_poste_por_df(df, tipo_poste: str) -> np.ndarray:
     if "Altura_Poste_m" in df.columns:
         return df["Altura_Poste_m"].astype(float).to_numpy()
 
-    return np.full(len(df), float(POSTES[tipo_poste]["altura_m"]), dtype=float)
+    return np.full(len(df), float(altura_poste_m(tipo_poste)), dtype=floa
 
 
 def altura_amarre_abs(df, terreno: np.ndarray, h_poste: np.ndarray) -> np.ndarray:
