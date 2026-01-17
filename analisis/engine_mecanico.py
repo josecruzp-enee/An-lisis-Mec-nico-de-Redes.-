@@ -1,42 +1,97 @@
-# analisis/engine_mecanico.py
+# analisis/engine.py
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from typing import Dict, Any
 import pandas as pd
 
-from .catalogos import CONDUCTORES_ACSR
-from .mecanica import peso_lineal_kN_m, tension_trabajo_kN, retenida_recomendada
+from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
+from .cargas_tramo import calcular_cargas_por_tramo
 
-def parametros_conductor(calibre: str, fraccion_trabajo: float) -> pd.DataFrame:
-    """
-    Devuelve una tabla (DataFrame) con parámetros mecánicos base del conductor,
-    lista para mostrar en Streamlit y exportar a Excel/PDF.
 
-    - Peso lineal (kN/m)
-    - TR (kgf)
-    - TR (kN)
-    - Tensión de trabajo (kN)
-    - Retenida recomendada
-    """
-    if calibre not in CONDUCTORES_ACSR:
-        raise ValueError(f"Calibre no válido: {calibre}")
+def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    puntos = list(zip(df["X"].tolist(), df["Y"].tolist()))
+    etiquetas = df["Punto"].tolist()
 
-    peso_kN_m = peso_lineal_kN_m(calibre)
-    twork_kN = tension_trabajo_kN(calibre, fraccion_trabajo)
-    ret = retenida_recomendada(calibre)
+    df_tramos = calcular_tramos(puntos, etiquetas)
+    df_def = calcular_deflexiones(puntos, etiquetas)
 
-    tr_kgf = CONDUCTORES_ACSR[calibre]["TR_kgf"]
+    if not df_def.empty:
+        estructuras, retenidas = [], []
+        for ang in df_def["Deflexión (°)"].tolist():
+            est, ret = clasificar_por_angulo(float(ang))
+            estructuras.append(est)
+            retenidas.append(ret)
+        df_def["Estructura"] = estructuras
+        df_def["Retenidas"] = retenidas
 
-    # TR kN lo obtenemos "al revés": Twork = TR*k
-    # => TR = Twork/k (evita duplicar conversiones aquí)
-    tr_kN = twork_kN / float(fraccion_trabajo) if fraccion_trabajo else 0.0
+    # Resumen por punto (incluye remates)
+    resumen = df[["Punto", "Poste", "Espacio Retenida"]].copy()
+    resumen["Deflexión (°)"] = "-"
+    resumen["Estructura"] = "Remate"
+    resumen["Retenidas"] = 1
 
-    return pd.DataFrame([{
-        "Conductor": calibre,
-        "Peso lineal (kN/m)": round(float(peso_kN_m), 6),
-        "TR (kgf)": round(float(tr_kgf), 1),
-        "TR (kN)": round(float(tr_kN), 3),
-        "Fracción trabajo": float(fraccion_trabajo),
-        "Tensión trabajo (kN)": round(float(twork_kN), 3),
-        "Retenida recomendada": ret,
-    }])
+    if not df_def.empty:
+        mapa = df_def.set_index("Punto")[["Deflexión (°)", "Estructura", "Retenidas"]]
+        for i in range(1, len(resumen) - 1):
+            p = resumen.loc[i, "Punto"]
+            if p in mapa.index:
+                resumen.loc[i, "Deflexión (°)"] = float(mapa.loc[p, "Deflexión (°)"])
+                resumen.loc[i, "Estructura"] = str(mapa.loc[p, "Estructura"])
+                resumen.loc[i, "Retenidas"] = int(mapa.loc[p, "Retenidas"])
+
+    return {
+        "tramos": df_tramos,
+        "deflexiones": df_def,
+        "resumen": resumen,
+        "total_m": float(df_tramos["Distancia (m)"].sum()) if "Distancia (m)" in df_tramos.columns else 0.0,
+    }
+
+
+def ejecutar_cargas_tramo(
+    df_tramos: pd.DataFrame,
+    *,
+    calibre: str,
+    n_fases: int,
+    v_viento_ms: float,
+    az_viento_deg: float,
+    diametro_m: float,
+    Cd: float = 1.2,
+    rho: float = 1.225,
+) -> pd.DataFrame:
+    return calcular_cargas_por_tramo(
+        df_tramos=df_tramos,
+        calibre=calibre,
+        n_fases=int(n_fases),
+        v_viento_ms=float(v_viento_ms),
+        azimut_viento_deg=float(az_viento_deg),
+        diametro_conductor_m=float(diametro_m),
+        Cd=float(Cd),
+        rho=float(rho),
+    )
+
+
+def ejecutar_todo(
+    df: pd.DataFrame,
+    *,
+    calibre: str,
+    n_fases: int,
+    v_viento_ms: float,
+    az_viento_deg: float,
+    diametro_m: float,
+    Cd: float = 1.2,
+    rho: float = 1.225,
+) -> Dict[str, Any]:
+    geo = ejecutar_fase_geometria(df)
+    df_cargas = ejecutar_cargas_tramo(
+        geo["tramos"],
+        calibre=calibre,
+        n_fases=n_fases,
+        v_viento_ms=v_viento_ms,
+        az_viento_deg=az_viento_deg,
+        diametro_m=diametro_m,
+        Cd=Cd,
+        rho=rho,
+    )
+    geo["cargas_tramo"] = df_cargas
+    return geo
