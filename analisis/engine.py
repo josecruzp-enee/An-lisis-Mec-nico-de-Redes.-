@@ -98,11 +98,19 @@ def ejecutar_todo(
     )
     geo["cargas_tramo"] = df_cargas
 
-    # ✅ NUEVO: fuerzas por nodo (poste) usando suma vectorial
+    
+    # 3) Fuerzas por nodo (poste) usando suma vectorial por azimut
     geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
         df_tramos=df_cargas,
         df_resumen=geo["resumen"],
         usar_col_w="w_resultante (kN/m)",
     )
+
+    # 4) Decisión soporte (poste / retenida / autosoportado)
+    geo["decision"] = decidir_soporte(
+        df_resumen=geo["resumen"],
+        df_fuerzas_nodo=geo["fuerzas_nodo"],
+    )
+
 
     return geo
