@@ -29,12 +29,12 @@ RETENIDAS_RECOMENDADAS: Dict[str, str] = {
 }
 
 POSTES: Dict[str, Dict[str, float]] = {
-    "PC-30": {"H_max_kN": 12.0},
-    "PC-35": {"H_max_kN": 14.0},
-    "PC-40": {"H_max_kN": 16.0},
-    "PM-40": {"H_max_kN": 16.0},
-    "PT-35": {"H_max_kN": 10.0},
-    "PT-40": {"H_max_kN": 12.0},
+    "PC-30": {"H_max_kN": 12.0, "altura_m": 9.0},
+    "PC-35": {"H_max_kN": 14.0, "altura_m": 10.5},
+    "PC-40": {"H_max_kN": 16.0, "altura_m": 12.0},
+    "PM-40": {"H_max_kN": 16.0, "altura_m": 12.0},
+    "PT-35": {"H_max_kN": 10.0, "altura_m": 10.5},
+    "PT-40": {"H_max_kN": 12.0, "altura_m": 12.0},
 }
 
 CAP_RETENIDA_ULT_LBF: Dict[str, float] = {
