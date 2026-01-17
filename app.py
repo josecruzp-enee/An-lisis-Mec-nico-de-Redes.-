@@ -33,6 +33,7 @@ def ui_datos_proyecto() -> dict:
 
     diametro_m = float(CONDUCTORES_ACSR[calibre]["diametro_m"])
     st.sidebar.caption(f"Diámetro (catálogo): {diametro_m*1000:.2f} mm")
+
     Cd = st.sidebar.number_input("Cd", min_value=0.1, value=1.2, step=0.1)
     rho = st.sidebar.number_input("ρ aire (kg/m³)", min_value=0.5, value=1.225, step=0.01)
 
@@ -48,6 +49,7 @@ def ui_datos_proyecto() -> dict:
         "n_fases": int(n_fases),
         "v_viento_ms": float(v_viento_ms),
         "az_viento_deg": float(az_viento_deg),
+        "diametro_m": float(diametro_m),   # <-- FIX
         "Cd": float(Cd),
         "rho": float(rho),
     }
@@ -91,7 +93,7 @@ try:
         n_fases=proyecto["n_fases"],
         v_viento_ms=proyecto["v_viento_ms"],
         az_viento_deg=proyecto["az_viento_deg"],
-        diametro_m=float(diametro_m),
+        diametro_m=proyecto["diametro_m"],   # <-- FIX
         Cd=proyecto["Cd"],
         rho=proyecto["rho"],
     )
