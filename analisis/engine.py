@@ -9,6 +9,7 @@ from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_ang
 from .cargas_tramo import calcular_cargas_por_tramo
 from .fuerzas_nodo import calcular_fuerzas_en_nodos  
 from .decision_soporte import decidir_soporte
+from .momento_poste import calcular_momento_poste
 
 
 
@@ -106,10 +107,16 @@ def ejecutar_todo(
         usar_col_w="w_resultante (kN/m)",
     )
 
+    geo["momento_poste"] = calcular_momento_poste(
+        df_fuerzas_nodo=geo["fuerzas_nodo"],
+        df_resumen=geo["resumen"],
+    )    
+    
     # 4) Decisión soporte (poste / retenida / autosoportado)
     geo["decision"] = decidir_soporte(
         df_resumen=geo["resumen"],
         df_fuerzas_nodo=geo["fuerzas_nodo"],
+        df_momento_poste=geo["momento_poste"],
     )
 
 
