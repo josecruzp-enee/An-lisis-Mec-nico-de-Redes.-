@@ -7,6 +7,7 @@ import pandas as pd
 
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from .cargas_tramo import calcular_cargas_por_tramo
+from .fuerzas_nodo import calcular_fuerzas_en_nodos  # ✅ NUEVO
 
 
 def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -93,6 +94,13 @@ def ejecutar_todo(
         Cd=Cd,
         rho=rho,
     )
-
     geo["cargas_tramo"] = df_cargas
+
+    # ✅ NUEVO: fuerzas por nodo (poste) usando suma vectorial
+    geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
+        df_tramos=df_cargas,
+        df_resumen=geo["resumen"],
+        usar_col_w="w_resultante (kN/m)",
+    )
+
     return geo
