@@ -1,37 +1,39 @@
-# analisis/io_excel.py
+# app.py
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import pandas as pd
+import streamlit as st
 
-def _norm_si_no(v) -> str:
-    s = str(v).strip().upper()
-    return "SI" if s in ("SI", "S", "TRUE", "1") else "NO"
+from analisis.io_excel import leer_puntos_excel
+from analisis.geometria import calcular_tramos  # función que devuelve DataFrame
 
-def leer_puntos_excel(archivo) -> pd.DataFrame:
-    # archivo puede ser ruta (CLI) o UploadedFile (Streamlit)
-    df = pd.read_excel(archivo)
-    df.columns = [str(c).strip() for c in df.columns]
+st.set_page_config(page_title="Análisis Mecánico - Distancias", layout="wide")
+st.title("Análisis Mecánico (FASE 1) — Distancias")
 
-    for c in ["Punto", "X", "Y"]:
-        if c not in df.columns:
-            raise ValueError(f"Falta columna obligatoria '{c}' en el Excel.")
+archivo = st.file_uploader("📄 Sube tu Excel (.xlsx)", type=["xlsx"])
 
-    df = df.copy()
-    df["Punto"] = df["Punto"].astype(str)
-    df["X"] = df["X"].astype(float)
-    df["Y"] = df["Y"].astype(float)
+if not archivo:
+    st.info("Sube un Excel con columnas: Punto, X, Y (opcional: Poste, Espacio Retenida).")
+    st.stop()
 
-    if "Poste" not in df.columns:
-        df["Poste"] = ""
+try:
+    df = leer_puntos_excel(archivo)
 
-    if "Espacio Retenida" in df.columns:
-        df["Espacio Retenida"] = df["Espacio Retenida"].apply(_norm_si_no)
-    elif "Espacio_Retenida" in df.columns:
-        df["Espacio_Retenida"] = df["Espacio_Retenida"].apply(_norm_si_no)
-        df = df.rename(columns={"Espacio_Retenida": "Espacio Retenida"})
-    else:
-        df["Espacio Retenida"] = "SI"
+    st.subheader("Entrada")
+    st.dataframe(df, use_container_width=True)
 
-    return df
+    puntos = list(zip(df["X"].tolist(), df["Y"].tolist()))
+    etiquetas = df["Punto"].tolist()
+
+    df_tramos = calcular_tramos(puntos, etiquetas)
+
+    st.subheader("Tramos y distancias")
+    st.dataframe(df_tramos, use_container_width=True)
+
+    total = float(df_tramos["Distancia (m)"].sum())
+    st.success(f"✅ Longitud total: {total:,.2f} m")
+
+except Exception as e:
+    st.error("❌ Error procesando el archivo.")
+    st.exception(e)
 
