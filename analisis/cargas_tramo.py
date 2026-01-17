@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from typing import List, Tuple
 import pandas as pd
 
 from .mecanica import peso_lineal_kN_m
 from .viento import viento_kN_m, proyectar_viento
 
-
 def calcular_cargas_por_tramo(
     df_tramos: pd.DataFrame,
+    *,
     calibre: str,
     n_fases: int,
     v_viento_ms: float,
@@ -19,69 +20,56 @@ def calcular_cargas_por_tramo(
     rho: float = 1.225,
 ) -> pd.DataFrame:
     """
-    Genera una tabla de cargas por tramo (kN/m) y cargas totales por tramo (kN).
+    Construye tabla de cargas por tramo:
+    - w_peso (kN/m) = peso_lineal_kN_m(calibre) * n_fases
+    - w_viento (kN/m) = viento_kN_m(V, D, Cd, rho)
+    - w_viento_eff (kN/m) = proyección sobre el tramo según azimut
+    - w_resultante (kN/m) = sqrt(w_peso^2 + w_viento_eff^2)
 
-    Requiere que df_tramos tenga como mínimo:
-    - 'Tramo'
-    - 'Distancia (m)'
-    - 'Azimut (°)'
-
-    Devuelve columnas:
-    - Tramo
-    - L (m)
-    - Azimut tramo (°)
-    - w_peso (kN/m) [por conductor]
-    - w_peso_total (kN/m) [* n_fases]
-    - w_viento (kN/m) [base, sin proyección, por conductor]
-    - w_viento_eff (kN/m) [proyectado, por conductor]
-    - w_viento_total (kN/m) [proyectado * n_fases]
-    - w_resultante (kN/m) [sqrt(peso^2 + viento^2) total]
-    - F_peso_tramo (kN) [w_peso_total * L]
-    - F_viento_tramo (kN) [w_viento_total * L]
-    - F_resultante_tramo (kN) [w_resultante * L]
+    Requiere que df_tramos tenga columna "Azimut (°)" y "Distancia (m)" (y "Tramo").
     """
-    req = ["Tramo", "Distancia (m)", "Azimut (°)"]
-    for c in req:
-        if c not in df_tramos.columns:
-            raise ValueError(f"df_tramos debe contener la columna '{c}'.")
+    if df_tramos is None or df_tramos.empty:
+        return pd.DataFrame()
 
-    # Cargas por conductor (kN/m)
-    w_peso = float(peso_lineal_kN_m(calibre))
-    w_viento_base = float(viento_kN_m(v_viento_ms, diametro_conductor_m, Cd=Cd, rho=rho))
+    out = df_tramos.copy()
 
-    filas = []
-    for _, row in df_tramos.iterrows():
-        tramo = str(row["Tramo"])
-        L = float(row["Distancia (m)"])
-        az_tramo = float(row["Azimut (°)"])
+    # Validaciones mínimas
+    if "Azimut (°)" not in out.columns:
+        raise ValueError("df_tramos debe incluir columna 'Azimut (°)'.")
+    if "Distancia (m)" not in out.columns:
+        raise ValueError("df_tramos debe incluir columna 'Distancia (m)'.")
+    if "Tramo" not in out.columns:
+        # por si tu calcular_tramos lo nombra distinto
+        raise ValueError("df_tramos debe incluir columna 'Tramo'.")
 
-        # Proyección del viento según orientación del tramo
-        w_viento_eff = float(proyectar_viento(w_viento_base, az_tramo, float(azimut_viento_deg)))
+    # Peso lineal por metro (kN/m) total por fases
+    w_peso = float(peso_lineal_kN_m(calibre)) * int(n_fases)
 
-        # Total por todas las fases (si modelas 1,2,3 conductores)
-        w_peso_total = w_peso * int(n_fases)
-        w_viento_total = w_viento_eff * int(n_fases)
+    # Viento base (kN/m)
+    w_viento = float(viento_kN_m(float(v_viento_ms), float(diametro_conductor_m), Cd=float(Cd), rho=float(rho)))
 
-        # Resultante total (kN/m)
-        w_res = (w_peso_total**2 + w_viento_total**2) ** 0.5
+    # Proyección del viento por tramo
+    w_eff_list: List[float] = []
+    w_res_list: List[float] = []
 
-        filas.append({
-            "Tramo": tramo,
-            "L (m)": round(L, 2),
-            "Azimut tramo (°)": round(az_tramo, 2),
+    for az_tramo in out["Azimut (°)"].astype(float).tolist():
+        w_eff = proyectar_viento(w_viento, float(az_tramo), float(azimut_viento_deg))
+        w_eff_list.append(float(w_eff))
+        w_res_list.append((w_peso**2 + w_eff**2) ** 0.5)
 
-            "w_peso (kN/m)": round(w_peso, 6),
-            "w_peso_total (kN/m)": round(w_peso_total, 6),
+    out["w_peso (kN/m)"] = w_peso
+    out["w_viento (kN/m)"] = w_viento
+    out["w_viento_eff (kN/m)"] = w_eff_list
+    out["w_resultante (kN/m)"] = w_res_list
 
-            "w_viento (kN/m)": round(w_viento_base, 6),
-            "w_viento_eff (kN/m)": round(w_viento_eff, 6),
-            "w_viento_total (kN/m)": round(w_viento_total, 6),
+    # Carga total por tramo (kN) (por si la quieres usar después)
+    out["W_resultante_tramo (kN)"] = out["w_resultante (kN/m)"].astype(float) * out["Distancia (m)"].astype(float)
 
-            "w_resultante (kN/m)": round(w_res, 6),
+    # Orden amigable de columnas (si existen)
+    cols_order = [c for c in [
+        "Tramo", "ΔX (m)", "ΔY (m)", "Distancia (m)", "Acumulado (m)", "Azimut (°)",
+        "w_peso (kN/m)", "w_viento (kN/m)", "w_viento_eff (kN/m)", "w_resultante (kN/m)",
+        "W_resultante_tramo (kN)",
+    ] if c in out.columns]
 
-            "F_peso_tramo (kN)": round(w_peso_total * L, 3),
-            "F_viento_tramo (kN)": round(w_viento_total * L, 3),
-            "F_resultante_tramo (kN)": round(w_res * L, 3),
-        })
-
-    return pd.DataFrame(filas)
+    return out[cols_order] if cols_order else out
