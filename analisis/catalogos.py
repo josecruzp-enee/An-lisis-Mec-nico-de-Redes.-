@@ -1,8 +1,10 @@
+# analisis/catalogos.py
 # -*- coding: utf-8 -*-
-G_KGF_TO_KN = 9.81 / 1000  # kgf -> kN
+from __future__ import annotations
 
-# ACSR: peso kg/m y TR en kgf (tabla base)
-CONDUCTORES_ACSR = {
+from typing import Dict
+
+CONDUCTORES_ACSR: Dict[str, Dict[str, float]] = {
     "2 ACSR":      {"peso_kg_m": 0.1359, "TR_kgf": 1265},
     "1/0 ACSR":    {"peso_kg_m": 0.2159, "TR_kgf": 1940},
     "2/0 ACSR":    {"peso_kg_m": 0.2721, "TR_kgf": 2425},
@@ -14,7 +16,7 @@ CONDUCTORES_ACSR = {
     "795 MCM":     {"peso_kg_m": 1.5220, "TR_kgf": 12950},
 }
 
-RETENIDAS_RECOMENDADAS = {
+RETENIDAS_RECOMENDADAS: Dict[str, str] = {
     "2 ACSR": "1/4\" EHS",
     "1/0 ACSR": "1/4\" EHS",
     "2/0 ACSR": "1/4\" EHS",
@@ -26,7 +28,17 @@ RETENIDAS_RECOMENDADAS = {
     "795 MCM": "3/8\" EHS",
 }
 
-# Placeholder: capacidad horizontal admisible del poste (kN)
-POSTES = {
+POSTES: Dict[str, Dict[str, float]] = {
     "PC-30": {"H_max_kN": 12.0},
+    "PC-35": {"H_max_kN": 14.0},
+    "PC-40": {"H_max_kN": 16.0},
+    "PM-40": {"H_max_kN": 16.0},
+    "PT-35": {"H_max_kN": 10.0},
+    "PT-40": {"H_max_kN": 12.0},
+}
 
+CAP_RETENIDA_ULT_LBF: Dict[str, float] = {
+    '1/4" EHS':  7000,
+    '5/16" EHS': 12000,
+    '3/8" EHS':  17000,
+}
