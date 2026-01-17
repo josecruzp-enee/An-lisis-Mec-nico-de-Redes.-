@@ -51,4 +51,5 @@ def proyectar_viento(
 
     donde theta = az_viento - az_tramo
     """
-    theta = math.radians(azimut_viento_deg - azimut_tra_
+    theta = math.radians(azimut_viento_deg - azimut_tramo_deg)
+    return float(abs(w_kN_m * math.sin(theta)))
