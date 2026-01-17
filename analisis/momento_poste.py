@@ -4,17 +4,11 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .catalogos import POSTES
+from .norma_postes import h_amarre_tipica_m
 
 
 def _h_amarre_por_poste(tipo_poste: str, default_m: float = 7.5) -> float:
-    """
-    Devuelve una altura de amarre típica (m) según el tipo de poste.
-    Si el catálogo no la trae, usa default_m.
-    """
-    d = POSTES.get(str(tipo_poste).strip(), {})
-    # Si luego agregas 'h_amarre_m' al catálogo, se usará automáticamente
-    return float(d.get("h_amarre_m", default_m))
+    return float(h_amarre_tipica_m(tipo_poste, default_m=default_m))
 
 
 def calcular_momento_poste(
