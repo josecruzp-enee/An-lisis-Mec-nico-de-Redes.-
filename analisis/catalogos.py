@@ -16,15 +16,15 @@ from typing import Dict, List, Any
 # ============================================================
 
 CONDUCTORES_ACSR: Dict[str, Dict[str, float]] = {
-    "2 ACSR":      {"peso_kg_m": 0.1359, "TR_kgf": 1265},
-    "1/0 ACSR":    {"peso_kg_m": 0.2159, "TR_kgf": 1940},
-    "2/0 ACSR":    {"peso_kg_m": 0.2721, "TR_kgf": 2425},
-    "3/0 ACSR":    {"peso_kg_m": 0.3429, "TR_kgf": 3030},
-    "4/0 ACSR":    {"peso_kg_m": 0.4325, "TR_kgf": 3820},
-    "266.8 MCM":   {"peso_kg_m": 0.5454, "TR_kgf": 5100},
-    "336.4 MCM":   {"peso_kg_m": 0.6874, "TR_kgf": 6375},
-    "477 MCM":     {"peso_kg_m": 0.9141, "TR_kgf": 7802},
-    "795 MCM":     {"peso_kg_m": 1.5220, "TR_kgf": 12950},
+    "2 ACSR":    {"peso_kg_m": 135.7/1000.0, "TR_kgf": 1292,  "diametro_m": 8.01/1000.0},
+    "1/0 ACSR":  {"peso_kg_m": 216.2/1000.0, "TR_kgf": 1986, "diametro_m": 10.11/1000.0},
+    "2/0 ACSR":  {"peso_kg_m": 272.0/1000.0, "TR_kgf": 2398, "diametro_m": 11.34/1000.0},
+    "3/0 ACSR":  {"peso_kg_m": 344.3/1000.0, "TR_kgf": 2996, "diametro_m": 12.75/1000.0},
+    "4/0 ACSR":  {"peso_kg_m": 433.1/1000.0, "TR_kgf": 3776, "diametro_m": 14.31/1000.0},
+    "266.8 MCM": {"peso_kg_m": 511.1/1000.0, "TR_kgf": 4330, "diametro_m": 16.07/1000.0},
+    "336.4 MCM": {"peso_kg_m": 689.9/1000.0, "TR_kgf": 6423, "diametro_m": 18.29/1000.0},
+    "477 MCM":   {"peso_kg_m": 975.8/1000.0, "TR_kgf": 8825, "diametro_m": 21.77/1000.0},
+    "795 MCM":   {"peso_kg_m": 1626.0/1000.0, "TR_kgf": 14283, "diametro_m": 28.11/1000.0},
 }
 
 # ============================================================
