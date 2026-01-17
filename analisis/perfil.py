@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple, Optional
 import numpy as np
+import math
 
 from .catalogos import POSTES
 from .config import OFFSET_AMARRE_DESDE_PUNTA_M, DESPEJE_MIN_M
@@ -25,14 +26,12 @@ def altura_poste_por_df(df, tipo_poste: str) -> np.ndarray:
     if "Altura_Poste_m" in df.columns:
         return df["Altura_Poste_m"].astype(float).to_numpy()
 
-    # Si en tu catálogo aún NO tienes 'altura_m', esto levantará KeyError.
-    # Recomiendo que POSTES incluya altura_m por tipo de poste.
     return np.full(len(df), float(POSTES[tipo_poste]["altura_m"]), dtype=float)
 
 
 def altura_amarre_abs(df, terreno: np.ndarray, h_poste: np.ndarray) -> np.ndarray:
     """
-    Altura absoluta del amarre (msnm si Altitude está en msnm).
+    Altura absoluta del amarre.
     - Si Excel trae 'Altura_Amarre_m', se suma al terreno.
     - Si no, amarre = terreno + altura_poste - OFFSET_AMARRE_DESDE_PUNTA_M
     """
@@ -45,17 +44,46 @@ def altura_amarre_abs(df, terreno: np.ndarray, h_poste: np.ndarray) -> np.ndarra
 # ============================================================
 # Sag / perfil
 # ============================================================
-def sag_parabolica_m(L: float, w_kN_m: float, T_kN: float) -> float:
+def sag_parabolica_m(L: float, wv_kN_m: float, H_kN: float) -> float:
     """
-    Flecha parabólica aproximada:
-        f = w*L^2 / (8*T)
-    donde:
-      - w_kN_m: carga vertical por metro (kN/m) (peso del conductor)
-      - T_kN: componente horizontal de tensión (kN) (aprox tensión de trabajo)
+    Parabólica (aprox):
+        f = w*L^2 / (8*H)
+    donde H ~ tensión horizontal.
     """
-    if L <= 0 or T_kN <= 0:
+    if L <= 0 or H_kN <= 0:
         return 0.0
-    return float(w_kN_m * L * L / (8.0 * T_kN))
+    return float(wv_kN_m * L * L / (8.0 * H_kN))
+
+
+def sag_catenaria_m(Lh: float, wv_kN_m: float, H_kN: float) -> float:
+    """
+    Catenaria real (nivelada) por peso vertical (sin viento en vertical):
+
+        f = (H/wv) * (cosh( (wv*Lh)/(2H) ) - 1)
+
+    donde:
+      - Lh: luz horizontal (m) (si no hay gran pendiente, Lh≈L)
+      - wv_kN_m: carga vertical por peso (kN/m)
+      - H_kN: componente horizontal de tensión (kN)
+    """
+    if Lh <= 0 or wv_kN_m <= 0 or H_kN <= 0:
+        return 0.0
+    x = (wv_kN_m * Lh) / (2.0 * H_kN)
+    return float((H_kN / wv_kN_m) * (math.cosh(x) - 1.0))
+
+
+def tension_soporte_catenaria_kN(Lh: float, wv_kN_m: float, H_kN: float) -> float:
+    """
+    Tensión en soporte (por fase) para catenaria nivelada:
+
+        Ts = H * cosh( (wv*Lh)/(2H) )
+
+    Devuelve kN.
+    """
+    if Lh <= 0 or wv_kN_m <= 0 or H_kN <= 0:
+        return 0.0
+    x = (wv_kN_m * Lh) / (2.0 * H_kN)
+    return float(H_kN * math.cosh(x))
 
 
 def evaluar_despeje_por_vano(
@@ -72,9 +100,11 @@ def evaluar_despeje_por_vano(
     Evalúa el perfil del conductor en un vano asumiendo:
     - Terreno lineal entre apoyos (g0->g1)
     - Línea recta entre amarres (y0->y1)
-    - Parabólica de flecha aplicada sobre la recta:
+    - Flecha aplicada sobre la recta:
         cond = y_line - 4*f*r*(1-r)
-    Devuelve arrays de chainage, terreno, conductor, y despeje mínimo del vano.
+
+    Nota: esto usa una parábola geométrica para "dibujar" el perfil.
+    La diferencia entre PARABOLA y CATENARIA aquí está en cómo calculamos f.
     """
     if L <= 0:
         s = np.array([0.0])
@@ -89,7 +119,7 @@ def evaluar_despeje_por_vano(
     terr = g0 + (g1 - g0) * r
     y_line = y0 + (y1 - y0) * r
 
-    # parábola simétrica con flecha máxima f en el centro
+    # Perfil simétrico con flecha máxima f en el centro
     cond = y_line - 4.0 * sag_f * r * (1.0 - r)
 
     despeje = cond - terr
@@ -99,24 +129,30 @@ def evaluar_despeje_por_vano(
 # ============================================================
 # Motor de perfil
 # ============================================================
-def analizar_perfil(df, tipo_poste: str, calibre: str) -> Optional[Dict]:
+def analizar_perfil(
+    df,
+    tipo_poste: str,
+    calibre: str,
+    *,
+    fraccion_trabajo: float = 0.20,   # <-- ajusta en UI (ej: 0.15, 0.20, 0.25)
+    modo_sag: str = "CATENARIA",       # "CATENARIA" | "PARABOLA"
+) -> Optional[Dict]:
     """
     Analiza perfil longitudinal si existe columna 'Altitude'.
-    Retorna dict con series del perfil y tabla por vano.
 
-    Nota:
-    - Para despeje y flecha se recomienda trabajar por conductor (NO multiplicar por n_fases).
-    - Si luego quieres considerar varios conductores, se evalúa el peor caso aparte.
+    - wv: solo peso (vertical) por conductor (NO multiplicar por fases)
+    - H: tensión horizontal por fase (aquí la aproximamos como tensión de trabajo)
+
+    Nota: el viento se usa en planta (esfuerzos laterales), no en la flecha vertical.
     """
     if "Altitude" not in df.columns:
-        return None  # perfil no aplica
+        return None
 
     puntos: List[Point] = list(zip(df["X"].tolist(), df["Y"].tolist()))
     etiquetas = df["Punto"].tolist()
 
     tramos, total_m = distancias_tramos(puntos, etiquetas)
 
-    # chainage de nodos
     chain_nodes = [0.0]
     for _n, d, _a in tramos:
         chain_nodes.append(chain_nodes[-1] + float(d))
@@ -126,16 +162,25 @@ def analizar_perfil(df, tipo_poste: str, calibre: str) -> Optional[Dict]:
     h_poste = altura_poste_por_df(df, tipo_poste)
     amarre = altura_amarre_abs(df, terreno, h_poste)
 
-    # Parámetros por CONDUCTOR (para sag/despeje)
-    w = float(peso_lineal_kN_m(calibre))          # kN/m
-    T = float(tension_trabajo_kN(calibre))        # kN
+    # Parámetros por conductor
+    wv = float(peso_lineal_kN_m(calibre))                  # kN/m (peso)
+    H = float(tension_trabajo_kN(calibre, fraccion_trabajo))  # kN (tensión horizontal aprox)
+
+    modo = str(modo_sag).strip().upper()
 
     filas_vanos: List[Dict] = []
     X_prof, G_prof, Y_prof = [], [], []
 
     for i in range(len(puntos) - 1):
-        L = dist_utm(puntos[i], puntos[i + 1])
-        f = sag_parabolica_m(L, w, T)
+        L = float(dist_utm(puntos[i], puntos[i + 1]))  # m (aquí usamos L≈Lh)
+        Lh = L  # si luego metes pendiente real, aquí puedes usar proyección horizontal
+
+        if modo == "CATENARIA":
+            f = sag_catenaria_m(Lh, wv, H)
+            Ts = tension_soporte_catenaria_kN(Lh, wv, H)
+        else:
+            f = sag_parabolica_m(L, wv, H)
+            Ts = H  # en parabólica no se calcula Ts real; dejamos H como referencia
 
         ch0 = float(chain_nodes[i])
         g0, g1 = float(terreno[i]), float(terreno[i + 1])
@@ -155,9 +200,13 @@ def analizar_perfil(df, tipo_poste: str, calibre: str) -> Optional[Dict]:
 
         filas_vanos.append({
             "Tramo": f"{etiquetas[i]} → {etiquetas[i + 1]}",
-            "Longitud (m)": round(float(L), 2),
-            "Sag f (m)": round(float(f), 2),
-            "Despeje mín (m)": round(float(min_clear), 2),
+            "Longitud (m)": round(L, 2),
+            "Modo sag": modo,
+            "wv (kN/m)": round(wv, 5),
+            "H (kN)": round(H, 3),
+            "Ts (kN)": round(float(Ts), 3),
+            "Sag f (m)": round(float(f), 3),
+            "Despeje mín (m)": round(float(min_clear), 3),
             "Cumple despeje": "SI" if (min_clear >= float(DESPEJE_MIN_M)) else "NO",
         })
 
