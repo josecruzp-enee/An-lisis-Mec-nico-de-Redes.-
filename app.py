@@ -48,7 +48,6 @@ def ui_datos_proyecto() -> dict:
         "n_fases": int(n_fases),
         "v_viento_ms": float(v_viento_ms),
         "az_viento_deg": float(az_viento_deg),
-        "diametro_m": float(diametro_m),
         "Cd": float(Cd),
         "rho": float(rho),
     }
