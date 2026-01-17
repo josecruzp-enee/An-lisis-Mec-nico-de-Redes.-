@@ -8,6 +8,7 @@ from analisis.io_excel import leer_puntos_excel
 from analisis.catalogos import CONDUCTORES_ACSR
 from analisis.engine import ejecutar_todo
 
+
 st.set_page_config(page_title="Análisis Mecánico", layout="wide")
 st.title("Análisis Mecánico — Geometría + Cargas por tramo")
 
