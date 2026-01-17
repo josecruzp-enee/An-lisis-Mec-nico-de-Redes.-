@@ -1,43 +1,29 @@
+# analisis/mecanica.py
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import math
-from typing import Dict
+from analisis.catalogos import CONDUCTORES_ACSR, RETENIDAS_RECOMENDADAS, POSTES, CAP_RETENIDA_ULT_LBF
+from analisis.unidades import kgf_to_kN, kg_m_to_kN_m, lbf_to_kN
 
-from .catalogos import (
-    CONDUCTORES_ACSR,
-    RETENIDAS_RECOMENDADAS,
-    POSTES,
-    G_KGF_TO_KN,
-    FRACCION_TRABAJO_DEFAULT,
-    ANG_RETENIDA_DEFAULT_DEG,
-)
+def tension_trabajo_kN(calibre: str, fraccion_trabajo: float) -> float:
+    if calibre not in CONDUCTORES_ACSR:
+        raise ValueError(f"Calibre no válido: {calibre}")
+    tr_kgf = CONDUCTORES_ACSR[calibre]["TR_kgf"]
+    return kgf_to_kN(tr_kgf) * float(fraccion_trabajo)
 
-def tension_trabajo_kN(calibre: str, fraccion: float = FRACCION_TRABAJO_DEFAULT) -> float:
-    dat = CONDUCTORES_ACSR[calibre]
-    TR_kN = dat["TR_kgf"] * G_KGF_TO_KN
-    return float(TR_kN * fraccion)
+def peso_lineal_kN_m(calibre: str) -> float:
+    if calibre not in CONDUCTORES_ACSR:
+        raise ValueError(f"Calibre no válido: {calibre}")
+    return kg_m_to_kN_m(CONDUCTORES_ACSR[calibre]["peso_kg_m"])
 
-def demanda_horizontal_kN(tipo_estructura: str, T_kN: float, n_fases: int, angulo_deg: float) -> float:
-    t = tipo_estructura.strip().lower()
-    if t in ("remate", "inicio", "fin"):
-        return float(n_fases * T_kN)
-    if t == "paso":
-        return 0.0
-    if t in ("ángulo", "angulo", "giro"):
-        return float(n_fases * 2.0 * T_kN * math.sin(math.radians(angulo_deg) / 2.0))
-    if t == "doble remate":
-        return float(n_fases * 2.0 * T_kN)
-    raise ValueError(f"Tipo de estructura desconocido: {tipo_estructura}")
-
-def tension_retenida_kN(H_kN: float, ang_ret_deg: float = ANG_RETENIDA_DEFAULT_DEG) -> float:
-    if H_kN <= 0:
-        return 0.0
-    return float(H_kN / math.cos(math.radians(ang_ret_deg)))
-
-def capacidad_poste_kN(tipo_poste: str) -> float:
-    return float(POSTES[tipo_poste]["H_max_kN"])
-
-def cable_retenida_recomendado(calibre: str) -> str:
+def retenida_recomendada(calibre: str) -> str:
     return RETENIDAS_RECOMENDADAS.get(calibre, "N/D")
 
+def H_max_poste_kN(tipo_poste: str, default: float = 9999.0) -> float:
+    return float(POSTES.get(tipo_poste, {}).get("H_max_kN", default))
+
+def capacidad_retenida_admisible_kN(cable_ret: str, FS_ret: float) -> float:
+    ult_lbf = CAP_RETENIDA_ULT_LBF.get(str(cable_ret).strip())
+    if ult_lbf is None:
+        return 0.0
+    return lbf_to_kN(ult_lbf) / float(FS_ret)
