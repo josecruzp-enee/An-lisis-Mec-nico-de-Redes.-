@@ -5,92 +5,59 @@ from __future__ import annotations
 import streamlit as st
 
 from analisis.io_excel import leer_puntos_excel
-from analisis.geometria import (
-    calcular_tramos,
-    calcular_deflexiones,
-    clasificar_por_angulo,
-)
+from analisis.catalogos import CONDUCTORES_ACSR
+from analisis.engine import ejecutar_todo
 
-st.set_page_config(page_title="Análisis Mecánico - Geometría", layout="wide")
-st.title("Análisis Mecánico (FASE 1) — Geometría (Distancias + Deflexión)")
+st.set_page_config(page_title="Análisis Mecánico", layout="wide")
+st.title("Análisis Mecánico — Geometría + Cargas por tramo")
 
 archivo = st.file_uploader("📄 Sube tu Excel (.xlsx)", type=["xlsx"])
-
 if not archivo:
     st.info("Sube un Excel con columnas: Punto, X, Y (opcional: Poste, Espacio Retenida).")
     st.stop()
 
+# Sidebar (solo UI)
+st.sidebar.header("Viento y cargas por tramo")
+calibre = st.sidebar.selectbox("Conductor", list(CONDUCTORES_ACSR.keys()), index=min(2, len(CONDUCTORES_ACSR)-1))
+n_fases = st.sidebar.selectbox("Fases", [1, 2, 3], index=2)
+v_viento_ms = st.sidebar.number_input("Velocidad viento (m/s)", min_value=0.0, value=0.0, step=0.5)
+az_viento = st.sidebar.number_input("Dirección viento (°)", min_value=0.0, max_value=360.0, value=0.0, step=1.0)
+diametro_m = st.sidebar.number_input("Diámetro conductor (m)", min_value=0.0001, value=0.0100, step=0.0005, format="%.4f")
+Cd = st.sidebar.number_input("Cd", min_value=0.1, value=1.2, step=0.1)
+rho = st.sidebar.number_input("ρ aire (kg/m³)", min_value=0.5, value=1.225, step=0.01)
+
 try:
-    # -----------------------
-    # 1) Lectura de entrada
-    # -----------------------
     df = leer_puntos_excel(archivo)
+
+    res = ejecutar_todo(
+        df,
+        calibre=calibre,
+        n_fases=int(n_fases),
+        v_viento_ms=float(v_viento_ms),
+        az_viento_deg=float(az_viento),
+        diametro_m=float(diametro_m),
+        Cd=float(Cd),
+        rho=float(rho),
+    )
 
     st.subheader("Entrada")
     st.dataframe(df, use_container_width=True)
 
-    puntos = list(zip(df["X"].tolist(), df["Y"].tolist()))
-    etiquetas = df["Punto"].tolist()
-
-    # -----------------------
-    # 2) Tramos y distancias
-    # -----------------------
-    df_tramos = calcular_tramos(puntos, etiquetas)
-
     st.subheader("Tramos y distancias")
-    st.dataframe(df_tramos, use_container_width=True)
+    st.dataframe(res["tramos"], use_container_width=True)
+    st.success(f"✅ Longitud total: {res['total_m']:,.2f} m")
 
-    total = float(df_tramos["Distancia (m)"].sum())
-    st.success(f"✅ Longitud total: {total:,.2f} m")
-
-    # -----------------------
-    # 3) Deflexión + clasificación
-    # -----------------------
     st.subheader("Deflexión y clasificación por punto")
-
-    df_def = calcular_deflexiones(puntos, etiquetas)  # P2..P(n-1)
-
-    if df_def.empty:
+    if res["deflexiones"].empty:
         st.info("Se requieren al menos 3 puntos para calcular deflexiones.")
     else:
-        estructuras = []
-        retenidas = []
-        for ang in df_def["Deflexión (°)"].tolist():
-            est, ret = clasificar_por_angulo(float(ang))
-            estructuras.append(est)
-            retenidas.append(ret)
+        st.dataframe(res["deflexiones"], use_container_width=True)
 
-        df_def["Estructura"] = estructuras
-        df_def["Retenidas"] = retenidas
-
-        st.dataframe(df_def, use_container_width=True)
-
-    # -----------------------
-    # 4) Resumen por punto (incluye remates)
-    # -----------------------
     st.subheader("Resumen por punto (incluye remates)")
+    st.dataframe(res["resumen"], use_container_width=True)
 
-    # Creamos una tabla por punto con estructura y retenidas
-    # P1 y último = Remate
-    resumen = df[["Punto", "Poste", "Espacio Retenida"]].copy()
-    resumen["Deflexión (°)"] = "-"
-    resumen["Estructura"] = "Remate"
-    resumen["Retenidas"] = 1
-
-    # Insertamos deflexiones/clasificación para puntos interiores
-    if not df_def.empty:
-        mapa = df_def.set_index("Punto")[["Deflexión (°)", "Estructura", "Retenidas"]]
-        for i in range(1, len(resumen) - 1):
-            p = resumen.loc[i, "Punto"]
-            if p in mapa.index:
-                resumen.loc[i, "Deflexión (°)"] = float(mapa.loc[p, "Deflexión (°)"])
-                resumen.loc[i, "Estructura"] = str(mapa.loc[p, "Estructura"])
-                resumen.loc[i, "Retenidas"] = int(mapa.loc[p, "Retenidas"])
-
-        # Para puntos interiores “Paso” normalmente retenidas=0 (según tu función)
-        # Aquí ya viene desde clasificar_por_angulo()
-
-    st.dataframe(resumen, use_container_width=True)
+    st.subheader("Cargas por tramo (peso + viento)")
+    st.dataframe(res["cargas_tramo"], use_container_width=True)
 
 except Exception as e:
     st.error("❌ Error procesando el archivo.")
