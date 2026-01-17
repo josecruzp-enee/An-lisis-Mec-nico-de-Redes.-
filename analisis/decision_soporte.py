@@ -5,12 +5,7 @@ from __future__ import annotations
 from typing import Optional, Dict, Any
 import pandas as pd
 
-from .catalogos import (
-    POSTES,  # legacy
-    POSTES_CONCRETO_TABLA_1,         # normativo (tabla 1)
-    POSTES_CLASES_APENDICE,          # normativo (clases 1..7)
-    APLICACION_CARGA_DESDE_PUNTA_M,  # 0.30 m (dato)
-)
+from .norma_postes import H_max_poste_kN
 from .unidades import kgf_to_kN  # ya lo tienes
 
 
