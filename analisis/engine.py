@@ -7,10 +7,9 @@ import pandas as pd
 
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from .cargas_tramo import calcular_cargas_por_tramo
-from .fuerzas_nodo import calcular_fuerzas_en_nodos  
+from .fuerzas_nodo import calcular_fuerzas_en_nodos
 from .decision_soporte import decidir_soporte
 from .momento_poste import calcular_momento_poste
-
 
 
 def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -99,7 +98,6 @@ def ejecutar_todo(
     )
     geo["cargas_tramo"] = df_cargas
 
-    
     # 3) Fuerzas por nodo (poste) usando suma vectorial por azimut
     geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
         df_tramos=df_cargas,
@@ -107,17 +105,16 @@ def ejecutar_todo(
         usar_col_w="w_resultante (kN/m)",
     )
 
+    # 3.1) Momento por poste (se calcula y se guarda, pero NO se usa para decisión FASE 1)
     geo["momento_poste"] = calcular_momento_poste(
         df_fuerzas_nodo=geo["fuerzas_nodo"],
         df_resumen=geo["resumen"],
-    )    
-    
+    )
+
     # 4) Decisión soporte (poste / retenida / autosoportado)
     geo["decision"] = decidir_soporte(
         df_resumen=geo["resumen"],
         df_fuerzas_nodo=geo["fuerzas_nodo"],
-        df_momento_poste=geo["momento_poste"],
     )
-
 
     return geo
