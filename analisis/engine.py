@@ -7,7 +7,9 @@ import pandas as pd
 
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from .cargas_tramo import calcular_cargas_por_tramo
-from .fuerzas_nodo import calcular_fuerzas_en_nodos  # ✅ NUEVO
+from .fuerzas_nodo import calcular_fuerzas_en_nodos  
+from .decision_soporte import decidir_soporte
+
 
 
 def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
