@@ -2,18 +2,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from typing import Dict, Any
 import pandas as pd
 
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
+from .cargas_tramo import calcular_cargas_por_tramo
 
-def ejecutar_geometria(df: pd.DataFrame) -> dict:
-    """
-    Motor único (sin Streamlit) para:
-    - Tramos (distancia, acumulado, azimut)
-    - Deflexión por punto interior
-    - Clasificación (Paso/Ángulo/Doble remate/Giro) + retenidas
-    - Resumen por punto (incluye remates)
-    """
+
+def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     puntos = list(zip(df["X"].tolist(), df["Y"].tolist()))
     etiquetas = df["Punto"].tolist()
 
@@ -21,8 +17,7 @@ def ejecutar_geometria(df: pd.DataFrame) -> dict:
     df_def = calcular_deflexiones(puntos, etiquetas)
 
     if not df_def.empty:
-        estructuras = []
-        retenidas = []
+        estructuras, retenidas = [], []
         for ang in df_def["Deflexión (°)"].tolist():
             est, ret = clasificar_por_angulo(float(ang))
             estructuras.append(est)
@@ -48,4 +43,56 @@ def ejecutar_geometria(df: pd.DataFrame) -> dict:
         "tramos": df_tramos,
         "deflexiones": df_def,
         "resumen": resumen,
+        "total_m": float(df_tramos["Distancia (m)"].sum()) if "Distancia (m)" in df_tramos.columns else 0.0,
     }
+
+
+def ejecutar_cargas_tramo(
+    df_tramos: pd.DataFrame,
+    *,
+    calibre: str,
+    n_fases: int,
+    v_viento_ms: float,
+    az_viento_deg: float,
+    diametro_m: float,
+    Cd: float = 1.2,
+    rho: float = 1.225,
+) -> pd.DataFrame:
+    return calcular_cargas_por_tramo(
+        df_tramos=df_tramos,
+        calibre=calibre,
+        n_fases=int(n_fases),
+        v_viento_ms=float(v_viento_ms),
+        azimut_viento_deg=float(az_viento_deg),
+        diametro_conductor_m=float(diametro_m),
+        Cd=float(Cd),
+        rho=float(rho),
+    )
+
+
+def ejecutar_todo(
+    df: pd.DataFrame,
+    *,
+    calibre: str,
+    n_fases: int,
+    v_viento_ms: float,
+    az_viento_deg: float,
+    diametro_m: float,
+    Cd: float = 1.2,
+    rho: float = 1.225,
+) -> Dict[str, Any]:
+    geo = ejecutar_fase_geometria(df)
+
+    df_cargas = ejecutar_cargas_tramo(
+        geo["tramos"],
+        calibre=calibre,
+        n_fases=n_fases,
+        v_viento_ms=v_viento_ms,
+        az_viento_deg=az_viento_deg,
+        diametro_m=diametro_m,
+        Cd=Cd,
+        rho=rho,
+    )
+
+    geo["cargas_tramo"] = df_cargas
+    return geo
