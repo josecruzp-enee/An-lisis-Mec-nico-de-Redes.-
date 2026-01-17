@@ -70,6 +70,10 @@ try:
     st.subheader("Fuerzas por poste (suma vectorial)")
     st.dataframe(res["fuerzas_nodo"], use_container_width=True)
 
+    st.subheader("Decisión por punto (poste / retenida / autosoportado)")
+    st.dataframe(res["decision"], use_container_width=True)
+
+
     # -----------------------
     # KPIs
     # -----------------------
