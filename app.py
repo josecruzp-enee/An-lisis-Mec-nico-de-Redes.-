@@ -91,6 +91,7 @@ try:
         n_fases=proyecto["n_fases"],
         v_viento_ms=proyecto["v_viento_ms"],
         az_viento_deg=proyecto["az_viento_deg"],
+        diametro_m=float(diametro_m),
         Cd=proyecto["Cd"],
         rho=proyecto["rho"],
     )
