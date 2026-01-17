@@ -31,7 +31,8 @@ def ui_datos_proyecto() -> dict:
     v_viento_ms = st.sidebar.number_input("Velocidad viento (m/s)", min_value=0.0, value=0.0, step=0.5)
     az_viento_deg = st.sidebar.number_input("Dirección viento (°)", min_value=0.0, max_value=360.0, value=0.0, step=1.0)
 
-    diametro_m = st.sidebar.number_input("Diámetro conductor (m)", min_value=0.0001, value=0.0100, step=0.0005, format="%.4f")
+    diametro_m = float(CONDUCTORES_ACSR[calibre]["diametro_m"])
+    st.sidebar.caption(f"Diámetro (catálogo): {diametro_m*1000:.2f} mm")
     Cd = st.sidebar.number_input("Cd", min_value=0.1, value=1.2, step=0.1)
     rho = st.sidebar.number_input("ρ aire (kg/m³)", min_value=0.5, value=1.225, step=0.01)
 
