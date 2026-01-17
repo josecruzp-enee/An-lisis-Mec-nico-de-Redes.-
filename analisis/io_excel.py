@@ -1,15 +1,19 @@
+# analisis/io_excel.py
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from typing import List, Tuple
 import pandas as pd
 
-Point = Tuple[float, float]
+def _norm_si_no(v) -> str:
+    s = str(v).strip().upper()
+    return "SI" if s in ("SI", "S", "TRUE", "1") else "NO"
 
-def leer_puntos_excel(path: str):
-    df = pd.read_excel(path)
-    req = ["Punto", "X", "Y"]
-    for c in req:
+def leer_puntos_excel(archivo) -> pd.DataFrame:
+    # archivo puede ser ruta (CLI) o UploadedFile (Streamlit)
+    df = pd.read_excel(archivo)
+    df.columns = [str(c).strip() for c in df.columns]
+
+    for c in ["Punto", "X", "Y"]:
         if c not in df.columns:
             raise ValueError(f"Falta columna obligatoria '{c}' en el Excel.")
 
@@ -18,6 +22,15 @@ def leer_puntos_excel(path: str):
     df["X"] = df["X"].astype(float)
     df["Y"] = df["Y"].astype(float)
 
-    puntos: List[Point] = list(zip(df["X"].tolist(), df["Y"].tolist()))
-    etiquetas = df["Punto"].tolist()
-    return df, puntos, etiquetas
+    if "Poste" not in df.columns:
+        df["Poste"] = ""
+
+    if "Espacio Retenida" in df.columns:
+        df["Espacio Retenida"] = df["Espacio Retenida"].apply(_norm_si_no)
+    elif "Espacio_Retenida" in df.columns:
+        df["Espacio_Retenida"] = df["Espacio_Retenida"].apply(_norm_si_no)
+        df = df.rename(columns={"Espacio_Retenida": "Espacio Retenida"})
+    else:
+        df["Espacio Retenida"] = "SI"
+
+    return df
