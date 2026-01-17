@@ -2,60 +2,74 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from io import BytesIO
-from typing import Dict
-
 import pandas as pd
+from typing import Dict, Any
 
 
-def _nombre_hoja_seguro(nombre: str) -> str:
-    """
-    Excel limita nombre de hoja a 31 chars y no permite: : \ / ? * [ ]
-    """
-    s = str(nombre).strip()
-    for ch in [":", "\\", "/", "?", "*", "[", "]"]:
-        s = s.replace(ch, "-")
-    s = s[:31] if len(s) > 31 else s
-    return s or "Hoja"
-
-
-def generar_excel_resultados(
+def exportar_resultados_excel(
+    ruta_salida: str,
     *,
     df_entrada: pd.DataFrame,
-    tablas: Dict[str, pd.DataFrame],
-) -> bytes:
+    resultados: Dict[str, Any],
+):
     """
-    Devuelve bytes .xlsx con múltiples hojas.
-    - df_entrada: hoja "Entrada"
-    - tablas: dict {nombre_hoja: dataframe}
-      Ej: {"Tramos": df_tramos, "Cargas_Tramo": df_cargas, ...}
-    """
-    bio = BytesIO()
+    Exporta los resultados del análisis mecánico a un archivo Excel.
 
-    with pd.ExcelWriter(bio, engine="openpyxl") as writer:
-        # Entrada
+    Hojas:
+    - Entrada
+    - Tramos
+    - Deflexiones
+    - Resumen
+    - Cargas_tramo
+    - Fuerzas_nodo
+    - Decision_soporte
+    """
+
+    with pd.ExcelWriter(ruta_salida, engine="openpyxl") as writer:
+
+        # -----------------------------
+        # 1) Entrada
+        # -----------------------------
         df_entrada.to_excel(writer, sheet_name="Entrada", index=False)
 
-        # Otras tablas
-        usados = set(["Entrada"])
-        for nombre, df in (tablas or {}).items():
-            if df is None:
-                continue
-            if not isinstance(df, pd.DataFrame):
-                continue
+        # -----------------------------
+        # 2) Geometría
+        # -----------------------------
+        if "tramos" in resultados:
+            resultados["tramos"].to_excel(
+                writer, sheet_name="Tramos", index=False
+            )
 
-            sheet = _nombre_hoja_seguro(nombre)
+        if "deflexiones" in resultados and resultados["deflexiones"] is not None:
+            resultados["deflexiones"].to_excel(
+                writer, sheet_name="Deflexiones", index=False
+            )
 
-            # evitar duplicados
-            base = sheet
-            k = 2
-            while sheet in usados:
-                suf = f"_{k}"
-                sheet = _nombre_hoja_seguro(base[: (31 - len(suf))] + suf)
-                k += 1
+        if "resumen" in resultados:
+            resultados["resumen"].to_excel(
+                writer, sheet_name="Resumen_por_punto", index=False
+            )
 
-            usados.add(sheet)
-            df.to_excel(writer, sheet_name=sheet, index=False)
+        # -----------------------------
+        # 3) Cargas
+        # -----------------------------
+        if "cargas_tramo" in resultados:
+            resultados["cargas_tramo"].to_excel(
+                writer, sheet_name="Cargas_por_tramo", index=False
+            )
 
-    bio.seek(0)
-    return bio.getvalue()
+        # -----------------------------
+        # 4) Fuerzas
+        # -----------------------------
+        if "fuerzas_nodo" in resultados:
+            resultados["fuerzas_nodo"].to_excel(
+                writer, sheet_name="Fuerzas_por_poste", index=False
+            )
+
+        # -----------------------------
+        # 5) Decisión estructural
+        # -----------------------------
+        if "decision" in resultados:
+            resultados["decision"].to_excel(
+                writer, sheet_name="Decision_soporte", index=False
+            )
