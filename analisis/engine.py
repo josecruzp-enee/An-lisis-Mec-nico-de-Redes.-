@@ -21,20 +21,45 @@ def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     df_tramos = calcular_tramos(puntos, etiquetas)
     df_def = calcular_deflexiones(puntos, etiquetas)
 
-    if not df_def.empty:
-        estructuras, retenidas = [], []
+    # ------------------------------------------------------------
+    # CORRECCIÓN: convertir "ángulo interior" (~180 en recta)
+    # a "deflexión real" (0 en recta, 90 en giro, etc.)
+    # deflex_real = |180 - ang|
+    # ------------------------------------------------------------
+    if not df_def.empty and "Deflexión (°)" in df_def.columns:
+        deflex_real_list = []
         for ang in df_def["Deflexión (°)"].tolist():
-            est, ret = clasificar_por_angulo(float(ang))
+            try:
+                a = float(ang)
+                deflex_real = abs(180.0 - a)
+            except Exception:
+                deflex_real = 0.0
+            deflex_real_list.append(deflex_real)
+
+        # Guardar la deflexión real (reemplaza la anterior)
+        df_def["Deflexión (°)"] = deflex_real_list
+
+        # Clasificar con deflexión real
+        estructuras, retenidas = [], []
+        for d in deflex_real_list:
+            est, ret = clasificar_por_angulo(float(d))
             estructuras.append(est)
             retenidas.append(ret)
+
         df_def["Estructura"] = estructuras
         df_def["Retenidas"] = retenidas
 
+    # ------------------------------------------------------------
+    # Resumen base (remates en extremos)
+    # ------------------------------------------------------------
     resumen = df[["Punto", "Poste", "Espacio Retenida"]].copy()
     resumen["Deflexión (°)"] = "-"
     resumen["Estructura"] = "Remate"
     resumen["Retenidas"] = 1
 
+    # ------------------------------------------------------------
+    # Insertar info de puntos internos desde df_def ya corregido
+    # ------------------------------------------------------------
     if not df_def.empty:
         mapa = df_def.set_index("Punto")[["Deflexión (°)", "Estructura", "Retenidas"]]
         for i in range(1, len(resumen) - 1):
