@@ -180,6 +180,18 @@ def ejecutar_todo(
         df_fuerzas_nodo=geo["fuerzas_nodo"],
     )
 
+    geo["retenidas"] = calcular_retenidas(
+        geo["decision"],                 # 👈 aquí ya existe "Solución"
+        col_H="H (kN)",
+        aplicar_si_col="Solución",
+        aplicar_si_val="RETENIDA",
+        params=ParamsRetenida(
+            cable_retenida="1/4",        # o lo que uses en catálogo
+            FS_retenida=2.0,
+            ang_retenida_deg=45.0,
+        )
+    )
+    
     # 09) Perfil longitudinal
     geo["perfil"] = analizar_perfil(
         df,
