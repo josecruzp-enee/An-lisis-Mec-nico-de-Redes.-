@@ -206,9 +206,14 @@ def ejecutar_todo(
     rho: float = 1.225,
 ) -> Dict[str, Any]:
 
+    # ============================================================
+    # 01) Geometría base
+    # ============================================================
     geo: Dict[str, Any] = ejecutar_fase_geometria(df)
 
-    # 02) Cargas por tramo
+    # ============================================================
+    # 02) Cargas por tramo (peso + viento)
+    # ============================================================
     geo["cargas_tramo"] = ejecutar_cargas_tramo(
         geo["tramos"],
         calibre=calibre,
@@ -220,7 +225,9 @@ def ejecutar_todo(
         rho=rho,
     )
 
-    # 03) Fuerzas en nodos (contrato: Punto, Fx, Fy, H)
+    # ============================================================
+    # 03) Fuerzas en nodos (planta)
+    # ============================================================
     geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
         df_tramos=geo["cargas_tramo"],
         df_resumen=geo["resumen"],
@@ -228,17 +235,38 @@ def ejecutar_todo(
         azimut_viento_deg=float(az_viento_deg or 0.0),
     )
 
-    # DF maestro por nodo
-    geo["nodos"] = _armar_df_nodos(geo["resumen"], geo["fuerzas_nodo"])
+    # ============================================================
+    # 04) DataFrame maestro por nodo
+    # ============================================================
+    geo["nodos"] = _armar_df_nodos(
+        geo["resumen"],
+        geo["fuerzas_nodo"],
+    )
 
-    # 04) Retenidas (demanda)
-    geo["retenidas"] = _calcular_retenidas(geo["nodos"], calibre)
-    df_ret = geo["retenidas"]
-    if "h_amarre (m)" not in df_ret.columns:
-        df_ret["h_amarre (m)"] = h_amarre_norma_m("PC-40", uso="primario")
+    # ============================================================
+    # 05) Retenidas (demanda mecánica)
+    # ============================================================
+    geo["retenidas"] = _calcular_retenidas(geo["nodos"])
+    df_ret = geo["retenidas"].copy()
 
+    # --- asegurar Poste y h_amarre por punto (SIN constantes)
+    if "Poste" not in df_ret.columns and "Poste" in geo["resumen"].columns:
+        df_ret = df_ret.merge(
+            geo["resumen"][["Punto", "Poste"]],
+            on="Punto",
+            how="left",
+        )
 
-    # 05) Equilibrio poste–retenida
+    if "h_amarre (m)" not in df_ret.columns or df_ret["h_amarre (m)"].isna().any():
+        df_ret["h_amarre (m)"] = df_ret["Poste"].apply(
+            lambda p: h_amarre_tipica_m(str(p))
+        )
+
+    geo["retenidas"] = df_ret
+
+    # ============================================================
+    # 06) Equilibrio poste – retenida
+    # ============================================================
     geo["equilibrio"] = equilibrar_poste_retenida(
         df=geo["retenidas"],
         col_H_nodo="H_sin_retenida (kN)",
@@ -246,7 +274,9 @@ def ejecutar_todo(
         col_h_amarre="h_amarre (m)",
     )
 
-    # 06) Cimentación
+    # ============================================================
+    # 07) Cimentación (referencial)
+    # ============================================================
     geo["cimentacion"] = evaluar_cimentacion(
         df=geo["equilibrio"],
         col_H_poste="H_poste (kN)",
@@ -255,20 +285,29 @@ def ejecutar_todo(
         capacidad_suelo_kN=50.0,
     )
 
-    # 07) Momento (referencial)
+    # ============================================================
+    # 08) Momento en el poste (USANDO H_poste REAL)
+    # ============================================================
     geo["momento_poste"] = calcular_momento_poste(
-        df_fuerzas_nodo=geo["fuerzas_nodo"],
+        df_fuerzas_nodo=geo["equilibrio"],
         df_resumen=geo["resumen"],
+        col_H="H_poste (kN)",
+        col_poste="Poste",
+        col_h_amarre="h_amarre (m)",
     )
 
-    # 08) Decisión estructural FINAL
+    # ============================================================
+    # 09) Decisión estructural FINAL
+    # ============================================================
     geo["decision"] = decidir_soporte(
         df_resumen=geo["resumen"],
         df_equilibrio=geo["equilibrio"],
         df_cimentacion=geo["cimentacion"],
     )
 
-    # 09) Perfil longitudinal (si hay Altitud)
+    # ============================================================
+    # 10) Perfil longitudinal (si hay Altitud)
+    # ============================================================
     geo["perfil"] = analizar_perfil(
         df,
         tipo_poste=str(df["Poste"].iloc[0]) if "Poste" in df.columns and len(df) else "",
