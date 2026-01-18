@@ -6,7 +6,7 @@ import ast
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 
 
 EXCLUDE_DIRS = {
@@ -26,6 +26,29 @@ class PyInfo:
     functions: List[str] = field(default_factory=list)  # "def name(args)"
     classes: List[str] = field(default_factory=list)    # "class Name(bases)"
     errors: List[str] = field(default_factory=list)
+
+
+def uniq(xs):
+    """
+    Devuelve lista sin duplicados conservando orden.
+    Soporta elementos no-hasheables (listas/dicts) convirtiéndolos a una clave estable.
+    """
+    seen = set()
+    out = []
+
+    def key(v):
+        if isinstance(v, (list, tuple)):
+            return tuple(key(i) for i in v)
+        if isinstance(v, dict):
+            return tuple(sorted((k, key(val)) for k, val in v.items()))
+        return v
+
+    for x in xs:
+        k = key(x)
+        if k not in seen:
+            seen.add(k)
+            out.append(x)
+    return out
 
 
 def _to_module(root: str, file_path: str) -> str:
@@ -81,42 +104,28 @@ def _parse_py(root: str, path: str) -> PyInfo:
         if isinstance(node, ast.Import):
             for n in node.names:
                 info.imports.append(n.name)
+
         elif isinstance(node, ast.ImportFrom):
             mod = node.module or ""
             names = [n.name for n in node.names]
             info.from_imports.append((mod, names))
+
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            # solo top-level: evita funciones internas revisando parent con un truco simple:
-            # (ast no trae parent, así que filtramos por col_offset == 0)
+            # top-level (ast no trae parent; col_offset==0 evita funciones internas)
             if getattr(node, "col_offset", 1) == 0:
                 info.functions.append(_sig_from_func(node))
+
         elif isinstance(node, ast.ClassDef):
             if getattr(node, "col_offset", 1) == 0:
                 info.classes.append(_sig_from_class(node))
 
     # normaliza y quita duplicados preservando orden
-    def uniq(xs):
-    """
-    Devuelve lista sin duplicados conservando orden.
-    Soporta elementos no-hasheables (listas/dicts) convirtiéndolos a una clave estable.
-    """
-    seen = set()
-    out = []
+    info.imports = uniq(info.imports)
+    info.from_imports = uniq(info.from_imports)
+    info.functions = uniq(info.functions)
+    info.classes = uniq(info.classes)
 
-    def key(v):
-        if isinstance(v, (list, tuple)):
-            return tuple(key(i) for i in v)
-        if isinstance(v, dict):
-            return tuple(sorted((k, key(val)) for k, val in v.items()))
-        return v
-
-    for x in xs:
-        k = key(x)
-        if k not in seen:
-            seen.add(k)
-            out.append(x)
-    return out
-
+    return info
 
 
 def _walk_py_files(root: str) -> List[str]:
@@ -132,21 +141,18 @@ def _walk_py_files(root: str) -> List[str]:
 
 
 def _tree_view(root: str, files: List[str]) -> str:
-    # árbol simple basado en paths relativos
     rels = [os.path.relpath(p, root).replace(os.sep, "/") for p in files]
     rels.sort()
     out = []
     last_parts: List[str] = []
     for r in rels:
         parts = r.split("/")
-        # encuentra prefijo común
         common = 0
         for a, b in zip(last_parts, parts):
             if a == b:
                 common += 1
             else:
                 break
-        # imprime desde common
         for i in range(common, len(parts)):
             indent = "  " * i
             out.append(f"{indent}- {parts[i]}")
@@ -158,10 +164,8 @@ def generar_mapa(root: str, out_md: str = "MAPA_DEL_PROYECTO.md") -> str:
     files = _walk_py_files(root)
     infos = [_parse_py(root, p) for p in files]
 
-    # índice por módulo
     by_mod: Dict[str, PyInfo] = {i.module: i for i in infos}
 
-    # dependencias: mod -> lista de imports (solo los que parecen locales)
     deps: Dict[str, List[str]] = {}
     for i in infos:
         local = []
@@ -173,18 +177,12 @@ def generar_mapa(root: str, out_md: str = "MAPA_DEL_PROYECTO.md") -> str:
                 continue
             if mod in by_mod or any((mod + ".") == m[: len(mod) + 1] for m in by_mod):
                 local.append(mod)
-        # uniq
-        seen = set()
-        local2 = []
-        for x in local:
-            if x not in seen:
-                seen.add(x)
-                local2.append(x)
-        deps[i.module] = local2
+        deps[i.module] = uniq(local)
 
     lines: List[str] = []
     lines.append("# MAPA DEL PROYECTO\n")
     lines.append(f"Raíz analizada: `{os.path.abspath(root)}`\n")
+
     lines.append("## Árbol de archivos (.py)\n")
     lines.append("```")
     lines.append(_tree_view(root, files))
@@ -223,7 +221,6 @@ def generar_mapa(root: str, out_md: str = "MAPA_DEL_PROYECTO.md") -> str:
                 lines.append(f"- `{f}`")
             lines.append("")
 
-        # deps locales
         d = deps.get(i.module, [])
         if d:
             lines.append("**Dependencias locales (aprox):**")
@@ -242,9 +239,10 @@ def generar_mapa(root: str, out_md: str = "MAPA_DEL_PROYECTO.md") -> str:
     lines.append("```")
 
     content = "\n".join(lines) + "\n"
-    with open(os.path.join(root, out_md), "w", encoding="utf-8") as f:
+    out_path = os.path.join(root, out_md)
+    with open(out_path, "w", encoding="utf-8") as f:
         f.write(content)
-    return os.path.join(root, out_md)
+    return out_path
 
 
 if __name__ == "__main__":
