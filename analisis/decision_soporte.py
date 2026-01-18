@@ -1,94 +1,141 @@
 # analisis/decision_soporte.py
 # -*- coding: utf-8 -*-
-from __future__ import annotations
+"""
+ORDEN LÓGICO: 11 – DECISIÓN ESTRUCTURAL FINAL
 
+Decide la solución estructural por punto usando:
+- H_poste real (post–equilibrio)
+- Requerimiento geométrico de retenida
+- Cumplimiento de cimentación
+
+Regla: funciones cortas, una responsabilidad por función.
+"""
+
+from __future__ import annotations
 import pandas as pd
+from typing import Dict, Tuple
+
 from .norma_postes import H_max_poste_kN
 
+
+# =============================================================================
+# UTILIDADES ATÓMICAS
+# =============================================================================
 
 def _si_no(v) -> str:
     s = str(v).strip().upper()
     return "SI" if s in ("SI", "S", "TRUE", "1") else "NO"
 
 
+def capacidad_poste_kN(tipo_poste: str) -> float:
+    return float(H_max_poste_kN(tipo_poste))
+
+
+def utilizacion_poste_pct(H_poste_kN: float, Hmax_kN: float) -> float:
+    return (100.0 * H_poste_kN / Hmax_kN) if Hmax_kN > 0 else 0.0
+
+
+def cumple_poste(H_poste_kN: float, Hmax_kN: float) -> str:
+    return "SI" if H_poste_kN <= Hmax_kN else "NO"
+
+
+# =============================================================================
+# VALIDACIONES
+# =============================================================================
+
+def _validar_df(nombre: str, df: pd.DataFrame, columnas: list[str]) -> None:
+    if df is None or df.empty:
+        raise ValueError(f"{nombre} vacío o None")
+    for c in columnas:
+        if c not in df.columns:
+            raise ValueError(f"{nombre} debe incluir columna '{c}'")
+
+
+# =============================================================================
+# DECISIÓN POR FILA (LÓGICA PURA)
+# =============================================================================
+
+def decidir_fila(r: pd.Series) -> Tuple[str, str]:
+    """
+    Devuelve (solución, motivo) para una fila.
+    """
+    espacio = _si_no(r["Espacio Retenida"])
+    ret_req = int(r["Retenidas"])
+    cumple_cim = _si_no(r.get("Cumple cimentación", "NO"))
+    cumple_p = r["Cumple poste"]
+
+    if ret_req > 0:
+        if espacio == "SI" and cumple_cim == "SI":
+            return "RETENIDA", "Requiere retenida; sistema cumple"
+        if espacio == "NO":
+            return "AUTOSOPORTADO", "Requiere retenida pero no hay espacio"
+        return "AUTOSOPORTADO", "Requiere retenida pero no cumple"
+    else:
+        if cumple_p == "SI" and cumple_cim == "SI":
+            return "POSTE SOLO", "Paso sin retenida; poste y cimentación cumplen"
+        return "AUTOSOPORTADO", "No cumple poste solo o cimentación"
+
+
+# =============================================================================
+# EVALUACIÓN POR FILA (CÁLCULO)
+# =============================================================================
+
+def evaluar_poste_fila(r: pd.Series) -> Dict[str, object]:
+    """
+    Calcula métricas del poste para una fila.
+    """
+    poste = str(r["Poste"]).strip()
+    H_poste = float(r.get("H_poste (kN)", 0.0) or 0.0)
+
+    Hmax = capacidad_poste_kN(poste)
+    util = utilizacion_poste_pct(H_poste, Hmax)
+    cumple_p = cumple_poste(H_poste, Hmax)
+
+    return {
+        "H_max (kN)": round(Hmax, 2),
+        "Utilización poste (%)": round(util, 1),
+        "Cumple poste": cumple_p,
+    }
+
+
+# =============================================================================
+# FUNCIÓN ORQUESTADORA (DATAFRAME)
+# =============================================================================
+
 def decidir_soporte(
     df_resumen: pd.DataFrame,
-    df_fuerzas_nodo: pd.DataFrame,
+    df_equilibrio: pd.DataFrame,
+    df_cimentacion: pd.DataFrame,
 ) -> pd.DataFrame:
     """
-    Une resumen + fuerzas y decide solución por poste.
-
-    Reglas (FASE 1 estructural):
-    - Si Retenidas > 0:
-        - si Espacio Retenida = SI  => RETENIDA
-        - si Espacio Retenida = NO  => AUTOSOPORTADO
-    - Si Retenidas == 0:
-        - si Cumple poste => POSTE SOLO
-        - si NO cumple    => AUTOSOPORTADO
+    Decide la solución estructural final por punto.
     """
-    if df_resumen is None or df_resumen.empty:
-        raise ValueError("df_resumen vacío")
-    if df_fuerzas_nodo is None or df_fuerzas_nodo.empty:
-        raise ValueError("df_fuerzas_nodo vacío")
-    if "Punto" not in df_resumen.columns or "Punto" not in df_fuerzas_nodo.columns:
-        raise ValueError("Ambos DataFrames deben tener columna 'Punto'.")
 
-    df = df_resumen.merge(
-        df_fuerzas_nodo[["Punto", "H (kN)", "Fx (kN)", "Fy (kN)"]],
-        on="Punto",
-        how="left",
+    # ---- Validaciones mínimas
+    _validar_df("df_resumen", df_resumen, ["Punto", "Poste", "Espacio Retenida", "Retenidas"])
+    _validar_df("df_equilibrio", df_equilibrio, ["Punto", "H_poste (kN)"])
+    _validar_df("df_cimentacion", df_cimentacion, ["Punto", "Cumple cimentación"])
+
+    # ---- Merge maestro
+    df = (
+        df_resumen
+        .merge(df_equilibrio, on="Punto", how="left")
+        .merge(df_cimentacion[["Punto", "Cumple cimentación"]], on="Punto", how="left")
     )
 
-    # columnas mínimas esperadas
-    for c in ["Poste", "Espacio Retenida", "Retenidas"]:
-        if c not in df.columns:
-            raise ValueError(f"df_resumen debe incluir columna '{c}'.")
+    # ---- Cálculo por fila
+    metricas = df.apply(evaluar_poste_fila, axis=1, result_type="expand")
+    df = pd.concat([df, metricas], axis=1)
 
-    Hmax_list, util_list, cumple_list = [], [], []
-    sol_list, motivo_list = [], []
+    # ---- Decisión por fila
+    decisiones = df.apply(decidir_fila, axis=1, result_type="expand")
+    decisiones.columns = ["Solución", "Motivo"]
+    df = pd.concat([df, decisiones], axis=1)
 
-    for _, r in df.iterrows():
-        poste = str(r["Poste"]).strip()
-        espacio = _si_no(r["Espacio Retenida"])
-        ret = int(r["Retenidas"])
-        H = float(r.get("H (kN)", 0.0) or 0.0)
-
-        Hmax = float(H_max_poste_kN(poste))
-        util = (100.0 * H / Hmax) if Hmax > 0 else 0.0
-        cumple_poste = "SI" if (H <= Hmax) else "NO"
-
-        # decisión
-        if ret > 0:
-            if espacio == "SI":
-                sol = "RETENIDA"
-                motivo = "Estructura requiere retenida"
-            else:
-                sol = "AUTOSOPORTADO"
-                motivo = "Estructura requiere retenida pero no hay espacio"
-        else:
-            if cumple_poste == "SI":
-                sol = "POSTE SOLO"
-                motivo = "Paso / sin retenida"
-            else:
-                sol = "AUTOSOPORTADO"
-                motivo = "No cumple poste solo"
-
-        Hmax_list.append(Hmax)
-        util_list.append(util)
-        cumple_list.append(cumple_poste)
-        sol_list.append(sol)
-        motivo_list.append(motivo)
-
-    df["H_max (kN)"] = [round(float(x), 2) for x in Hmax_list]
-    df["Utilización poste (%)"] = [round(float(x), 1) for x in util_list]
-    df["Cumple poste"] = cumple_list
-    df["Solución"] = sol_list
-    df["Motivo"] = motivo_list
-
-    cols = [c for c in [
+    # ---- Orden de salida
+    columnas_salida = [
         "Punto", "Estructura", "Deflexión (°)", "Retenidas", "Espacio Retenida",
-        "Poste", "H (kN)", "H_max (kN)", "Utilización poste (%)", "Cumple poste",
-        "Solución", "Motivo", "Fx (kN)", "Fy (kN)",
-    ] if c in df.columns]
-
-    return df[cols]
+        "Poste", "H_poste (kN)", "H_max (kN)", "Utilización poste (%)",
+        "Cumple poste", "Cumple cimentación", "Solución", "Motivo",
+    ]
+    return df[[c for c in columnas_salida if c in df.columns]]
