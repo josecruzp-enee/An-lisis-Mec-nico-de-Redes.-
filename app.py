@@ -282,7 +282,7 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     if not df_vanos.empty:
         st.dataframe(df_vanos, use_container_width=True)
 
-    # Series del perfil
+    # Perfil (malla)
     X_prof = np.asarray(perfil.get("X_prof", []), dtype=float)
     G_prof = np.asarray(perfil.get("G_prof", []), dtype=float)
     Y_prof = np.asarray(perfil.get("Y_prof", []), dtype=float)
@@ -291,14 +291,28 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
         st.warning("No hay datos suficientes para graficar el perfil (X_prof/G_prof/Y_prof vacíos).")
         return
 
-    # Limpieza por seguridad
+    # --- limpiar NaN/inf (Streamlit Cloud se rompe si hay NaNs) ---
     mask = np.isfinite(X_prof) & np.isfinite(G_prof) & np.isfinite(Y_prof)
     X_prof, G_prof, Y_prof = X_prof[mask], G_prof[mask], Y_prof[mask]
     if X_prof.size == 0:
         st.warning("El perfil quedó vacío tras filtrar NaN/inf.")
         return
 
-    # ---- Datos por punto (para dibujar postes opcionalmente) ----
+    # --- ordenar por X (importante para plot e interp) ---
+    order = np.argsort(X_prof)
+    X_prof, G_prof, Y_prof = X_prof[order], G_prof[order], Y_prof[order]
+
+    # --- asegurar X estrictamente creciente para interp ---
+    X_i, idx = np.unique(X_prof, return_index=True)
+    G_i = G_prof[idx]
+    Y_i = Y_prof[idx]
+    if X_i.size < 2:
+        st.warning("No hay suficientes puntos únicos para graficar/interpolar el perfil.")
+        return
+
+    # ============================================================
+    # Preparar postes (opcional) desde df de entrada
+    # ============================================================
     df_local = df.copy()
     df_local.columns = [c.strip() for c in df_local.columns]
 
@@ -334,20 +348,23 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
                     .tolist()
                 )
 
-    # ---- Gráfica ----
+    # ============================================================
+    # Plot perfil
+    # ============================================================
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(X_prof, G_prof, label="Terreno", linewidth=2)
-    ax.plot(X_prof, Y_prof, label="Conductor", linewidth=2)
+    ax.plot(X_i, G_i, label="Terreno", linewidth=2)
+    ax.plot(X_i, Y_i, label="Conductor", linewidth=2)
 
-    # Catálogo simple para dibujar postes (ajústalo si quieres)
+    # Catálogo simple de alturas (opcional) para dibujar postes
     ALTURA_POSTE_M = {
         "PC-30": 9.0, "PC-35": 10.5, "PC-40": 12.0, "PC-40A": 12.0, "PC-45": 13.5, "PC-50": 15.0,
         "PM-30": 9.0, "PM-35": 10.5, "PM-40": 12.0, "PM-45": 13.5, "PM-50": 15.0,
     }
 
     if len(postes) > 0 and dist_puntos.size > 0:
-        G_puntos = np.interp(dist_puntos, X_prof, G_prof)
-        Y_puntos = np.interp(dist_puntos, X_prof, Y_prof)
+        # Interpolar terreno/conductor del perfil en las distancias de puntos
+        G_puntos = np.interp(dist_puntos, X_i, G_i)
+        Y_puntos = np.interp(dist_puntos, X_i, Y_i)
 
         n = min(len(postes), len(dist_puntos))
         for i in range(n):
@@ -356,20 +373,22 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
                 continue
 
             t = str(tipo).upper().strip().replace(" ", "").replace("_", "-")
-            if "-" not in t and len(t) >= 4:  # "PM40" -> "PM-40"
+            if "-" not in t and len(t) >= 4:  # casos tipo "PM40"
                 t = t[:2] + "-" + t[2:]
 
             h = ALTURA_POSTE_M.get(t, 12.0)
 
-            x_i = float(dist_puntos[i])
+            x_i_pt = float(dist_puntos[i])
             y_base = float(G_puntos[i])
             y_top = y_base + h
 
-            ax.plot([x_i, x_i], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
-            ax.scatter([x_i], [float(Y_puntos[i])], zorder=5)
+            ax.plot([x_i_pt, x_i_pt], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
+            ax.scatter([x_i_pt], [float(Y_puntos[i])], zorder=5)
 
             etiqueta = f"{df_local[col_punto].iloc[i]} {t}" if col_punto is not None else t
-            ax.text(x_i, y_top + 0.3, etiqueta, ha="center", fontsize=8)
+            ax.text(x_i_pt, y_top + 0.3, etiqueta, ha="center", fontsize=8)
+    else:
+        st.caption("Postes no dibujados (falta columna 'Poste' o no se pudo calcular distancia por punto).")
 
     ax.set_xlabel("Distancia acumulada (m)")
     ax.set_ylabel("Cota / Altitud (m)")
@@ -377,7 +396,9 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     ax.grid(True, linestyle="--", alpha=0.35)
     ax.legend()
 
+    # En Cloud ayuda a evitar render roto
     st.pyplot(fig, clear_figure=True)
+
 
 
 
