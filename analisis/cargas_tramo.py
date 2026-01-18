@@ -58,10 +58,9 @@ def calcular_cargas_por_tramo(
     # ------------------------------
     # 2) Viento lineal base (kN/m)
     # ------------------------------
-    if float(v_viento_ms) <= 0:
-        raise ValueError("v_viento_ms debe ser > 0 para calcular viento.")
-    if float(diametro_conductor_m) <= 0:
-        raise ValueError("diametro_conductor_m debe ser > 0 (en metros).")
+    if float(v_viento_ms) < 0:
+        raise ValueError("v_viento_ms no puede ser negativo."):
+        
 
     w_viento = viento_kN_m(
         velocidad_ms=float(v_viento_ms),
