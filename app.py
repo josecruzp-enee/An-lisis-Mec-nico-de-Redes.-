@@ -338,6 +338,29 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
             else:
                 postes = []
 
+
+def _render_tab_retenidas(res: Dict[str, Any]):
+    st.subheader("Retenidas (tensión / verificación)")
+
+    df_ret = res.get("retenidas", None)
+    if df_ret is None or df_ret.empty:
+        st.info("No hay resultados de retenidas (o no se calcularon).")
+        return
+
+    st.dataframe(df_ret, use_container_width=True)
+
+    # KPI rápido (opcional)
+    if "Cumple retenida" in df_ret.columns:
+        n = len(df_ret)
+        n_no = int((df_ret["Cumple retenida"] == "NO").sum())
+        n_si = int((df_ret["Cumple retenida"] == "SI").sum())
+        st.caption(f"Cumple: {n_si} / {n}  |  No cumple: {n_no}")
+
+
+
+
+
+    
     # ============================================================
     # 2) Catálogo de alturas típicas (m) — AJUSTABLE
     #    (Puse valores típicos; tú los alineas a tu estándar)
@@ -422,25 +445,28 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
 
 def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Entrada", "Resumen por punto", "Cargas por tramo", "Fuerzas por poste", "Decisión", "Perfil"]
+        ["Entrada","Resumen por punto","Cargas por tramo","Fuerzas por poste","Decisión","Retenidas","Perfil"]
     )
 
-    with tab1:
+    with tabs[0]:
         _render_tab_entrada(df)
 
-    with tab2:
+    with tabs[1]:
         _render_tab_resumen(res, df)
 
-    with tab3:
+    with tabs[2]:
         _render_tab_cargas(res)
 
-    with tab4:
+    with tabs[3]:
         _render_tab_fuerzas(res)
 
-    with tab5:
+    with tabs[4]:
         _render_tab_decision(res)
 
-    with tab6:
+    with tabs[5]:
+        _render_tab_retenidas(res)
+
+    with tabs[6]:
         _render_tab_perfil(df, res)
 
 
