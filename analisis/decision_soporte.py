@@ -109,33 +109,59 @@ def decidir_soporte(
 ) -> pd.DataFrame:
     """
     Decide la solución estructural final por punto.
+    Base mecánica: df_equilibrio
+    Metadatos: df_resumen
+    Veredicto suelo: df_cimentacion
     """
 
-    # ---- Validaciones mínimas
-    _validar_df("df_resumen", df_resumen, ["Punto", "Poste", "Espacio Retenida", "Retenidas"])
+    # ---- Validaciones
     _validar_df("df_equilibrio", df_equilibrio, ["Punto", "H_poste (kN)"])
+    _validar_df("df_resumen", df_resumen, ["Punto", "Poste", "Espacio Retenida", "Retenidas"])
     _validar_df("df_cimentacion", df_cimentacion, ["Punto", "Cumple cimentación"])
 
-    # ---- Merge maestro
-    df = (
-        df_resumen
-        .merge(df_equilibrio, on="Punto", how="left")
-        .merge(df_cimentacion[["Punto", "Cumple cimentación"]], on="Punto", how="left")
+    # ---- DF base = mecánica real
+    df = df_equilibrio.copy()
+
+    # ---- Enriquecer con geometría / entrada
+    df = df.merge(
+        df_resumen[["Punto", "Poste", "Espacio Retenida", "Retenidas",
+                    "Estructura", "Deflexión (°)"]],
+        on="Punto",
+        how="left",
     )
 
-    # ---- Cálculo por fila
+    # ---- Enriquecer con cimentación
+    df = df.merge(
+        df_cimentacion[["Punto", "Cumple cimentación"]],
+        on="Punto",
+        how="left",
+    )
+
+    # ---- Métricas del poste
     metricas = df.apply(evaluar_poste_fila, axis=1, result_type="expand")
     df = pd.concat([df, metricas], axis=1)
 
-    # ---- Decisión por fila
+    # ---- Decisión estructural
     decisiones = df.apply(decidir_fila, axis=1, result_type="expand")
     decisiones.columns = ["Solución", "Motivo"]
     df = pd.concat([df, decisiones], axis=1)
 
     # ---- Orden de salida
     columnas_salida = [
-        "Punto", "Estructura", "Deflexión (°)", "Retenidas", "Espacio Retenida",
-        "Poste", "H_poste (kN)", "H_max (kN)", "Utilización poste (%)",
-        "Cumple poste", "Cumple cimentación", "Solución", "Motivo",
+        "Punto",
+        "Estructura",
+        "Deflexión (°)",
+        "Retenidas",
+        "Espacio Retenida",
+        "Poste",
+        "H_poste (kN)",
+        "H_max (kN)",
+        "Utilización poste (%)",
+        "Cumple poste",
+        "Cumple cimentación",
+        "Solución",
+        "Motivo",
     ]
+
     return df[[c for c in columnas_salida if c in df.columns]]
+
