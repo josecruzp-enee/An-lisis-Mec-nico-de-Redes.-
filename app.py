@@ -282,7 +282,7 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     if not df_vanos.empty:
         st.dataframe(df_vanos, use_container_width=True)
 
-    # Perfil (malla)
+    # Series del perfil
     X_prof = np.asarray(perfil.get("X_prof", []), dtype=float)
     G_prof = np.asarray(perfil.get("G_prof", []), dtype=float)
     Y_prof = np.asarray(perfil.get("Y_prof", []), dtype=float)
@@ -291,9 +291,14 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
         st.warning("No hay datos suficientes para graficar el perfil (X_prof/G_prof/Y_prof vacíos).")
         return
 
-    # ============================================================
-    # Preparar postes (opcional) desde df de entrada
-    # ============================================================
+    # Limpieza por seguridad
+    mask = np.isfinite(X_prof) & np.isfinite(G_prof) & np.isfinite(Y_prof)
+    X_prof, G_prof, Y_prof = X_prof[mask], G_prof[mask], Y_prof[mask]
+    if X_prof.size == 0:
+        st.warning("El perfil quedó vacío tras filtrar NaN/inf.")
+        return
+
+    # ---- Datos por punto (para dibujar postes opcionalmente) ----
     df_local = df.copy()
     df_local.columns = [c.strip() for c in df_local.columns]
 
@@ -329,21 +334,18 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
                     .tolist()
                 )
 
-    # ============================================================
-    # Plot perfil
-    # ============================================================
+    # ---- Gráfica ----
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(X_prof, G_prof, label="Terreno", linewidth=2)
     ax.plot(X_prof, Y_prof, label="Conductor", linewidth=2)
 
-    # Catálogo simple de alturas (opcional) para dibujar postes
+    # Catálogo simple para dibujar postes (ajústalo si quieres)
     ALTURA_POSTE_M = {
         "PC-30": 9.0, "PC-35": 10.5, "PC-40": 12.0, "PC-40A": 12.0, "PC-45": 13.5, "PC-50": 15.0,
         "PM-30": 9.0, "PM-35": 10.5, "PM-40": 12.0, "PM-45": 13.5, "PM-50": 15.0,
     }
 
     if len(postes) > 0 and dist_puntos.size > 0:
-        # Interpolar terreno/conductor del perfil en las distancias de puntos
         G_puntos = np.interp(dist_puntos, X_prof, G_prof)
         Y_puntos = np.interp(dist_puntos, X_prof, Y_prof)
 
@@ -353,9 +355,8 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
             if not tipo:
                 continue
 
-            t = str(tipo).upper().strip()
-            t = t.replace(" ", "").replace("_", "-")
-            if "-" not in t and len(t) >= 4:  # casos tipo "PM40"
+            t = str(tipo).upper().strip().replace(" ", "").replace("_", "-")
+            if "-" not in t and len(t) >= 4:  # "PM40" -> "PM-40"
                 t = t[:2] + "-" + t[2:]
 
             h = ALTURA_POSTE_M.get(t, 12.0)
@@ -369,15 +370,15 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
 
             etiqueta = f"{df_local[col_punto].iloc[i]} {t}" if col_punto is not None else t
             ax.text(x_i, y_top + 0.3, etiqueta, ha="center", fontsize=8)
-    else:
-        st.caption("Postes no dibujados (falta columna 'Poste' o no se pudo calcular distancia por punto).")
 
     ax.set_xlabel("Distancia acumulada (m)")
     ax.set_ylabel("Cota / Altitud (m)")
     ax.set_title("Perfil longitudinal del conductor")
     ax.grid(True, linestyle="--", alpha=0.35)
     ax.legend()
-    st.pyplot(fig)
+
+    st.pyplot(fig, clear_figure=True)
+
 
 
 def _render_tab_retenidas(res: Dict[str, Any]) -> None:
