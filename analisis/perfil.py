@@ -13,7 +13,7 @@ from .mecanica import peso_lineal_kN_m, tension_trabajo_kN
 Point = Tuple[float, float]
 
 # ============================================================
-# Parámetros (default) - SIN depender de config.py
+# Parámetros 
 # ============================================================
 OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT: float = 0.10  # m (amarre típico bajo la punta)
 DESPEJE_MIN_M_DEFAULT: float = 0.00                # m (ponlo en 6.0, 7.0 etc si ya tienes norma)
@@ -172,7 +172,7 @@ def analizar_perfil(
         chain_nodes.append(chain_nodes[-1] + d)
     chain_nodes = np.array(chain_nodes, dtype=float)
 
-    terreno = df["Altitude"].astype(float).to_numpy()
+    terreno = df["Altitud"].astype(float).to_numpy()
     h_poste = altura_poste_por_df(df, tipo_poste)
     amarre = altura_amarre_abs(df, terreno, h_poste, offset_desde_punta_m=offset_amarre_desde_punta_m)
 
