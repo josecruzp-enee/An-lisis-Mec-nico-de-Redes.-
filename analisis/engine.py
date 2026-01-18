@@ -246,7 +246,7 @@ def ejecutar_todo(
     # ============================================================
     # 05) Retenidas (demanda mecánica)
     # ============================================================
-    geo["retenidas"] = _calcular_retenidas(geo["nodos"])
+    geo["retenidas"] = _calcular_retenidas(geo["nodos"], calibre)
     df_ret = geo["retenidas"].copy()
 
     # --- asegurar Poste y h_amarre por punto (SIN constantes)
