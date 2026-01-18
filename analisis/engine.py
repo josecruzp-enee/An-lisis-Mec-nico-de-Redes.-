@@ -17,7 +17,7 @@ ORDEN LÓGICO DEL ENGINE
 from __future__ import annotations
 from typing import Dict, Any
 import pandas as pd
-
+from .retenidas import calcular_retenidas, ParamsRetenida
 # ------------------------------
 # Módulos de cálculo
 # ------------------------------
