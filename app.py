@@ -444,7 +444,7 @@ def _render_tab_retenidas(res: Dict[str, Any]):
 
 
 def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         ["Entrada","Resumen por punto","Cargas por tramo","Fuerzas por poste","Decisión","Retenidas","Perfil"]
     )
 
