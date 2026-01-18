@@ -139,76 +139,135 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
         return
 
     # Tabla de vanos
-    df_vanos = pd.DataFrame(perfil["tabla_vanos"])
-    st.dataframe(df_vanos, use_container_width=True)
+    df_vanos = pd.DataFrame(perfil.get("tabla_vanos", []))
+    if not df_vanos.empty:
+        st.dataframe(df_vanos, use_container_width=True)
 
-    # Gráfica
-    X = np.asarray(perfil.get("X_prof", []), dtype=float)
-    G = np.asarray(perfil.get("G_prof", []), dtype=float)
-    Y = np.asarray(perfil.get("Y_prof", []), dtype=float)
+    # Perfil suave (malla)
+    X_prof = np.asarray(perfil.get("X_prof", []), dtype=float)
+    G_prof = np.asarray(perfil.get("G_prof", []), dtype=float)
+    Y_prof = np.asarray(perfil.get("Y_prof", []), dtype=float)
 
-    if X.size == 0 or G.size == 0 or Y.size == 0:
+    if X_prof.size == 0 or G_prof.size == 0 or Y_prof.size == 0:
         st.warning("No hay datos suficientes para graficar el perfil (X_prof/G_prof/Y_prof vacíos).")
         return
 
-    # ----------------------------
-    # Diccionario de alturas típicas de poste (m)
-    # Ajusta según tu estándar ENEE
-    # ----------------------------
+    # ============================================================
+    # 1) Detectar nombres de columnas (vienen como "X (m)" y "Y (m)")
+    # ============================================================
+    df_local = df.copy()
+    df_local.columns = [c.strip() for c in df_local.columns]
+
+    def _pick_col(posibles):
+        for c in posibles:
+            if c in df_local.columns:
+                return c
+        return None
+
+    col_x = _pick_col(["X (m)", "X", "x", "X_m", "X_m)"])
+    col_y = _pick_col(["Y (m)", "Y", "y", "Y_m", "Y_m)"])
+    col_poste = _pick_col(["Poste", "POSTE"])
+    col_punto = _pick_col(["Punto", "PUNTO"])
+
+    if col_x is None or col_y is None:
+        st.warning("No se pudo simular postes: faltan columnas 'X (m)'/'Y (m)' (o 'X'/'Y').")
+        postes = []
+        dist_puntos = np.array([], dtype=float)
+    else:
+        x_raw = pd.to_numeric(df_local[col_x], errors="coerce").to_numpy(dtype=float)
+        y_raw = pd.to_numeric(df_local[col_y], errors="coerce").to_numpy(dtype=float)
+
+        if np.isnan(x_raw).any() or np.isnan(y_raw).any():
+            st.warning("No se pudo simular postes: hay valores no numéricos en columnas X/Y.")
+            postes = []
+            dist_puntos = np.array([], dtype=float)
+        else:
+            dx = np.diff(x_raw, prepend=x_raw[0])
+            dy = np.diff(y_raw, prepend=y_raw[0])
+            dist_puntos = np.cumsum(np.sqrt(dx**2 + dy**2))
+
+            if col_poste is not None:
+                postes = (
+                    df_local[col_poste]
+                    .astype(str)
+                    .str.strip()
+                    .replace({"nan": ""})
+                    .tolist()
+                )
+            else:
+                postes = []
+
+    # ============================================================
+    # 2) Catálogo de alturas típicas (m) — AJUSTABLE
+    #    (Puse valores típicos; tú los alineas a tu estándar)
+    # ============================================================
     ALTURA_POSTE_M = {
+        # Concreto (PC)
         "PC-30": 9.0,
         "PC-35": 10.5,
         "PC-40": 12.0,
         "PC-40A": 12.0,
         "PC-45": 13.5,
         "PC-50": 15.0,
+
+        # Madera (PM)
+        "PM-30": 9.0,
+        "PM-35": 10.5,
+        "PM-40": 12.0,
+        "PM-45": 13.5,
+        "PM-50": 15.0,
     }
 
-    # Leer columna Poste (si existe)
-    df_local = df.copy()
-    df_local.columns = [c.strip() for c in df_local.columns]
-
-    postes: list[str] = []
-    if "Poste" in df_local.columns:
-        postes = (
-            df_local["Poste"]
-            .astype(str)
-            .str.strip()
-            .replace({"nan": ""})
-            .tolist()
-        )
-
+    # ============================================================
+    # 3) Plot
+    # ============================================================
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(X, G, label="Terreno", linewidth=2)
-    ax.plot(X, Y, label="Conductor", linewidth=2)
+    ax.plot(X_prof, G_prof, label="Terreno", linewidth=2)
+    ax.plot(X_prof, Y_prof, label="Conductor", linewidth=2)
 
     # ============================================================
-    # Postes (simulación por tamaño)
+    # 4) Dibujar postes usando distancias reales por punto
     # ============================================================
-    # Asumimos que X_prof corresponde a los puntos del Excel en el mismo orden.
-    # Si tu engine interpola puntos, luego lo amarramos por "Punto".
-    n = min(len(X), len(postes))
+    if len(postes) > 0 and dist_puntos.size > 0:
+        # Interpolar terreno/conductor del perfil en las distancias de puntos
+        G_puntos = np.interp(dist_puntos, X_prof, G_prof)
+        Y_puntos = np.interp(dist_puntos, X_prof, Y_prof)
 
-    for i in range(n):
-        tipo = postes[i]
-        if not tipo:
-            continue
+        n = min(len(postes), len(dist_puntos))
 
-        tipo_norm = str(tipo).upper().replace(" ", "")
-        h = ALTURA_POSTE_M.get(tipo_norm, 12.0)  # default 12 m si no está en el catálogo
+        for i in range(n):
+            tipo = postes[i]
+            if not tipo:
+                continue
 
-        x = float(X[i])
-        y_base = float(G[i])
-        y_top = y_base + h
+            # Normalización: "PM 40" -> "PM-40", "pm-40" -> "PM-40"
+            t = str(tipo).upper().strip()
+            t = t.replace(" ", "").replace("_", "-")
+            if "-" not in t and len(t) >= 4:
+                # casos raros tipo "PM40"
+                t = t[:2] + "-" + t[2:]
 
-        # Poste
-        ax.plot([x, x], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
+            h = ALTURA_POSTE_M.get(t, 12.0)  # default 12 m si no está en el catálogo
 
-        # Punto de amarre (marcamos el conductor justo en el poste)
-        ax.scatter([x], [float(Y[i])], zorder=5)
+            x = float(dist_puntos[i])
+            y_base = float(G_puntos[i])
+            y_top = y_base + h
 
-        # Etiqueta del tipo de poste (opcional)
-        ax.text(x, y_top + 0.3, tipo_norm, ha="center", fontsize=8)
+            # Poste (línea vertical)
+            ax.plot([x, x], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
+
+            # Punto de amarre (marcamos conductor en el poste)
+            ax.scatter([x], [float(Y_puntos[i])], zorder=5)
+
+            # Etiqueta: Punto + tipo de poste si existe "Punto"
+            if col_punto is not None:
+                etiqueta = f"{df_local[col_punto].iloc[i]} {t}"
+            else:
+                etiqueta = t
+
+            ax.text(x, y_top + 0.3, etiqueta, ha="center", fontsize=8)
+    else:
+        st.info("No se dibujaron postes (falta columna 'Poste' o no se pudo calcular distancia por punto).")
 
     ax.set_xlabel("Distancia acumulada (m)")
     ax.set_ylabel("Cota / Altitud (m)")
@@ -217,6 +276,7 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     ax.legend()
 
     st.pyplot(fig)
+
 
 
 def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
