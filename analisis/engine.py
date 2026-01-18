@@ -22,8 +22,6 @@ def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     df_def = calcular_deflexiones(puntos, etiquetas)
 
     # ------------------------------------------------------------
-    # CORRECCIÓN: convertir "ángulo interior" (~180 en recta)
-    # a "deflexión real" (0 en recta, 90 en giro, etc.)
     # deflex_real = |180 - ang|
     # ------------------------------------------------------------
     if not df_def.empty and "Deflexión (°)" in df_def.columns:
@@ -37,7 +35,8 @@ def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
             deflex_real_list.append(deflex_real)
 
         # Guardar la deflexión real (reemplaza la anterior)
-        df_def["Deflexión (°)"] = deflex_real_list
+        df_def["Deflexión (°)"] = df_def["Deflexión (°)"].round(2)
+
 
         # Clasificar con deflexión real
         estructuras, retenidas = [], []
