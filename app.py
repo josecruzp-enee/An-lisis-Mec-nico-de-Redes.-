@@ -448,26 +448,27 @@ def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
         ["Entrada","Resumen por punto","Cargas por tramo","Fuerzas por poste","Decisión","Retenidas","Perfil"]
     )
 
-    with tabs[0]:
+    with tab0:
         _render_tab_entrada(df)
 
-    with tabs[1]:
+    with tab1:
         _render_tab_resumen(res, df)
 
-    with tabs[2]:
+    with tab2:
         _render_tab_cargas(res)
 
-    with tabs[3]:
+    with tab3:
         _render_tab_fuerzas(res)
 
-    with tabs[4]:
+    with tab4:
         _render_tab_decision(res)
 
-    with tabs[5]:
+    with tab5:
         _render_tab_retenidas(res)
 
-    with tabs[6]:
+    with tab6:
         _render_tab_perfil(df, res)
+
 
 
 def mostrar_kpis(res: Dict[str, Any]) -> None:
