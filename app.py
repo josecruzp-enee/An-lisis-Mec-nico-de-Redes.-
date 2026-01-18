@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 from analisis.io_excel import leer_puntos_excel
 from analisis.catalogos import CONDUCTORES_ACSR
 from analisis.engine import ejecutar_todo
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 
 # ============================================================
@@ -129,47 +132,38 @@ def _render_tab_decision(res: Dict[str, Any]) -> None:
     _tabla(res["decision"], "Decisión por punto (poste / retenida / autosoportado)")
 
 
-def _render_tab_perfil(res: Dict[str, Any]) -> None:
-    st.subheader("Perfil longitudinal (si existe Altitud)")
 
+def _render_tab_perfil(res):
+    st.subheader("Perfil longitudinal (si existe Altitud)")
     perfil = res.get("perfil")
+
     if not perfil:
         st.info("No se detectó columna 'Altitud' en el Excel, así que no se calculó el perfil.")
         return
 
-    # Tabla por vanos
-    df_vanos = pd.DataFrame(perfil.get("tabla_vanos", []))
-    if not df_vanos.empty:
-        st.dataframe(df_vanos, use_container_width=True)
+    # Tabla de vanos
+    df_vanos = pd.DataFrame(perfil["tabla_vanos"])
+    st.dataframe(df_vanos, use_container_width=True)
 
-        # KPI global
-        if "Despeje mín (m)" in df_vanos.columns:
-            try:
-                despeje_min_global = float(df_vanos["Despeje mín (m)"].astype(float).min())
-                st.metric("Despeje mínimo global (m)", f"{despeje_min_global:.3f}")
-            except Exception:
-                pass
-    else:
-        st.warning("Perfil calculado, pero la tabla de vanos está vacía.")
+    # Gráfica
+    X = np.asarray(perfil.get("X_prof", []), dtype=float)
+    G = np.asarray(perfil.get("G_prof", []), dtype=float)
+    Y = np.asarray(perfil.get("Y_prof", []), dtype=float)
 
-    # Gráfica (Terreno vs Conductor)
-    X = perfil.get("X_prof")
-    G = perfil.get("G_prof")
-    Y = perfil.get("Y_prof")
-
-    if X is None or G is None or Y is None or len(X) == 0:
-        st.warning("Perfil calculado, pero no hay series para graficar (X_prof/G_prof/Y_prof).")
+    if X.size == 0 or G.size == 0 or Y.size == 0:
+        st.warning("No hay datos suficientes para graficar el perfil (X_prof/G_prof/Y_prof vacíos).")
         return
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(X, G, label="Terreno")
-    ax.plot(X, Y, label="Conductor")
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(X, G, label="Terreno", linewidth=2)
+    ax.plot(X, Y, label="Conductor", linewidth=2)
     ax.set_xlabel("Distancia acumulada (m)")
-    ax.set_ylabel("Cota (m)")
-    ax.grid(True, alpha=0.3)
+    ax.set_ylabel("Cota / Altitud (m)")
+    ax.set_title("Perfil longitudinal del conductor")
+    ax.grid(True, linestyle="--", alpha=0.35)
     ax.legend()
-    st.pyplot(fig, clear_figure=True)
+
+    st.pyplot(fig)
 
 
 def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
