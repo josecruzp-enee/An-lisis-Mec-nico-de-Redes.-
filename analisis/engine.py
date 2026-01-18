@@ -22,13 +22,13 @@ import pandas as pd
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from .cargas_tramo import calcular_cargas_por_tramo
 from .fuerzas_nodo import calcular_fuerzas_en_nodos
-from .retenidas import calcular_retenidas
 from .equilibrio_poste import equilibrar_poste_retenida
 from .cimentacion import evaluar_cimentacion
 from .momento_poste import calcular_momento_poste
 from .decision_soporte import decidir_soporte
 from .perfil import analizar_perfil
 from .norma_postes import h_amarre_tipica_m
+from .retenidas import calcular_retenidas, ParamsRetenida
 
 
 # =============================================================================
@@ -191,12 +191,19 @@ def ejecutar_todo(
     )
     df_nodos_aplica = df_nodos.loc[aplica].copy()
 
+    
+
     geo["retenidas"] = calcular_retenidas(
-        df_nodos_aplica,
+        df_nodos,                     # DF maestro por punto
+        col_punto="Punto",
         col_H="H (kN)",
-        cable_retenida="1/4",
-        FS_retenida=2.0,
-        ang_retenida_deg=45.0,
+        aplicar_si_col="Retenidas_aplican",  # filtro booleano (opcional)
+        aplicar_si_val=None,                 # None => interpreta booleano
+        params=ParamsRetenida(
+            cable_retenida="1/4",
+            FS_retenida=2.0,
+            ang_retenida_deg=45.0,
+        ),
     )
 
     # 05) Equilibrio poste–retenida
