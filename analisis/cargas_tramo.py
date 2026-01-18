@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import List
 import pandas as pd
 import math
-
+from .viento import viento_kN_m, proyectar_viento
 from .mecanica import peso_lineal_kN_m
 from .viento import proyectar_viento
 
@@ -58,9 +58,17 @@ def calcular_cargas_por_tramo(
     # ------------------------------
     # 2) Viento lineal base (kN/m)
     # ------------------------------
-    # w = 0.5 * rho * Cd * D * v^2   [N/m]
-    w_viento_N_m = 0.5 * float(rho) * float(Cd) * float(diametro_conductor_m) * float(v_viento_ms) ** 2
-    w_viento = w_viento_N_m / 1000.0  # kN/m
+    if float(v_viento_ms) <= 0:
+        raise ValueError("v_viento_ms debe ser > 0 para calcular viento.")
+    if float(diametro_conductor_m) <= 0:
+        raise ValueError("diametro_conductor_m debe ser > 0 (en metros).")
+
+    w_viento = viento_kN_m(
+        velocidad_ms=float(v_viento_ms),
+        diametro_m=float(diametro_conductor_m),
+        Cd=float(Cd),
+        rho=float(rho),
+    )
 
     # ------------------------------
     # 3) Proyección por tramo
