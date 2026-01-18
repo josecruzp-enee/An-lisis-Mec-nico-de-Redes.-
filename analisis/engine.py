@@ -147,8 +147,10 @@ def ejecutar_todo(
     geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
         df_tramos=df_cargas,
         df_resumen=geo["resumen"],
-        usar_col_w="w_resultante (kN/m)",
+        usar_col_w="w_viento_eff (kN/m)",
+        azimut_viento_deg=az_viento_deg,
     )
+
 
     # 3.1) Momento por poste (se calcula y se guarda, pero NO se usa para decisión FASE 1)
     geo["momento_poste"] = calcular_momento_poste(
