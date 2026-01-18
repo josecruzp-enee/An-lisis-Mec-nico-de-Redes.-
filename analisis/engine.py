@@ -10,6 +10,8 @@ from .cargas_tramo import calcular_cargas_por_tramo
 from .fuerzas_nodo import calcular_fuerzas_en_nodos
 from .decision_soporte import decidir_soporte
 from .momento_poste import calcular_momento_poste
+from .perfil import analizar_perfil
+
 
 
 def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -115,6 +117,17 @@ def ejecutar_todo(
     geo["decision"] = decidir_soporte(
         df_resumen=geo["resumen"],
         df_fuerzas_nodo=geo["fuerzas_nodo"],
+    )
+
+    # 5) Perfil longitudinal (solo si Excel trae Altitud)
+    geo["perfil"] = analizar_perfil(
+        df,
+        tipo_poste=str(df["Poste"].iloc[0]) if "Poste" in df.columns and len(df) else "",
+        calibre=calibre,
+        fraccion_trabajo=0.20,
+        modo_sag="CATENARIA",
+        offset_amarre_desde_punta_m=0.10,
+        despeje_min_m=0.0,
     )
 
     return geo
