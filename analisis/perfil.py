@@ -159,7 +159,7 @@ def analizar_perfil(
 
     Nota: el viento se usa en planta (esfuerzos laterales), no en la flecha vertical.
     """
-    if "Altitude" not in df.columns:
+    if "Altitud" not in df.columns:
         return None
 
     puntos: List[Point] = list(zip(df["X"].tolist(), df["Y"].tolist()))
