@@ -75,6 +75,24 @@ def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         "total_m": float(df_tramos["Distancia (m)"].sum()) if "Distancia (m)" in df_tramos.columns else 0.0,
     }
 
+def clasificar_por_angulo(d: float):
+    """
+    Clasifica la estructura según la deflexión REAL (grados).
+
+    d = deflexión real:
+        0°  -> recto
+        5°  -> quiebre leve
+        90° -> giro fuerte
+    """
+    if d <= 5:
+        return "Paso", 0
+    elif d <= 30:
+        return "Ángulo", 1
+    elif d <= 60:
+        return "Doble remate", 2
+    else:
+        return "Giro", 2
+
 
 def ejecutar_cargas_tramo(
     df_tramos: pd.DataFrame,
