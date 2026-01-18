@@ -37,16 +37,8 @@ MAPA_COLUMNAS = {
     "NORTE": "Y",
 
     # Altitud (opcional)
-    "ALTITUDE": "Altitude",
-    "ALTITUDE (M)": "Altitude",
-    "ALTITUDE(M)": "Altitude",
-    "ALTITUD": "Altitude",
-    "ALTITUD (M)": "Altitude",
-    "ALTURA": "Altitude",
-    "ALTURA (M)": "Altitude",
-    "COTA": "Altitude",
-    "ELEVACION": "Altitude",
-    "ELEVACIÓN": "Altitude",
+    "ALTITUD (msnm)": "Altitud (m)",
+    
 
     # Poste (opcional)
     "POSTE": "Poste",
