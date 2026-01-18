@@ -84,7 +84,7 @@ def evaluar_poste_fila(r: pd.Series) -> Dict[str, object]:
     """
     Calcula métricas del poste para una fila.
     """
-    poste = str(r["Poste"]).strip()
+    poste = str(r.get("Poste", "")).strip()
     H_poste = float(r.get("H_poste (kN)", 0.0) or 0.0)
 
     Hmax = capacidad_poste_kN(poste)
