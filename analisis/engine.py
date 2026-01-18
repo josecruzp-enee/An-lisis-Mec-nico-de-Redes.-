@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Dict, Any
 import pandas as pd
-
+from .norma_postes import h_amarre_norma_m
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from .cargas_tramo import calcular_cargas_por_tramo
 from .fuerzas_nodo import calcular_fuerzas_en_nodos
@@ -233,6 +233,11 @@ def ejecutar_todo(
 
     # 04) Retenidas (demanda)
     geo["retenidas"] = _calcular_retenidas(geo["nodos"])
+    df_ret = geo["retenidas"]
+        if "h_amarre (m)" not in df_ret.columns:
+           df_ret["h_amarre (m)"] = h_amarre_norma_m(proyecto["poste"], uso="primario")
+
+
 
     # 05) Equilibrio poste–retenida
     geo["equilibrio"] = equilibrar_poste_retenida(
