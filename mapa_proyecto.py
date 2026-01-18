@@ -95,20 +95,28 @@ def _parse_py(root: str, path: str) -> PyInfo:
                 info.classes.append(_sig_from_class(node))
 
     # normaliza y quita duplicados preservando orden
-    def uniq(seq):
-        seen = set()
-        out = []
-        for x in seq:
-            if x not in seen:
-                seen.add(x)
-                out.append(x)
-        return out
+    def uniq(xs):
+    """
+    Devuelve lista sin duplicados conservando orden.
+    Soporta elementos no-hasheables (listas/dicts) convirtiéndolos a una clave estable.
+    """
+    seen = set()
+    out = []
 
-    info.imports = uniq(info.imports)
-    info.from_imports = uniq(info.from_imports)
-    info.functions = uniq(info.functions)
-    info.classes = uniq(info.classes)
-    return info
+    def key(v):
+        if isinstance(v, (list, tuple)):
+            return tuple(key(i) for i in v)
+        if isinstance(v, dict):
+            return tuple(sorted((k, key(val)) for k, val in v.items()))
+        return v
+
+    for x in xs:
+        k = key(x)
+        if k not in seen:
+            seen.add(k)
+            out.append(x)
+    return out
+
 
 
 def _walk_py_files(root: str) -> List[str]:
