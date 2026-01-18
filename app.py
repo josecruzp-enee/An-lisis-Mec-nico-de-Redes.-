@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 from datetime import date
+import pandas as pd 
 
 from analisis.io_excel import leer_puntos_excel
 from analisis.catalogos import CONDUCTORES_ACSR
@@ -101,9 +102,10 @@ try:
     # -----------------------
     # Tabs de resultados
     # -----------------------
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Entrada", "Resumen por punto", "Cargas por tramo", "Fuerzas por poste", "Decisión"]
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["Entrada", "Resumen por punto", "Cargas por tramo", "Fuerzas por poste", "Decisión", "Perfil"]
     )
+
 
     with tab1:
         st.subheader("Entrada")
@@ -124,6 +126,15 @@ try:
     with tab5:
         st.subheader("Decisión por punto (poste / retenida / autosoportado)")
         st.dataframe(res["decision"], use_container_width=True)
+
+    with tab6:
+        st.subheader("Perfil longitudinal (si existe Altitud)")
+        perfil = res.get("perfil")
+        if not perfil:
+            st.info("No se detectó columna 'Altitud' en el Excel, así que no se calculó el perfil.")
+        else:
+            st.dataframe(pd.DataFrame(perfil["tabla_vanos"]), use_container_width=True)
+
 
     # -----------------------
     # KPIs
