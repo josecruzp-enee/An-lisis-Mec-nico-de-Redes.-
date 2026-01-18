@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 import re
 
 from .catalogos import POSTES_CONCRETO_TABLA_1, POSTES_CLASES_APENDICE
@@ -10,10 +10,22 @@ from .unidades import kgf_to_kN, lbf_to_kN
 
 
 # ============================================================
+# 0) CONFIGURACIÓN / CONSTANTES
+# ============================================================
+
+# Default de altura si el poste viene "por clase" o no se encuentra en tablas
+DEFAULT_ALTURA_POSTE_M: float = 12.0
+
+# Offset desde la punta (m) hasta el punto típico de amarre del primario (cruceta superior)
+# Nota: si no hay dato específico en catálogo, se usa este valor.
+DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M: float = 2.0
+
+# Default de amarre final (para evitar negativos si algo raro llega)
+DEFAULT_H_AMARRE_M: float = 7.5
+
+
+# ============================================================
 # 1) MAPA DE ALIAS (TU NOMENCLATURA -> ID NORMATIVO)
-# ------------------------------------------------------------
-# Ajusta esto según tu norma/empresa.
-# Ejemplo inicial (TEMPORAL): PM-40 se interpreta como PC-12-750.
 # ============================================================
 ALIAS_POSTES: Dict[str, str] = {
     "PM-40": "PC-12-750",
@@ -25,19 +37,48 @@ ALIAS_POSTES: Dict[str, str] = {
 
 
 # ============================================================
-# Índices para búsqueda rápida
+# 2) CATÁLOGO DE PUNTOS DE AMARRE (OFFSET DESDE PUNTA)
+# ------------------------------------------------------------
+# OFFSETS en metros (m) desde la punta hacia abajo.
+# "uso": primario | retenida | luminaria | telefonica | ctv ...
+# Clave: ID normativo (PC-12-750, etc.).
+# ============================================================
+PUNTOS_AMARRE_DESDE_PUNTA_M: Dict[str, Dict[str, float]] = {
+    "PC-9-450": {    # ~ "PC-30"
+        "primario": 2.00,
+        "retenida": 2.20,
+        "luminaria": 5.00,
+    },
+    "PC-10-450": {   # ~ "PC-35"
+        "primario": 2.00,
+        "retenida": 2.20,
+        "luminaria": 5.40,
+    },
+    "PC-12-750": {   # ~ "PC-40"
+        "primario": 2.00,
+        "retenida": 2.20,
+        "luminaria": 6.00,
+    },
+}
+
+
+# ============================================================
+# 3) ÍNDICES PARA BÚSQUEDA RÁPIDA
 # ============================================================
 _IDX_CONCRETO = {str(r["id"]).strip().upper(): r for r in POSTES_CONCRETO_TABLA_1}
 _IDX_CLASES = {int(r["clase"]): r for r in POSTES_CLASES_APENDICE}
 
 
+# ============================================================
+# 4) UTILIDADES INTERNAS
+# ============================================================
 def _norm(s: str) -> str:
     return str(s).strip().upper()
 
 
 def _resolver_id_normativo(tipo_poste: str) -> str:
     """
-    Convierte tu nomenclatura (PM-40) a un ID normativo (PC-12-750),
+    Convierte tu nomenclatura (PM-40, PC-40) a un ID normativo (PC-12-750),
     o deja el mismo si ya viene como ID normativo.
     """
     key = _norm(tipo_poste)
@@ -61,13 +102,12 @@ def _parse_clase(tipo_poste: str) -> Optional[int]:
 
 
 # ============================================================
-# API pública para el resto del proyecto
+# 5) API PÚBLICA: FICHA DEL POSTE
 # ============================================================
 def obtener_ficha_poste(tipo_poste: str) -> Dict[str, Any]:
-    """
-    Retorna una ficha unificada del poste (normativo o por clase).
-    """
     tipo_poste = str(tipo_poste).strip()
+
+    # 1) Clase
     clase = _parse_clase(tipo_poste)
     if clase is not None and clase in _IDX_CLASES:
         r = _IDX_CLASES[clase]
@@ -78,6 +118,7 @@ def obtener_ficha_poste(tipo_poste: str) -> Dict[str, Any]:
             "carga_horizontal_kN": float(r["carga_horizontal_kN"]),
         }
 
+    # 2) Tabla concreta (normativo)
     id_norm = _resolver_id_normativo(tipo_poste)
     if id_norm in _IDX_CONCRETO:
         r = _IDX_CONCRETO[id_norm]
@@ -92,50 +133,30 @@ def obtener_ficha_poste(tipo_poste: str) -> Dict[str, Any]:
             "notas": str(r.get("notas", "") or ""),
         }
 
-    # No encontrado
-    return {
-        "fuente": "NO_ENCONTRADO",
-        "id": id_norm,
-    }
+    # 3) No encontrado
+    return {"fuente": "NO_ENCONTRADO", "id": id_norm}
 
 
-def altura_poste_m(tipo_poste: str, default_m: float = 12.0) -> float:
-    """
-    Altura del poste (m):
-    - Si viene por tabla normativo: longitud_m
-    - Si viene por clase: no trae longitud -> default_m
-    """
+# ============================================================
+# 6) ALTURA DEL POSTE
+# ============================================================
+def altura_poste_m(tipo_poste: str, default_m: float = DEFAULT_ALTURA_POSTE_M) -> float:
     ficha = obtener_ficha_poste(tipo_poste)
     if ficha.get("fuente") == "CONCRETO_TABLA_1":
         return float(ficha["longitud_m"])
     return float(default_m)
 
 
-def h_amarre_tipica_m(tipo_poste: str, default_m: float = 7.5, offset_desde_punta_m: float = 0.30) -> float:
-    """
-    Altura de amarre típica (m) para cálculos rápidos:
-    h_amarre ≈ altura_poste - offset_desde_punta
-    (offset por defecto 0.30 m, consistente con el apéndice de carga)
-    """
-    h = altura_poste_m(tipo_poste, default_m=max(default_m, 1.0))
-    val = h - float(offset_desde_punta_m)
-    return float(val if val > 0 else default_m)
-
-
+# ============================================================
+# 7) CAPACIDAD HORIZONTAL (kN)
+# ============================================================
 def H_max_poste_kN(tipo_poste: str, default_kN: float = 9999.0) -> float:
-    """
-    Capacidad horizontal 'H_max' (kN) unificada:
-    - Si viene por CLASE: usa carga_horizontal_kN (ya está en kN)
-    - Si viene por TABLA 1: convierte carga_ruptura (kgf o lbf) -> kN (carga última)
-      (FASE 1: se usa como referencia base. En FASE 2 aquí aplicarás FS, modelo de esfuerzos, etc.)
-    """
     ficha = obtener_ficha_poste(tipo_poste)
 
     if ficha.get("fuente") == "CLASES_APENDICE":
         return float(ficha["carga_horizontal_kN"])
 
     if ficha.get("fuente") == "CONCRETO_TABLA_1":
-        # Preferimos kgf si existe, si no lbf.
         kgf = ficha.get("carga_ruptura_kgf", None)
         if kgf is not None:
             return float(kgf_to_kN(float(kgf)))
@@ -144,3 +165,52 @@ def H_max_poste_kN(tipo_poste: str, default_kN: float = 9999.0) -> float:
             return float(lbf_to_kN(float(lbf)))
 
     return float(default_kN)
+
+
+# ============================================================
+# 8) AMARRE "RÁPIDO" (compatibilidad)
+# ============================================================
+def h_amarre_tipica_m(
+    tipo_poste: str,
+    default_m: float = DEFAULT_H_AMARRE_M,
+    offset_desde_punta_m: float = DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M,
+) -> float:
+    h = altura_poste_m(tipo_poste, default_m=max(default_m, 1.0))
+    val = h - float(offset_desde_punta_m)
+    return float(val if val > 0 else default_m)
+
+
+# ============================================================
+# 9) AMARRE NORMATIVO (por catálogo)
+# ============================================================
+def offset_amarre_desde_punta_m(
+    tipo_poste: str,
+    *,
+    uso: str = "primario",
+    default_m: float = DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M,
+) -> float:
+    ficha = obtener_ficha_poste(tipo_poste)
+    id_norm = str(ficha.get("id", "") or "").strip().upper()
+
+    if not id_norm or ficha.get("fuente") != "CONCRETO_TABLA_1":
+        return float(default_m)
+
+    return float(PUNTOS_AMARRE_DESDE_PUNTA_M.get(id_norm, {}).get(str(uso).strip().lower(), default_m))
+
+
+def h_amarre_norma_m(
+    tipo_poste: str,
+    *,
+    uso: str = "primario",
+    default_h_poste_m: float = DEFAULT_ALTURA_POSTE_M,
+    default_offset_m: float = DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M,
+    default_h_amarre_m: float = DEFAULT_H_AMARRE_M,
+) -> float:
+    """
+    Calcula h_amarre (m) desde terreno:
+      h_amarre = altura_poste - offset_desde_punta(uso)
+    """
+    h_poste = altura_poste_m(tipo_poste, default_m=default_h_poste_m)
+    off = offset_amarre_desde_punta_m(tipo_poste, uso=uso, default_m=default_offset_m)
+    val = float(h_poste) - float(off)
+    return float(val if val > 0 else default_h_amarre_m)
