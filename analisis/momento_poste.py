@@ -2,90 +2,111 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+from typing import Optional
 import pandas as pd
 
 from .norma_postes import h_amarre_tipica_m
 
 
-def _h_amarre_por_poste(tipo_poste: str, default_m: float = 7.5) -> float:
-    return float(h_amarre_tipica_m(tipo_poste, default_m=default_m))
-
-
 def calcular_momento_poste(
     df_fuerzas_nodo: pd.DataFrame,
-    df_resumen: pd.DataFrame | None = None,
+    df_resumen: Optional[pd.DataFrame] = None,
     *,
+    col_punto: str = "Punto",
     col_H: str = "H (kN)",
     col_poste: str = "Poste",
-    col_h_amarre: str = "Altura_Amarre_m",   # opcional en Excel (altura respecto al terreno)
-    he_offset_m: float = 0.10,               # teoría: +0.10 m desde la punta
+    col_altura_amarre_excel: str = "Altura_Amarre_m",  # altura SOBRE TERRENO (m)
     default_h_amarre_m: float = 7.5,
+    he_offset_m: float = 0.10,
+    incluir_fp: bool = False,
 ) -> pd.DataFrame:
     """
-    Calcula Momento en poste y Fuerza equivalente en punta:
+    Momento en la base del poste (modelo simple):
 
-    - h (m): altura de aplicación
-        * si df_resumen trae col_h_amarre, se usa esa
-        * si no, se toma una altura típica según tipo de poste (catálogo)
-    - M (kN·m) = H(kN) * h(m)
-    - He (m) = h + 0.10
-    - Fp (kN) = M / He
+        M_base (kN·m) = H (kN) * h_amarre (m)
 
-    Devuelve un DataFrame con columnas nuevas:
-    - h_amarre (m)
-    - M_poste (kN·m)
-    - He (m)
-    - Fp (kN)
+    Donde h_amarre se toma así:
+      1) Si el Excel trae 'Altura_Amarre_m' => se asume altura SOBRE TERRENO (m).
+      2) Si no, se usa h_amarre_tipica_m(Poste) según norma/catálogo.
+
+    Parámetros:
+    - incluir_fp: si True agrega He y Fp como métricas auxiliares:
+        He = h_amarre + he_offset_m
+        Fp = M_base / He
+
+    Devuelve:
+    - Punto, Poste, H (kN), h_amarre (m), M_base (kN·m) (+ He, Fp si incluir_fp)
     """
-    if df_fuerzas_nodo is None or df_fuerzas_nodo.empty:
-        raise ValueError("df_fuerzas_nodo vacío")
 
+    if df_fuerzas_nodo is None or df_fuerzas_nodo.empty:
+        raise ValueError("df_fuerzas_nodo vacío o None")
+    if col_punto not in df_fuerzas_nodo.columns:
+        raise ValueError(f"df_fuerzas_nodo debe incluir '{col_punto}'")
     if col_H not in df_fuerzas_nodo.columns:
         raise ValueError(f"df_fuerzas_nodo debe incluir '{col_H}'")
 
     out = df_fuerzas_nodo.copy()
+    out[col_punto] = out[col_punto].astype(str).str.strip()
 
-    # Si df_resumen viene, traemos Poste y/o Altura_Amarre_m por Punto
-    if df_resumen is not None and (not df_resumen.empty) and ("Punto" in out.columns) and ("Punto" in df_resumen.columns):
-        cols_merge = ["Punto"]
+    # Traer Poste y/o Altura_Amarre_m desde df_resumen
+    if df_resumen is not None and (not df_resumen.empty) and (col_punto in df_resumen.columns):
+        aux_cols = [col_punto]
         if col_poste in df_resumen.columns:
-            cols_merge.append(col_poste)
-        if col_h_amarre in df_resumen.columns:
-            cols_merge.append(col_h_amarre)
+            aux_cols.append(col_poste)
+        if col_altura_amarre_excel in df_resumen.columns:
+            aux_cols.append(col_altura_amarre_excel)
 
-        aux = df_resumen[cols_merge].copy()
-        out = out.merge(aux, on="Punto", how="left", suffixes=("", "_res"))
+        aux = df_resumen[aux_cols].copy()
+        aux[col_punto] = aux[col_punto].astype(str).str.strip()
 
-    # Determinar h por fila
-    h_list = []
-    for _, r in out.iterrows():
-        # 1) Si viene altura explícita en Excel, úsala
-        h_val = r.get(col_h_amarre, None)
-        if h_val is not None and str(h_val).strip() not in ("", "nan", "None"):
-            try:
-                h = float(h_val)
-                if h > 0:
-                    h_list.append(h)
-                    continue
-            except Exception:
-                pass
+        out = out.merge(aux, on=col_punto, how="left")
 
-        # 2) Si no, usar catálogo por poste
-        poste = r.get(col_poste, "")
-        h_list.append(_h_amarre_por_poste(str(poste), default_m=default_h_amarre_m))
+    # Normalizar H
+    out[col_H] = pd.to_numeric(out[col_H], errors="coerce").fillna(0.0)
 
-    out["h_amarre (m)"] = [float(x) for x in h_list]
+    # 1) h desde excel (altura sobre terreno)
+    h_excel = None
+    if col_altura_amarre_excel in out.columns:
+        h_excel = pd.to_numeric(out[col_altura_amarre_excel], errors="coerce")
 
-    # Momento y fuerza equivalente
-    out["M_poste (kN·m)"] = out[col_H].astype(float) * out["h_amarre (m)"].astype(float)
-    out["He (m)"] = out["h_amarre (m)"].astype(float) + float(he_offset_m)
+    # 2) h típica por poste
+    def _h_tipica(tipo: object) -> float:
+        t = "" if tipo is None else str(tipo).strip()
+        h = float(h_amarre_tipica_m(t, default_m=default_h_amarre_m))
+        return h if h > 0 else float(default_h_amarre_m)
 
-    # Evitar división por cero
-    out["Fp (kN)"] = out["M_poste (kN·m)"] / out["He (m)"].replace(0, pd.NA)
+    if col_poste in out.columns:
+        h_tip = out[col_poste].apply(_h_tipica)
+    else:
+        h_tip = pd.Series([float(default_h_amarre_m)] * len(out), index=out.index)
 
-    # Redondeo suave para tabla
-    for c, nd in [("h_amarre (m)", 2), ("M_poste (kN·m)", 2), ("He (m)", 2), ("Fp (kN)", 3)]:
-        if c in out.columns:
-            out[c] = out[c].astype(float).round(nd)
+    # Selección final: usar excel si es válida (>0), si no usar típica
+    if h_excel is not None:
+        out["h_amarre (m)"] = h_excel.where(h_excel > 0, h_tip)
+    else:
+        out["h_amarre (m)"] = h_tip
 
-    return out
+    out["M_base (kN·m)"] = out[col_H] * out["h_amarre (m)"]
+
+    if incluir_fp:
+        out["He (m)"] = out["h_amarre (m)"] + float(he_offset_m)
+        out["Fp (kN)"] = out["M_base (kN·m)"] / out["He (m)"].replace(0, pd.NA)
+
+    # Redondeos
+    out["h_amarre (m)"] = out["h_amarre (m)"].astype(float).round(2)
+    out["M_base (kN·m)"] = out["M_base (kN·m)"].astype(float).round(2)
+    if incluir_fp:
+        out["He (m)"] = out["He (m)"].astype(float).round(2)
+        out["Fp (kN)"] = pd.to_numeric(out["Fp (kN)"], errors="coerce").round(3)
+
+    # Orden limpio
+    base_cols = [col_punto]
+    if col_poste in out.columns:
+        base_cols.append(col_poste)
+    base_cols += [col_H, "h_amarre (m)", "M_base (kN·m)"]
+    if incluir_fp:
+        base_cols += ["He (m)", "Fp (kN)"]
+
+    # Filtrar solo columnas existentes
+    base_cols = [c for c in base_cols if c in out.columns]
+    return out[base_cols]
