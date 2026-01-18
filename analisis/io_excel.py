@@ -85,8 +85,8 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     df["Y"] = df["Y"].astype(float)
 
     # Altitude opcional
-    if "Altitude" in df.columns:
-        df["Altitude"] = df["Altitude"].astype(float)
+    if "Altitud (m)" in df.columns:
+        df["Altitud (m)"] = df["Altitud (m)"].astype(float)
 
     # Poste opcional
     if "Poste" not in df.columns:
