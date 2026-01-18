@@ -237,7 +237,7 @@ def ejecutar_todo(
     # 05) Equilibrio poste–retenida
     geo["equilibrio"] = equilibrar_poste_retenida(
         df=geo["retenidas"],
-        col_H_nodo="H (kN)",
+        col_H_nodo="H_sin_retenida (kN)",
         col_T_ret="T_retenida (kN)",
         col_h_amarre="h_amarre (m)",
     )
