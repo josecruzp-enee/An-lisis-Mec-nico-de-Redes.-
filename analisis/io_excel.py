@@ -40,7 +40,8 @@ MAPA_COLUMNAS = {
     "ALTITUD": "Altitud",
     "ALTITUD (M)": "Altitud",
     "ALTITUD(M)": "Altitud",
-    "ALTITUD (MSNM)": "Altitud",",
+    "ALTITUD (MSNM)": "Altitud",
+    "ALTITUD (m)": "Altitud",
     
 
     # Poste (opcional)
