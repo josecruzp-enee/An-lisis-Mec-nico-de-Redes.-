@@ -81,7 +81,7 @@ def ui_cargar_excel() -> Optional[Any]:
     st.subheader("Entrada")
     archivo = st.file_uploader("📄 Sube tu Excel (.xlsx)", type=["xlsx"])
     if not archivo:
-        st.info("Sube un Excel con columnas: Punto, X, Y (opcional: Altitud (m), Poste, Espacio Retenida).")
+        st.info("Sube un Excel con columnas: Punto, X, Y (opcional: Altitud, Poste, Espacio Retenida).")
         return None
     return archivo
 
@@ -115,7 +115,6 @@ def _render_tab_entrada(df: pd.DataFrame) -> None:
 
 
 def _render_tab_resumen(res: Dict[str, Any], df_entrada: pd.DataFrame) -> None:
-    # Tabla (igual que antes)
     _tabla(res["resumen"], "Resumen por punto (estructura / retenidas)")
 
     st.divider()
@@ -258,7 +257,6 @@ def _render_tab_resumen(res: Dict[str, Any], df_entrada: pd.DataFrame) -> None:
     st.pyplot(fig)
 
 
-
 def _render_tab_cargas(res: Dict[str, Any]) -> None:
     _tabla(res["cargas_tramo"], "Cargas por tramo (peso + viento)")
 
@@ -284,7 +282,7 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     if not df_vanos.empty:
         st.dataframe(df_vanos, use_container_width=True)
 
-    # Perfil suave (malla)
+    # Perfil (malla)
     X_prof = np.asarray(perfil.get("X_prof", []), dtype=float)
     G_prof = np.asarray(perfil.get("G_prof", []), dtype=float)
     Y_prof = np.asarray(perfil.get("Y_prof", []), dtype=float)
@@ -294,7 +292,7 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
         return
 
     # ============================================================
-    # 1) Detectar nombres de columnas (vienen como "X (m)" y "Y (m)")
+    # Preparar postes (opcional) desde df de entrada
     # ============================================================
     df_local = df.copy()
     df_local.columns = [c.strip() for c in df_local.columns]
@@ -305,24 +303,19 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
                 return c
         return None
 
-    col_x = _pick_col(["X (m)", "X", "x", "X_m", "X_m)"])
-    col_y = _pick_col(["Y (m)", "Y", "y", "Y_m", "Y_m)"])
+    col_x = _pick_col(["X (m)", "X", "x", "X_m"])
+    col_y = _pick_col(["Y (m)", "Y", "y", "Y_m"])
     col_poste = _pick_col(["Poste", "POSTE"])
     col_punto = _pick_col(["Punto", "PUNTO"])
 
-    if col_x is None or col_y is None:
-        st.warning("No se pudo simular postes: faltan columnas 'X (m)'/'Y (m)' (o 'X'/'Y').")
-        postes = []
-        dist_puntos = np.array([], dtype=float)
-    else:
+    postes: list[str] = []
+    dist_puntos = np.array([], dtype=float)
+
+    if col_x is not None and col_y is not None:
         x_raw = pd.to_numeric(df_local[col_x], errors="coerce").to_numpy(dtype=float)
         y_raw = pd.to_numeric(df_local[col_y], errors="coerce").to_numpy(dtype=float)
 
-        if np.isnan(x_raw).any() or np.isnan(y_raw).any():
-            st.warning("No se pudo simular postes: hay valores no numéricos en columnas X/Y.")
-            postes = []
-            dist_puntos = np.array([], dtype=float)
-        else:
+        if not (np.isnan(x_raw).any() or np.isnan(y_raw).any()):
             dx = np.diff(x_raw, prepend=x_raw[0])
             dy = np.diff(y_raw, prepend=y_raw[0])
             dist_puntos = np.cumsum(np.sqrt(dx**2 + dy**2))
@@ -335,11 +328,59 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
                     .replace({"nan": ""})
                     .tolist()
                 )
-            else:
-                postes = []
+
+    # ============================================================
+    # Plot perfil
+    # ============================================================
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(X_prof, G_prof, label="Terreno", linewidth=2)
+    ax.plot(X_prof, Y_prof, label="Conductor", linewidth=2)
+
+    # Catálogo simple de alturas (opcional) para dibujar postes
+    ALTURA_POSTE_M = {
+        "PC-30": 9.0, "PC-35": 10.5, "PC-40": 12.0, "PC-40A": 12.0, "PC-45": 13.5, "PC-50": 15.0,
+        "PM-30": 9.0, "PM-35": 10.5, "PM-40": 12.0, "PM-45": 13.5, "PM-50": 15.0,
+    }
+
+    if len(postes) > 0 and dist_puntos.size > 0:
+        # Interpolar terreno/conductor del perfil en las distancias de puntos
+        G_puntos = np.interp(dist_puntos, X_prof, G_prof)
+        Y_puntos = np.interp(dist_puntos, X_prof, Y_prof)
+
+        n = min(len(postes), len(dist_puntos))
+        for i in range(n):
+            tipo = postes[i]
+            if not tipo:
+                continue
+
+            t = str(tipo).upper().strip()
+            t = t.replace(" ", "").replace("_", "-")
+            if "-" not in t and len(t) >= 4:  # casos tipo "PM40"
+                t = t[:2] + "-" + t[2:]
+
+            h = ALTURA_POSTE_M.get(t, 12.0)
+
+            x_i = float(dist_puntos[i])
+            y_base = float(G_puntos[i])
+            y_top = y_base + h
+
+            ax.plot([x_i, x_i], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
+            ax.scatter([x_i], [float(Y_puntos[i])], zorder=5)
+
+            etiqueta = f"{df_local[col_punto].iloc[i]} {t}" if col_punto is not None else t
+            ax.text(x_i, y_top + 0.3, etiqueta, ha="center", fontsize=8)
+    else:
+        st.caption("Postes no dibujados (falta columna 'Poste' o no se pudo calcular distancia por punto).")
+
+    ax.set_xlabel("Distancia acumulada (m)")
+    ax.set_ylabel("Cota / Altitud (m)")
+    ax.set_title("Perfil longitudinal del conductor")
+    ax.grid(True, linestyle="--", alpha=0.35)
+    ax.legend()
+    st.pyplot(fig)
 
 
-def _render_tab_retenidas(res: Dict[str, Any]):
+def _render_tab_retenidas(res: Dict[str, Any]) -> None:
     st.subheader("Retenidas (tensión / verificación)")
 
     df_ret = res.get("retenidas", None)
@@ -349,7 +390,6 @@ def _render_tab_retenidas(res: Dict[str, Any]):
 
     st.dataframe(df_ret, use_container_width=True)
 
-    # KPI rápido (opcional)
     if "Cumple retenida" in df_ret.columns:
         n = len(df_ret)
         n_no = int((df_ret["Cumple retenida"] == "NO").sum())
@@ -357,95 +397,9 @@ def _render_tab_retenidas(res: Dict[str, Any]):
         st.caption(f"Cumple: {n_si} / {n}  |  No cumple: {n_no}")
 
 
-
-
-
-    
-    # ============================================================
-    # 2) Catálogo de alturas típicas (m) — AJUSTABLE
-    #    (Puse valores típicos; tú los alineas a tu estándar)
-    # ============================================================
-    ALTURA_POSTE_M = {
-        # Concreto (PC)
-        "PC-30": 9.0,
-        "PC-35": 10.5,
-        "PC-40": 12.0,
-        "PC-40A": 12.0,
-        "PC-45": 13.5,
-        "PC-50": 15.0,
-
-        # Madera (PM)
-        "PM-30": 9.0,
-        "PM-35": 10.5,
-        "PM-40": 12.0,
-        "PM-45": 13.5,
-        "PM-50": 15.0,
-    }
-
-    # ============================================================
-    # 3) Plot
-    # ============================================================
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(X_prof, G_prof, label="Terreno", linewidth=2)
-    ax.plot(X_prof, Y_prof, label="Conductor", linewidth=2)
-
-    # ============================================================
-    # 4) Dibujar postes usando distancias reales por punto
-    # ============================================================
-    if len(postes) > 0 and dist_puntos.size > 0:
-        # Interpolar terreno/conductor del perfil en las distancias de puntos
-        G_puntos = np.interp(dist_puntos, X_prof, G_prof)
-        Y_puntos = np.interp(dist_puntos, X_prof, Y_prof)
-
-        n = min(len(postes), len(dist_puntos))
-
-        for i in range(n):
-            tipo = postes[i]
-            if not tipo:
-                continue
-
-            # Normalización: "PM 40" -> "PM-40", "pm-40" -> "PM-40"
-            t = str(tipo).upper().strip()
-            t = t.replace(" ", "").replace("_", "-")
-            if "-" not in t and len(t) >= 4:
-                # casos raros tipo "PM40"
-                t = t[:2] + "-" + t[2:]
-
-            h = ALTURA_POSTE_M.get(t, 12.0)  # default 12 m si no está en el catálogo
-
-            x = float(dist_puntos[i])
-            y_base = float(G_puntos[i])
-            y_top = y_base + h
-
-            # Poste (línea vertical)
-            ax.plot([x, x], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
-
-            # Punto de amarre (marcamos conductor en el poste)
-            ax.scatter([x], [float(Y_puntos[i])], zorder=5)
-
-            # Etiqueta: Punto + tipo de poste si existe "Punto"
-            if col_punto is not None:
-                etiqueta = f"{df_local[col_punto].iloc[i]} {t}"
-            else:
-                etiqueta = t
-
-            ax.text(x, y_top + 0.3, etiqueta, ha="center", fontsize=8)
-    else:
-        st.info("No se dibujaron postes (falta columna 'Poste' o no se pudo calcular distancia por punto).")
-
-    ax.set_xlabel("Distancia acumulada (m)")
-    ax.set_ylabel("Cota / Altitud (m)")
-    ax.set_title("Perfil longitudinal del conductor")
-    ax.grid(True, linestyle="--", alpha=0.35)
-    ax.legend()
-
-    st.pyplot(fig)
-
-
-
 def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Entrada","Resumen por punto","Cargas por tramo","Fuerzas por poste","Decisión","Retenidas","Perfil"]
+        ["Entrada", "Resumen por punto", "Cargas por tramo", "Fuerzas por poste", "Decisión", "Retenidas", "Perfil"]
     )
 
     with tab0:
@@ -468,7 +422,6 @@ def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
 
     with tab6:
         _render_tab_perfil(df, res)
-
 
 
 def mostrar_kpis(res: Dict[str, Any]) -> None:
