@@ -119,10 +119,11 @@ def decidir_soporte(
     _validar_df("df_resumen", df_resumen, ["Punto", "Poste", "Espacio Retenida", "Retenidas"])
     _validar_df("df_cimentacion", df_cimentacion, ["Punto", "Cumple cimentación"])
 
-    for _df in (df_resumen, df_equilibrio, df_cimentacion):
-        _df["Punto"] = _df["Punto"].astype(str).str.strip()
     if "Punto" not in df_equilibrio.columns and df_equilibrio.index.name == "Punto":
         df_equilibrio = df_equilibrio.reset_index()
+    for _df in (df_resumen, df_equilibrio, df_cimentacion):
+        if "Punto" in _df.columns:
+            _df["Punto"] = _df["Punto"].astype(str).str.strip()
     
     # ---- DF base = mecánica real
     df = df_equilibrio.copy()
