@@ -293,7 +293,6 @@ def ejecutar_todo(
         df_resumen=geo["resumen"],
         col_H="H_poste (kN)",
         col_poste="Poste",
-        col_h_amarre="h_amarre (m)",
     )
 
     # ============================================================
