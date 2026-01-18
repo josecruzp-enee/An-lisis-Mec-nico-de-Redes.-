@@ -175,7 +175,9 @@ def _armar_df_nodos(resumen: pd.DataFrame, fuerzas: pd.DataFrame) -> pd.DataFram
     return df_nodos
 
 
-def _calcular_retenidas(df_nodos: pd.DataFrame) -> pd.DataFrame:
+from .mecanica import retenida_recomendada
+
+def _calcular_retenidas(df_nodos: pd.DataFrame, calibre: str) -> pd.DataFrame:
     return calcular_retenidas(
         df_nodos,
         col_punto="Punto",
@@ -183,13 +185,11 @@ def _calcular_retenidas(df_nodos: pd.DataFrame) -> pd.DataFrame:
         aplicar_si_col="Retenidas_aplican",
         aplicar_si_val=None,  # booleano
         params=ParamsRetenida(
-            cable_retenida="1/4",
+            cable_retenida=retenida_recomendada(calibre),  # <- automático
             FS_retenida=2.0,
             ang_retenida_deg=45.0,
         ),
     )
-
-
 # =============================================================================
 # FASE 03 – EJECUCIÓN TOTAL
 # =============================================================================
@@ -232,7 +232,7 @@ def ejecutar_todo(
     geo["nodos"] = _armar_df_nodos(geo["resumen"], geo["fuerzas_nodo"])
 
     # 04) Retenidas (demanda)
-    geo["retenidas"] = _calcular_retenidas(geo["nodos"])
+    geo["retenidas"] = _calcular_retenidas(geo["nodos"], calibre)
     df_ret = geo["retenidas"]
     if "h_amarre (m)" not in df_ret.columns:
         df_ret["h_amarre (m)"] = h_amarre_norma_m("PC-40", uso="primario")
