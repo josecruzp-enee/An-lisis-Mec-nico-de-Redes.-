@@ -7,38 +7,51 @@ import numpy as np
 import math
 
 from .norma_postes import altura_poste_m
-from .config import OFFSET_AMARRE_DESDE_PUNTA_M, DESPEJE_MIN_M
-from .geometria import dist_utm, distancias_tramos
+from .geometria import dist_utm
 from .mecanica import peso_lineal_kN_m, tension_trabajo_kN
 
 Point = Tuple[float, float]
+
+# ============================================================
+# Parámetros (default) - SIN depender de config.py
+# ============================================================
+OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT: float = 0.10  # m (amarre típico bajo la punta)
+DESPEJE_MIN_M_DEFAULT: float = 0.00                # m (ponlo en 6.0, 7.0 etc si ya tienes norma)
 
 
 # ============================================================
 # Utilidades de alturas
 # ============================================================
-def altura_poste_por_df(df, tipo_poste: str) -> np.ndarray:
+def altura_poste_por_df(df, tipo_poste: str, default_m: float = 12.0) -> np.ndarray:
     """
     Altura del poste (m) por punto.
     - Si Excel trae 'Altura_Poste_m', se usa por punto.
-    - Si no, toma altura del catálogo POSTES[tipo_poste]['altura_m'].
+    - Si no, toma altura del catálogo/norma via altura_poste_m(tipo_poste).
     """
     if "Altura_Poste_m" in df.columns:
         return df["Altura_Poste_m"].astype(float).to_numpy()
 
-    return np.full(len(df), float(altura_poste_m(tipo_poste)), dtype=floa
+    # altura_poste_m ya resuelve tipo_poste (ej: "PM-40", "PC-12-750", etc.)
+    h = float(altura_poste_m(tipo_poste, default_m=default_m))
+    return np.full(len(df), h, dtype=float)
 
 
-def altura_amarre_abs(df, terreno: np.ndarray, h_poste: np.ndarray) -> np.ndarray:
+def altura_amarre_abs(
+    df,
+    terreno: np.ndarray,
+    h_poste: np.ndarray,
+    *,
+    offset_desde_punta_m: float = OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT,
+) -> np.ndarray:
     """
-    Altura absoluta del amarre.
-    - Si Excel trae 'Altura_Amarre_m', se suma al terreno.
-    - Si no, amarre = terreno + altura_poste - OFFSET_AMARRE_DESDE_PUNTA_M
+    Altura absoluta del amarre (cota).
+    - Si Excel trae 'Altura_Amarre_m', se interpreta como altura sobre terreno y se suma al terreno.
+    - Si no, amarre = terreno + altura_poste - offset_desde_punta_m
     """
     if "Altura_Amarre_m" in df.columns:
         return terreno + df["Altura_Amarre_m"].astype(float).to_numpy()
 
-    return terreno + h_poste - float(OFFSET_AMARRE_DESDE_PUNTA_M)
+    return terreno + h_poste - float(offset_desde_punta_m)
 
 
 # ============================================================
@@ -103,8 +116,8 @@ def evaluar_despeje_por_vano(
     - Flecha aplicada sobre la recta:
         cond = y_line - 4*f*r*(1-r)
 
-    Nota: esto usa una parábola geométrica para "dibujar" el perfil.
-    La diferencia entre PARABOLA y CATENARIA aquí está en cómo calculamos f.
+    Nota: aquí dibujamos con parábola geométrica; la diferencia PARABOLA vs CATENARIA
+    está en cómo calculas f (flecha).
     """
     if L <= 0:
         s = np.array([0.0])
@@ -119,7 +132,6 @@ def evaluar_despeje_por_vano(
     terr = g0 + (g1 - g0) * r
     y_line = y0 + (y1 - y0) * r
 
-    # Perfil simétrico con flecha máxima f en el centro
     cond = y_line - 4.0 * sag_f * r * (1.0 - r)
 
     despeje = cond - terr
@@ -134,14 +146,16 @@ def analizar_perfil(
     tipo_poste: str,
     calibre: str,
     *,
-    fraccion_trabajo: float = 0.20,   # <-- ajusta en UI (ej: 0.15, 0.20, 0.25)
-    modo_sag: str = "CATENARIA",       # "CATENARIA" | "PARABOLA"
+    fraccion_trabajo: float = 0.20,
+    modo_sag: str = "CATENARIA",  # "CATENARIA" | "PARABOLA"
+    offset_amarre_desde_punta_m: float = OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT,
+    despeje_min_m: float = DESPEJE_MIN_M_DEFAULT,
 ) -> Optional[Dict]:
     """
     Analiza perfil longitudinal si existe columna 'Altitude'.
 
     - wv: solo peso (vertical) por conductor (NO multiplicar por fases)
-    - H: tensión horizontal por fase (aquí la aproximamos como tensión de trabajo)
+    - H: tensión horizontal por fase (aquí se usa tensión de trabajo)
 
     Nota: el viento se usa en planta (esfuerzos laterales), no en la flecha vertical.
     """
@@ -151,19 +165,19 @@ def analizar_perfil(
     puntos: List[Point] = list(zip(df["X"].tolist(), df["Y"].tolist()))
     etiquetas = df["Punto"].tolist()
 
-    tramos, total_m = distancias_tramos(puntos, etiquetas)
-
+    # chainage (distancia acumulada por tramos)
     chain_nodes = [0.0]
-    for _n, d, _a in tramos:
-        chain_nodes.append(chain_nodes[-1] + float(d))
+    for i in range(len(puntos) - 1):
+        d = float(dist_utm(puntos[i], puntos[i + 1]))
+        chain_nodes.append(chain_nodes[-1] + d)
     chain_nodes = np.array(chain_nodes, dtype=float)
 
     terreno = df["Altitude"].astype(float).to_numpy()
     h_poste = altura_poste_por_df(df, tipo_poste)
-    amarre = altura_amarre_abs(df, terreno, h_poste)
+    amarre = altura_amarre_abs(df, terreno, h_poste, offset_desde_punta_m=offset_amarre_desde_punta_m)
 
     # Parámetros por conductor
-    wv = float(peso_lineal_kN_m(calibre))                  # kN/m (peso)
+    wv = float(peso_lineal_kN_m(calibre))                     # kN/m (peso)
     H = float(tension_trabajo_kN(calibre, fraccion_trabajo))  # kN (tensión horizontal aprox)
 
     modo = str(modo_sag).strip().upper()
@@ -172,15 +186,15 @@ def analizar_perfil(
     X_prof, G_prof, Y_prof = [], [], []
 
     for i in range(len(puntos) - 1):
-        L = float(dist_utm(puntos[i], puntos[i + 1]))  # m (aquí usamos L≈Lh)
-        Lh = L  # si luego metes pendiente real, aquí puedes usar proyección horizontal
+        L = float(dist_utm(puntos[i], puntos[i + 1]))  # m (usamos L≈Lh en FASE 2 puedes meter proyección)
+        Lh = L
 
         if modo == "CATENARIA":
             f = sag_catenaria_m(Lh, wv, H)
             Ts = tension_soporte_catenaria_kN(Lh, wv, H)
         else:
             f = sag_parabolica_m(L, wv, H)
-            Ts = H  # en parabólica no se calcula Ts real; dejamos H como referencia
+            Ts = H  # referencia
 
         ch0 = float(chain_nodes[i])
         g0, g1 = float(terreno[i]), float(terreno[i + 1])
@@ -191,7 +205,7 @@ def analizar_perfil(
             g0=g0, g1=g1,
             y0=y0, y1=y1,
             sag_f=f,
-            npts=90
+            npts=90,
         )
 
         X_prof.append(ch)
@@ -207,12 +221,11 @@ def analizar_perfil(
             "Ts (kN)": round(float(Ts), 3),
             "Sag f (m)": round(float(f), 3),
             "Despeje mín (m)": round(float(min_clear), 3),
-            "Cumple despeje": "SI" if (min_clear >= float(DESPEJE_MIN_M)) else "NO",
+            "Cumple despeje": "SI" if (min_clear >= float(despeje_min_m)) else "NO",
         })
 
     return {
-        "tramos": tramos,
-        "total_m": float(total_m),
+        "total_m": float(chain_nodes[-1]) if len(chain_nodes) else 0.0,
         "chain_nodes": chain_nodes,
         "terreno": terreno,
         "amarre": amarre,
@@ -220,4 +233,12 @@ def analizar_perfil(
         "G_prof": np.concatenate(G_prof) if G_prof else np.array([], dtype=float),
         "Y_prof": np.concatenate(Y_prof) if Y_prof else np.array([], dtype=float),
         "tabla_vanos": filas_vanos,
+        "meta": {
+            "tipo_poste": str(tipo_poste),
+            "calibre": str(calibre),
+            "fraccion_trabajo": float(fraccion_trabajo),
+            "modo_sag": modo,
+            "offset_amarre_desde_punta_m": float(offset_amarre_desde_punta_m),
+            "despeje_min_m": float(despeje_min_m),
+        }
     }
