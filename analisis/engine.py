@@ -6,21 +6,18 @@ ORDEN LÓGICO DEL ENGINE
 01 Geometría
 02 Cargas por tramo
 03 Fuerzas en nodos
-04 Retenidas
+04 Retenidas (demanda)
 05 Equilibrio poste–retenida
 06 Cimentación
 07 Momento (referencial)
-08 Decisión estructural
+08 Decisión estructural (final)
 09 Perfil longitudinal
 """
 
 from __future__ import annotations
 from typing import Dict, Any
 import pandas as pd
-from .retenidas import calcular_retenidas, ParamsRetenida
-# ------------------------------
-# Módulos de cálculo
-# ------------------------------
+
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from .cargas_tramo import calcular_cargas_por_tramo
 from .fuerzas_nodo import calcular_fuerzas_en_nodos
@@ -30,6 +27,7 @@ from .cimentacion import evaluar_cimentacion
 from .momento_poste import calcular_momento_poste
 from .decision_soporte import decidir_soporte
 from .perfil import analizar_perfil
+from .norma_postes import h_amarre_tipica_m
 
 
 # =============================================================================
@@ -143,9 +141,22 @@ def ejecutar_todo(
         azimut_viento_deg=az_viento_deg,
     )
 
-    # 04) Retenidas
+    # --- Preparar DF nodos para retenidas/equilibrio: agregar Poste y h_amarre
+    df_nodos = geo["fuerzas_nodo"].merge(
+        geo["resumen"][["Punto", "Poste", "Retenidas", "Espacio Retenida"]],
+        on="Punto",
+        how="left",
+    )
+
+    # altura típica de amarre por poste (m)
+    df_nodos["h_amarre (m)"] = df_nodos["Poste"].apply(lambda p: float(h_amarre_tipica_m(str(p))))
+
+    # 04) Retenidas (demanda mecánica)  ✅ USA TU MODULO ACTUAL
+    # IMPORTANTE: col_H debe coincidir con tu fuerzas_nodo.
+    # Por tu proyecto, normalmente es "H (kN)" (no "H_nodo (kN)").
     geo["retenidas"] = calcular_retenidas(
-        df_fuerzas_nodo=geo["fuerzas_nodo"],
+        df_nodos,
+        col_H="H (kN)",
         cable_retenida="1/4",
         FS_retenida=2.0,
         ang_retenida_deg=45.0,
@@ -154,7 +165,7 @@ def ejecutar_todo(
     # 05) Equilibrio poste–retenida
     geo["equilibrio"] = equilibrar_poste_retenida(
         df=geo["retenidas"],
-        col_H_nodo="H_nodo (kN)",
+        col_H_nodo="H (kN)",
         col_T_ret="T_retenida (kN)",
         col_h_amarre="h_amarre (m)",
     )
@@ -168,30 +179,19 @@ def ejecutar_todo(
         capacidad_suelo_kN=50.0,
     )
 
-    # 07) Momento (referencial)
+    # 07) Momento (referencial, si lo quieres aparte)
     geo["momento_poste"] = calcular_momento_poste(
         df_fuerzas_nodo=geo["fuerzas_nodo"],
         df_resumen=geo["resumen"],
     )
 
-    # 08) Decisión estructural (FASE 1 – luego se refina)
+    # 08) Decisión FINAL (con equilibrio + cimentación)
     geo["decision"] = decidir_soporte(
         df_resumen=geo["resumen"],
-        df_fuerzas_nodo=geo["fuerzas_nodo"],
+        df_equilibrio=geo["equilibrio"],
+        df_cimentacion=geo["cimentacion"],
     )
 
-    geo["retenidas"] = calcular_retenidas(
-        geo["decision"],                 # 👈 aquí ya existe "Solución"
-        col_H="H (kN)",
-        aplicar_si_col="Solución",
-        aplicar_si_val="RETENIDA",
-        params=ParamsRetenida(
-            cable_retenida="1/4",        # o lo que uses en catálogo
-            FS_retenida=2.0,
-            ang_retenida_deg=45.0,
-        )
-    )
-    
     # 09) Perfil longitudinal
     geo["perfil"] = analizar_perfil(
         df,
