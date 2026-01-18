@@ -234,9 +234,8 @@ def ejecutar_todo(
     # 04) Retenidas (demanda)
     geo["retenidas"] = _calcular_retenidas(geo["nodos"])
     df_ret = geo["retenidas"]
-        if "h_amarre (m)" not in df_ret.columns:
-           df_ret["h_amarre (m)"] = h_amarre_norma_m(proyecto["poste"], uso="primario")
-
+    if "h_amarre (m)" not in df_ret.columns:
+        df_ret["h_amarre (m)"] = h_amarre_norma_m("PC-40", uso="primario")
 
 
     # 05) Equilibrio poste–retenida
