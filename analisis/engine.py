@@ -175,8 +175,8 @@ def ejecutar_todo(
     )
 
     # ---- DF maestro para retenidas / equilibrio / cimentación
-    df_nodos = geo["fuerzas_nodo"].merge(
-        geo["resumen"][["Punto", "Poste", "Espacio Retenida", "Retenidas"]],
+    df_nodos = geo["resumen"][["Punto", "Poste", "Espacio Retenida", "Retenidas"]].merge(
+        geo["fuerzas_nodo"],
         on="Punto",
         how="left",
     )
