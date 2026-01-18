@@ -114,8 +114,149 @@ def _render_tab_entrada(df: pd.DataFrame) -> None:
     _tabla(df, "Entrada")
 
 
-def _render_tab_resumen(res: Dict[str, Any]) -> None:
+def _render_tab_resumen(res: Dict[str, Any], df_entrada: pd.DataFrame) -> None:
+    # Tabla (igual que antes)
     _tabla(res["resumen"], "Resumen por punto (estructura / retenidas)")
+
+    st.divider()
+    st.subheader("Vista superior — Trayectoria y retenidas (desde Resumen por punto)")
+
+    # --- Preparar datos del Excel ---
+    df_local = df_entrada.copy()
+    df_local.columns = [c.strip() for c in df_local.columns]
+
+    def _pick_col(cands):
+        for c in cands:
+            if c in df_local.columns:
+                return c
+        return None
+
+    col_x = _pick_col(["X (m)", "X", "x"])
+    col_y = _pick_col(["Y (m)", "Y", "y"])
+    col_p = _pick_col(["Punto", "PUNTO"])
+    col_esp = _pick_col(["Espacio Retenida", "ESPACIO RETENIDA", "EspacioRetenida"])
+
+    if col_x is None or col_y is None:
+        st.warning("No se puede dibujar la vista superior: faltan columnas X/Y en el Excel.")
+        return
+
+    x = pd.to_numeric(df_local[col_x], errors="coerce").to_numpy(dtype=float)
+    y = pd.to_numeric(df_local[col_y], errors="coerce").to_numpy(dtype=float)
+
+    if np.isnan(x).any() or np.isnan(y).any():
+        st.warning("No se puede dibujar la vista superior: hay valores no numéricos en X/Y.")
+        return
+
+    puntos = df_local[col_p].astype(str).str.strip().tolist() if col_p else [f"P{i+1}" for i in range(len(df_local))]
+
+    # --- Tomar Retenidas desde la tabla resumen ---
+    df_r = res["resumen"].copy()
+    df_r.columns = [c.strip() for c in df_r.columns]
+
+    def _pick_col_r(cands):
+        for c in cands:
+            if c in df_r.columns:
+                return c
+        return None
+
+    col_r_p = _pick_col_r(["Punto", "PUNTO"])
+    col_ret = _pick_col_r(["Retenidas", "RETENIDAS"])
+    if col_r_p is None or col_ret is None:
+        st.warning("La tabla resumen no trae 'Punto' y/o 'Retenidas'.")
+        return
+
+    mapa_ret = {}
+    for _, row in df_r.iterrows():
+        p = str(row[col_r_p]).strip()
+        try:
+            mapa_ret[p] = int(row[col_ret])
+        except Exception:
+            mapa_ret[p] = 0
+
+    # --- Espacio retenida (SI/NO) del excel ---
+    def _norm_si_no(v):
+        s = str(v).strip().upper()
+        if s in ("SI", "SÍ", "1", "TRUE", "YES"):
+            return "SI"
+        if s in ("NO", "0", "FALSE", "N"):
+            return "NO"
+        return s
+
+    mapa_esp = {}
+    if col_esp:
+        for i, p in enumerate(puntos):
+            mapa_esp[p] = _norm_si_no(df_local[col_esp].iloc[i])
+
+    # --- Controles ---
+    L = float(st.slider("Longitud visual de flecha (m)", 5.0, 80.0, 25.0, 1.0))
+    lado_por_defecto = st.selectbox("Lado por defecto si no hay 'Espacio Retenida'", ["IZQUIERDA", "DERECHA"], index=0)
+
+    # --- Plot ---
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.plot(x, y, linewidth=2, label="Trayectoria")
+    ax.scatter(x, y, zorder=3)
+
+    for i in range(len(x)):
+        ax.text(x[i], y[i], f" {puntos[i]}", fontsize=8, va="bottom")
+
+    # Flechas con quiver
+    def _flecha(ax, x0, y0, dx, dy, L):
+        ax.quiver(
+            [x0], [y0], [dx], [dy],
+            angles="xy", scale_units="xy", scale=1 / L,
+            width=0.003, headwidth=6, headlength=7, headaxislength=6,
+            alpha=0.9
+        )
+
+    for i, p in enumerate(puntos):
+        r = mapa_ret.get(p, 0)
+        if r <= 0:
+            continue
+
+        # Tangente (aprox) para normal
+        if 0 < i < len(x) - 1:
+            tx = (x[i + 1] - x[i - 1])
+            ty = (y[i + 1] - y[i - 1])
+        elif i == 0:
+            tx = (x[1] - x[0])
+            ty = (y[1] - y[0])
+        else:
+            tx = (x[-1] - x[-2])
+            ty = (y[-1] - y[-2])
+
+        norm = float(np.hypot(tx, ty))
+        if norm == 0:
+            continue
+        tx, ty = tx / norm, ty / norm
+
+        # Normales
+        nxL, nyL = -ty, tx
+        nxR, nyR = ty, -tx
+
+        esp = mapa_esp.get(p, "")
+        if esp == "SI":
+            use_left = True
+        elif esp == "NO":
+            use_left = False
+        else:
+            use_left = (lado_por_defecto == "IZQUIERDA")
+
+        if r == 1:
+            dx, dy = (nxL, nyL) if use_left else (nxR, nyR)
+            _flecha(ax, x[i], y[i], dx, dy, L)
+        else:
+            _flecha(ax, x[i], y[i], nxL, nyL, L)
+            _flecha(ax, x[i], y[i], nxR, nyR, L)
+
+    ax.set_xlabel("Coordenada X")
+    ax.set_ylabel("Coordenada Y")
+    ax.set_title("Trayectoria y retenidas (vista superior)")
+    ax.grid(True, linestyle="--", alpha=0.35)
+    ax.axis("equal")
+    ax.legend()
+
+    st.pyplot(fig)
+
 
 
 def _render_tab_cargas(res: Dict[str, Any]) -> None:
@@ -288,7 +429,7 @@ def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
         _render_tab_entrada(df)
 
     with tab2:
-        _render_tab_resumen(res)
+        _render_tab_resumen(res, df)
 
     with tab3:
         _render_tab_cargas(res)
