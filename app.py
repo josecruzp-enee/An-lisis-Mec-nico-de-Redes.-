@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Dict, Any, Optional
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -12,9 +13,6 @@ import matplotlib.pyplot as plt
 from analisis.io_excel import leer_puntos_excel
 from analisis.catalogos import CONDUCTORES_ACSR
 from analisis.engine import ejecutar_todo
-import matplotlib.pyplot as plt
-import numpy as np
-
 
 
 # ============================================================
@@ -132,8 +130,7 @@ def _render_tab_decision(res: Dict[str, Any]) -> None:
     _tabla(res["decision"], "Decisión por punto (poste / retenida / autosoportado)")
 
 
-
-def _render_tab_perfil(res):
+def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     st.subheader("Perfil longitudinal (si existe Altitud)")
     perfil = res.get("perfil")
 
@@ -154,9 +151,65 @@ def _render_tab_perfil(res):
         st.warning("No hay datos suficientes para graficar el perfil (X_prof/G_prof/Y_prof vacíos).")
         return
 
+    # ----------------------------
+    # Diccionario de alturas típicas de poste (m)
+    # Ajusta según tu estándar ENEE
+    # ----------------------------
+    ALTURA_POSTE_M = {
+        "PC-30": 9.0,
+        "PC-35": 10.5,
+        "PC-40": 12.0,
+        "PC-40A": 12.0,
+        "PC-45": 13.5,
+        "PC-50": 15.0,
+    }
+
+    # Leer columna Poste (si existe)
+    df_local = df.copy()
+    df_local.columns = [c.strip() for c in df_local.columns]
+
+    postes: list[str] = []
+    if "Poste" in df_local.columns:
+        postes = (
+            df_local["Poste"]
+            .astype(str)
+            .str.strip()
+            .replace({"nan": ""})
+            .tolist()
+        )
+
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(X, G, label="Terreno", linewidth=2)
     ax.plot(X, Y, label="Conductor", linewidth=2)
+
+    # ============================================================
+    # Postes (simulación por tamaño)
+    # ============================================================
+    # Asumimos que X_prof corresponde a los puntos del Excel en el mismo orden.
+    # Si tu engine interpola puntos, luego lo amarramos por "Punto".
+    n = min(len(X), len(postes))
+
+    for i in range(n):
+        tipo = postes[i]
+        if not tipo:
+            continue
+
+        tipo_norm = str(tipo).upper().replace(" ", "")
+        h = ALTURA_POSTE_M.get(tipo_norm, 12.0)  # default 12 m si no está en el catálogo
+
+        x = float(X[i])
+        y_base = float(G[i])
+        y_top = y_base + h
+
+        # Poste
+        ax.plot([x, x], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
+
+        # Punto de amarre (marcamos el conductor justo en el poste)
+        ax.scatter([x], [float(Y[i])], zorder=5)
+
+        # Etiqueta del tipo de poste (opcional)
+        ax.text(x, y_top + 0.3, tipo_norm, ha="center", fontsize=8)
+
     ax.set_xlabel("Distancia acumulada (m)")
     ax.set_ylabel("Cota / Altitud (m)")
     ax.set_title("Perfil longitudinal del conductor")
@@ -187,7 +240,7 @@ def mostrar_tabs_resultados(df: pd.DataFrame, res: Dict[str, Any]) -> None:
         _render_tab_decision(res)
 
     with tab6:
-        _render_tab_perfil(res)
+        _render_tab_perfil(df, res)
 
 
 def mostrar_kpis(res: Dict[str, Any]) -> None:
