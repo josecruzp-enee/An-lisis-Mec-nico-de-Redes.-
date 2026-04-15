@@ -231,7 +231,7 @@ def ejecutar_todo(
     geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
         df_tramos=geo["cargas_tramo"],
         df_resumen=geo["resumen"],
-        usar_col_w="w_viento_eff (kN/m)",
+        usar_col_w="w_resultante (kN/m)",
         azimut_viento_deg=float(az_viento_deg or 0.0),
     )
 
