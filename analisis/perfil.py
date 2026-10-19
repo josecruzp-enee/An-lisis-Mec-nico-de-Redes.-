@@ -1,244 +1,137 @@
-# analisis/perfil.py
-# -*- coding: utf-8 -*-
+"""Perfil longitudinal exacto sin viento, con terreno lineal entre apoyos.
+
+API heredada conservada. Para viento, temperatura y puntos de amarre 3D usar
+motor_integral. El despeje a terreno lineal no comprueba obstáculos no medidos.
+"""
 from __future__ import annotations
-
-from typing import Dict, List, Tuple, Optional
 import numpy as np
-import math
-
-from .norma_postes import altura_poste_m
-from .geometria import dist_utm
+from .catenaria import resolver_catenaria
+from .geometria_amarres import alturas_amarre, longitudes_poste
 from .mecanica import peso_lineal_kN_m, tension_trabajo_kN
+from .validacion_mecanica import finito, validar_puntos
 
-Point = Tuple[float, float]
-
-# ============================================================
-# Parámetros 
-# ============================================================
-OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT: float = 0.10  # m (amarre típico bajo la punta)
-DESPEJE_MIN_M_DEFAULT: float = 0.00                # m (ponlo en 6.0, 7.0 etc si ya tienes norma)
+OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT = .10
+DESPEJE_MIN_M_DEFAULT = None
 
 
-# ============================================================
-# Utilidades de alturas
-# ============================================================
-def altura_poste_por_df(df, tipo_poste: str, default_m: float = 12.0) -> np.ndarray:
-    """
-    Altura del poste (m) por punto.
-    - Si Excel trae 'Altura_Poste_m', se usa por punto.
-    - Si no, toma altura del catálogo/norma via altura_poste_m(tipo_poste).
-    """
-    if "Altura_Poste_m" in df.columns:
-        return df["Altura_Poste_m"].astype(float).to_numpy()
-
-    # altura_poste_m ya resuelve tipo_poste (ej: "PM-40", "PC-12-750", etc.)
-    h = float(altura_poste_m(tipo_poste, default_m=default_m))
-    return np.full(len(df), h, dtype=float)
+def altura_poste_por_df(df,tipo_poste,default_m=float('nan')):
+    """Compatibilidad: devuelve longitud total por punto, nunca altura expuesta."""
+    return longitudes_poste(df,tipo_poste)
 
 
-def altura_amarre_abs(
-    df,
-    terreno: np.ndarray,
-    h_poste: np.ndarray,
-    *,
-    offset_desde_punta_m: float = OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT,
-) -> np.ndarray:
-    """
-    Altura absoluta del amarre (cota).
-    - Si Excel trae 'Altura_Amarre_m', se interpreta como altura sobre terreno y se suma al terreno.
-    - Si no, amarre = terreno + altura_poste - offset_desde_punta_m
-    """
-    if "Altura_Amarre_m" in df.columns:
-        return terreno + df["Altura_Amarre_m"].astype(float).to_numpy()
-
-    return terreno + h_poste - float(offset_desde_punta_m)
+def altura_amarre_abs(df,terreno,h_poste,*,offset_desde_punta_m=.10):
+    """Cota de amarre; exige altura medida o empotramiento explícito."""
+    datos = df.copy()
+    datos['Altura_Poste_m'] = h_poste
+    h = alturas_amarre(datos,offset_m=offset_desde_punta_m)
+    if h is None:
+        raise ValueError('Falta Altura_Amarre_m o Empotramiento_m')
+    return np.asarray(terreno)+h
 
 
-# ============================================================
-# Sag / perfil
-# ============================================================
-def sag_parabolica_m(L: float, wv_kN_m: float, H_kN: float) -> float:
-    """
-    Parabólica (aprox):
-        f = w*L^2 / (8*H)
-    donde H ~ tensión horizontal.
-    """
-    if L <= 0 or H_kN <= 0:
+def sag_parabolica_m(L,wv_kN_m,H_kN):
+    """Aproximación auxiliar w L²/(8H), no sustituye al cable exacto."""
+    finito(L,'L',0); finito(wv_kN_m,'peso',0); finito(H_kN,'H',0,True)
+    return wv_kN_m*L**2/(8*H_kN)
+
+
+def sag_catenaria_m(Lh,wv_kN_m,H_kN):
+    """Flecha nivelada exacta; 2a sinh²(L/4a) evita cancelación numérica."""
+    sag_parabolica_m(Lh,wv_kN_m,H_kN)
+    if Lh == 0 or wv_kN_m == 0:
         return 0.0
-    return float(wv_kN_m * L * L / (8.0 * H_kN))
+    cable = resolver_catenaria([0,0,0],[Lh,0,0],[0,0,-wv_kN_m],H_kN)
+    return float(-cable.puntos(Lh/2)[2])
 
 
-def sag_catenaria_m(Lh: float, wv_kN_m: float, H_kN: float) -> float:
-    """
-    Catenaria real (nivelada) por peso vertical (sin viento en vertical):
-
-        f = (H/wv) * (cosh( (wv*Lh)/(2H) ) - 1)
-
-    donde:
-      - Lh: luz horizontal (m) (si no hay gran pendiente, Lh≈L)
-      - wv_kN_m: carga vertical por peso (kN/m)
-      - H_kN: componente horizontal de tensión (kN)
-    """
-    if Lh <= 0 or wv_kN_m <= 0 or H_kN <= 0:
-        return 0.0
-    x = (wv_kN_m * Lh) / (2.0 * H_kN)
-    return float((H_kN / wv_kN_m) * (math.cosh(x) - 1.0))
+def tension_soporte_catenaria_kN(Lh,wv_kN_m,H_kN):
+    """Tensión total en apoyo nivelado; con carga nula sigue siendo H."""
+    sag_parabolica_m(Lh,wv_kN_m,H_kN)
+    if Lh == 0 or wv_kN_m == 0:
+        return H_kN
+    return float(resolver_catenaria([0,0,0],[Lh,0,0],[0,0,-wv_kN_m],H_kN).tension(0))
 
 
-def tension_soporte_catenaria_kN(Lh: float, wv_kN_m: float, H_kN: float) -> float:
-    """
-    Tensión en soporte (por fase) para catenaria nivelada:
-
-        Ts = H * cosh( (wv*Lh)/(2H) )
-
-    Devuelve kN.
-    """
-    if Lh <= 0 or wv_kN_m <= 0 or H_kN <= 0:
-        return 0.0
-    x = (wv_kN_m * Lh) / (2.0 * H_kN)
-    return float(H_kN * math.cosh(x))
-
-
-def evaluar_despeje_por_vano(
-    chain0: float,
-    L: float,
-    g0: float,
-    g1: float,
-    y0: float,
-    y1: float,
-    sag_f: float,
-    npts: int = 80,
-):
-    """
-    Evalúa el perfil del conductor en un vano asumiendo:
-    - Terreno lineal entre apoyos (g0->g1)
-    - Línea recta entre amarres (y0->y1)
-    - Flecha aplicada sobre la recta:
-        cond = y_line - 4*f*r*(1-r)
-
-    Nota: aquí dibujamos con parábola geométrica; la diferencia PARABOLA vs CATENARIA
-    está en cómo calculas f (flecha).
-    """
-    if L <= 0:
-        s = np.array([0.0])
-        ch = chain0 + s
-        terr = np.array([g0])
-        cond = np.array([y0])
-        return ch, terr, cond, float(np.min(cond - terr))
-
-    s = np.linspace(0.0, L, int(npts))
-    r = s / L
-
-    terr = g0 + (g1 - g0) * r
-    y_line = y0 + (y1 - y0) * r
-
-    cond = y_line - 4.0 * sag_f * r * (1.0 - r)
-
-    despeje = cond - terr
-    return chain0 + s, terr, cond, float(np.min(despeje))
+def evaluar_despeje_por_vano(chain0,L,g0,g1,y0,y1,sag_f,npts=80):
+    """API auxiliar parabólica. Mínimo analítico, independiente de la malla."""
+    finito(L,'L',0,True)
+    finito(sag_f,'flecha',0)
+    if npts < 2:
+        raise ValueError('npts debe ser al menos 2')
+    r = np.linspace(0,1,int(npts))
+    terreno = g0+(g1-g0)*r
+    conductor = y0+(y1-y0)*r-4*sag_f*r*(1-r)
+    pendiente = (y1-g1)-(y0-g0)
+    rc = np.clip((4*sag_f-pendiente)/(8*sag_f),0,1) if sag_f else float(pendiente < 0)
+    minimo = y0-g0+pendiente*rc-4*sag_f*rc*(1-rc)
+    return chain0+L*r,terreno,conductor,float(minimo)
 
 
-# ============================================================
-# Motor de perfil
-# ============================================================
-def analizar_perfil(
-    df,
-    tipo_poste: str,
-    calibre: str,
-    *,
-    fraccion_trabajo: float = 0.20,
-    modo_sag: str = "CATENARIA",  # "CATENARIA" | "PARABOLA"
-    offset_amarre_desde_punta_m: float = OFFSET_AMARRE_DESDE_PUNTA_M_DEFAULT,
-    despeje_min_m: float = DESPEJE_MIN_M_DEFAULT,
-) -> Optional[Dict]:
-    """
-    Analiza perfil longitudinal si existe columna 'Altitude'.
+def _vano_exacto(L,g0,g1,y0,y1,H,w):
+    """Perfil, flecha respecto a cuerda y mínimo de despeje analítico."""
+    cable = resolver_catenaria([0,0,y0],[L,0,y1],[0,0,-w],H)
+    x = np.linspace(0,L,90)
+    terreno = g0+(g1-g0)*x/L
+    yc = cable.puntos(x)[:,2]
+    xmin = cable.minimo_lineal([0,0,1],(g1-g0)/L)
+    despeje = cable.puntos(xmin)[2]-(g0+(g1-g0)*xmin/L)
+    xf = cable.minimo_lineal([0,0,1],(y1-y0)/L)
+    flecha = y0+(y1-y0)*xf/L-cable.puntos(xf)[2]
+    return x,terreno,yc,float(despeje),float(flecha),float(cable.tension(0)),float(cable.tension(L))
 
-    - wv: solo peso (vertical) por conductor (NO multiplicar por fases)
-    - H: tensión horizontal por fase (aquí se usa tensión de trabajo)
 
-    Nota: el viento se usa en planta (esfuerzos laterales), no en la flecha vertical.
-    """
-    if "Altitud" not in df.columns:
+def _fila_perfil(etiquetas,i,L,modo,w,H,f,ta,tb,despeje,limite):
+    """Conserva columnas heredadas y distingue los dos apoyos desnivelados."""
+    cumple = 'NO VERIFICABLE' if limite is None else ('SI' if despeje >= limite else 'NO')
+    return {'Tramo':f'{etiquetas[i]} → {etiquetas[i+1]}','Longitud (m)':L,
+            'Modo sag':modo,'wv (kN/m)':w,'H (kN)':H,'Ts (kN)':max(ta,tb),
+            'Ts A (kN)':ta,'Ts B (kN)':tb,'Sag f (m)':f,
+            'Despeje mín (m)':despeje,'Cumple despeje':cumple}
+
+
+def analizar_perfil(df,tipo_poste,calibre,*,fraccion_trabajo=None,modo_sag='CATENARIA',
+                     offset_amarre_desde_punta_m=.10,despeje_min_m=None,H_kN=None):
+    """Sin cota/amarre/tensión retorna None; jamás interpreta faltantes como cumplimiento."""
+    if 'Altitud' not in df:
         return None
-
-    puntos: List[Point] = list(zip(df["X"].tolist(), df["Y"].tolist()))
-    etiquetas = df["Punto"].tolist()
-
-    # chainage (distancia acumulada por tramos)
-    chain_nodes = [0.0]
-    for i in range(len(puntos) - 1):
-        d = float(dist_utm(puntos[i], puntos[i + 1]))
-        chain_nodes.append(chain_nodes[-1] + d)
-    chain_nodes = np.array(chain_nodes, dtype=float)
-
-    terreno = df["Altitud"].astype(float).to_numpy()
-    h_poste = altura_poste_por_df(df, tipo_poste)
-    amarre = altura_amarre_abs(df, terreno, h_poste, offset_desde_punta_m=offset_amarre_desde_punta_m)
-
-    # Parámetros por conductor
-    wv = float(peso_lineal_kN_m(calibre))                     # kN/m (peso)
-    H = float(tension_trabajo_kN(calibre, fraccion_trabajo))  # kN (tensión horizontal aprox)
-
+    validar_puntos(df)
+    h = alturas_amarre(df,tipo_poste,offset_amarre_desde_punta_m)
+    if h is None or (H_kN is None and fraccion_trabajo is None):
+        return None
+    H = H_kN if H_kN is not None else tension_trabajo_kN(calibre,fraccion_trabajo)
+    finito(H,'H',0,True)
+    if despeje_min_m is not None:
+        finito(despeje_min_m,'despeje mínimo',0,True)
     modo = str(modo_sag).strip().upper()
+    if modo not in ('CATENARIA','PARABOLA'):
+        raise ValueError('Modo de flecha desconocido')
+    terreno = df['Altitud'].to_numpy(dtype=float)
+    if not np.isfinite(terreno).all():
+        raise ValueError('Altitudes no finitas')
+    return _construir_perfil(df,terreno,h,H,peso_lineal_kN_m(calibre),modo,despeje_min_m,
+                            {'tipo_poste':tipo_poste,'calibre':calibre,'H_kN':H,
+                             'fraccion_trabajo':fraccion_trabajo,'modo_sag':modo,
+                             'despeje_min_m':despeje_min_m,'alcance':'Sin viento; terreno lineal'})
 
-    filas_vanos: List[Dict] = []
-    X_prof, G_prof, Y_prof = [], [], []
 
-    for i in range(len(puntos) - 1):
-        L = float(dist_utm(puntos[i], puntos[i + 1]))  # m (usamos L≈Lh en FASE 2 puedes meter proyección)
-        Lh = L
-
-        if modo == "CATENARIA":
-            f = sag_catenaria_m(Lh, wv, H)
-            Ts = tension_soporte_catenaria_kN(Lh, wv, H)
-        else:
-            f = sag_parabolica_m(L, wv, H)
-            Ts = H  # referencia
-
-        ch0 = float(chain_nodes[i])
-        g0, g1 = float(terreno[i]), float(terreno[i + 1])
-        y0, y1 = float(amarre[i]), float(amarre[i + 1])
-
-        ch, g, y, min_clear = evaluar_despeje_por_vano(
-            chain0=ch0, L=L,
-            g0=g0, g1=g1,
-            y0=y0, y1=y1,
-            sag_f=f,
-            npts=90,
-        )
-
-        X_prof.append(ch)
-        G_prof.append(g)
-        Y_prof.append(y)
-
-        filas_vanos.append({
-            "Tramo": f"{etiquetas[i]} → {etiquetas[i + 1]}",
-            "Longitud (m)": round(L, 2),
-            "Modo sag": modo,
-            "wv (kN/m)": round(wv, 5),
-            "H (kN)": round(H, 3),
-            "Ts (kN)": round(float(Ts), 3),
-            "Sag f (m)": round(float(f), 3),
-            "Despeje mín (m)": round(float(min_clear), 3),
-            "Cumple despeje": "SI" if (min_clear >= float(despeje_min_m)) else "NO",
-        })
-
-    return {
-        "total_m": float(chain_nodes[-1]) if len(chain_nodes) else 0.0,
-        "chain_nodes": chain_nodes,
-        "terreno": terreno,
-        "amarre": amarre,
-        "X_prof": np.concatenate(X_prof) if X_prof else np.array([], dtype=float),
-        "G_prof": np.concatenate(G_prof) if G_prof else np.array([], dtype=float),
-        "Y_prof": np.concatenate(Y_prof) if Y_prof else np.array([], dtype=float),
-        "tabla_vanos": filas_vanos,
-        "meta": {
-            "tipo_poste": str(tipo_poste),
-            "calibre": str(calibre),
-            "fraccion_trabajo": float(fraccion_trabajo),
-            "modo_sag": modo,
-            "offset_amarre_desde_punta_m": float(offset_amarre_desde_punta_m),
-            "despeje_min_m": float(despeje_min_m),
-        }
-    }
+def _construir_perfil(df,terreno,h,H,w,modo,limite,meta):
+    """Ensambla vanos independientes y arrays usados por los gráficos existentes."""
+    xy = df[['X','Y']].to_numpy(dtype=float)
+    luces = np.linalg.norm(np.diff(xy,axis=0),axis=1)
+    chain = np.r_[0,np.cumsum(luces)]
+    amarre = terreno+h
+    perfiles,filas = [],[]
+    for i,L in enumerate(luces):
+        g0,g1,y0,y1 = terreno[i],terreno[i+1],amarre[i],amarre[i+1]
+        x,g,y,cl,f,ta,tb = _vano_exacto(L,g0,g1,y0,y1,H,w)
+        if modo == 'PARABOLA':
+            f = sag_parabolica_m(L,w,H)
+            x,g,y,cl = evaluar_despeje_por_vano(0,L,g0,g1,y0,y1,f,90)
+            pendiente = (y1-y0)/L
+            ta,tb = H*np.sqrt(1+(pendiente-4*f/L)**2),H*np.sqrt(1+(pendiente+4*f/L)**2)
+        perfiles.append((chain[i]+x,g,y))
+        filas.append(_fila_perfil(df['Punto'].tolist(),i,L,modo,w,H,f,ta,tb,cl,limite))
+    return {'total_m':float(chain[-1]),'chain_nodes':chain,'terreno':terreno,'amarre':amarre,
+            'X_prof':np.concatenate([p[0] for p in perfiles]),
+            'G_prof':np.concatenate([p[1] for p in perfiles]),
+            'Y_prof':np.concatenate([p[2] for p in perfiles]),'tabla_vanos':filas,'meta':meta}

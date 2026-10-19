@@ -121,7 +121,7 @@ def calcular_tramos(
 
     # Redondeo solo para presentación
     for col in ["ΔX (m)", "ΔY (m)", "Distancia (m)", "Acumulado (m)", "Azimut (°)"]:
-        df[col] = df[col].astype(float).round(2)
+        df[col] = df[col].astype(float)
 
     return df
 

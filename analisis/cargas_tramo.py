@@ -7,7 +7,6 @@ import pandas as pd
 import math
 from .viento import viento_kN_m, proyectar_viento
 from .mecanica import peso_lineal_kN_m
-from .viento import proyectar_viento
 
 
 def calcular_cargas_por_tramo(
@@ -30,7 +29,7 @@ def calcular_cargas_por_tramo(
     - Viento (arrastre):
         w_w = 0.5 · rho · Cd · D · v²     [N/m]
     - Proyección:
-        w_eff = w_w · |sin(theta)|
+        w_eff = w_w · sin(theta)²
     - Resultante:
         w_t = sqrt(w_v² + w_eff²)
 
@@ -40,6 +39,8 @@ def calcular_cargas_por_tramo(
     if df_tramos is None or df_tramos.empty:
         return pd.DataFrame()
 
+    if isinstance(n_fases, bool) or int(n_fases) != n_fases or n_fases < 1:
+        raise ValueError('n_fases debe ser entero positivo')
     out = df_tramos.copy()
 
     # ------------------------------
@@ -67,7 +68,7 @@ def calcular_cargas_por_tramo(
         diametro_m=float(diametro_conductor_m),
         Cd=float(Cd),
         rho=float(rho),
-    )
+    ) * int(n_fases)
 
     # ------------------------------
     # 3) Proyección por tramo

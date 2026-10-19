@@ -32,11 +32,14 @@ def capacidad_poste_kN(tipo_poste: str) -> float:
 
 
 def utilizacion_poste_pct(H_poste_kN: float, Hmax_kN: float) -> float:
-    return (100.0 * H_poste_kN / Hmax_kN) if Hmax_kN > 0 else 0.0
+    return (100.0 * H_poste_kN / Hmax_kN) if Hmax_kN > 0 else float("nan")
 
 
 def cumple_poste(H_poste_kN: float, Hmax_kN: float) -> str:
-    return "SI" if H_poste_kN <= Hmax_kN else "NO"
+    import math
+    if not math.isfinite(H_poste_kN) or not math.isfinite(Hmax_kN) or Hmax_kN <= 0:
+        return 'NO VERIFICABLE'
+    return 'SI' if H_poste_kN <= Hmax_kN else 'NO'
 
 
 # =============================================================================
@@ -56,24 +59,10 @@ def _validar_df(nombre: str, df: pd.DataFrame, columnas: list[str]) -> None:
 # =============================================================================
 
 def decidir_fila(r: pd.Series) -> Tuple[str, str]:
-    """
-    Devuelve (solución, motivo) para una fila.
-    """
-    espacio = _si_no(r["Espacio Retenida"])
-    ret_req = int(r["Retenidas"])
-    cumple_cim = _si_no(r.get("Cumple cimentación", "NO"))
-    cumple_p = r["Cumple poste"]
-
-    if ret_req > 0:
-        if espacio == "SI" and cumple_cim == "SI":
-            return "RETENIDA", "Requiere retenida; sistema cumple"
-        if espacio == "NO":
-            return "AUTOSOPORTADO", "Requiere retenida pero no hay espacio"
-        return "AUTOSOPORTADO", "Requiere retenida pero no cumple"
-    else:
-        if cumple_p == "SI" and cumple_cim == "SI":
-            return "POSTE SOLO", "Paso sin retenida; poste y cimentación cumplen"
-        return "AUTOSOPORTADO", "No cumple poste solo o cimentación"
+    """La ruta heredada carece de verificaciones completas; nunca aprueba por geometría."""
+    if r.get('Cumple poste') == 'NO' or r.get('Cumple cimentación') == 'NO':
+        return 'NO CUMPLE', 'Una verificación disponible falla; evaluar otra alternativa'
+    return 'NO VERIFICABLE', 'Faltan verificaciones de material, anclajes y suelo'
 
 
 # =============================================================================

@@ -1,34 +1,18 @@
 # analisis/engine.py
 # -*- coding: utf-8 -*-
-"""
-ORDEN LÓGICO DEL ENGINE
+"""Adaptador Excel: conserva geometría, tablas y gráficos, exige datos mecánicos.
 
-01 Geometría
-02 Cargas por tramo
-03 Fuerzas en nodos
-04 Retenidas (demanda)
-05 Equilibrio poste–retenida
-06 Cimentación
-07 Momento (referencial)
-08 Decisión estructural FINAL
-09 Perfil longitudinal
+Para proyecto 3D multicaso con alternativas usar motor_integral.py.
+La ruta Excel no dimensiona retenidas ni aprueba postes con datos incompletos.
 """
 
 from __future__ import annotations
 
 from typing import Dict, Any
 import pandas as pd
-from .norma_postes import h_amarre_norma_m
 from .geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from .cargas_tramo import calcular_cargas_por_tramo
-from .fuerzas_nodo import calcular_fuerzas_en_nodos
-from .retenidas import calcular_retenidas, ParamsRetenida
-from .equilibrio_poste import equilibrar_poste_retenida
-from .cimentacion import evaluar_cimentacion
-from .momento_poste import calcular_momento_poste
-from .decision_soporte import decidir_soporte
 from .perfil import analizar_perfil
-from .norma_postes import h_amarre_tipica_m
 
 
 # =============================================================================
@@ -80,9 +64,9 @@ def _calcular_deflexion_real(df_def: pd.DataFrame) -> pd.DataFrame:
 def _armar_resumen(df: pd.DataFrame, df_def: pd.DataFrame) -> pd.DataFrame:
     # remates en extremos
     resumen = df[["Punto", "Poste", "Espacio Retenida"]].copy()
-    resumen["Deflexión (°)"] = "-"
+    resumen["Deflexión (°)"] = float("nan")
     resumen["Estructura"] = "Remate"
-    resumen["Retenidas"] = 1
+    resumen["Retenidas"] = pd.Series(pd.NA,index=resumen.index,dtype="Int64")
 
     if df_def is None or df_def.empty or "Punto" not in df_def.columns:
         return resumen
@@ -94,13 +78,16 @@ def _armar_resumen(df: pd.DataFrame, df_def: pd.DataFrame) -> pd.DataFrame:
         if p in mapa.index:
             resumen.loc[i, "Deflexión (°)"] = mapa.loc[p, "Deflexión (°)"]
             resumen.loc[i, "Estructura"] = mapa.loc[p, "Estructura"]
-            resumen.loc[i, "Retenidas"] = int(mapa.loc[p, "Retenidas"])
+            resumen.loc[i, "Retenidas"] = pd.NA  # Se diseña por equilibrio, no por ángulo.
 
     return resumen
 
 
 def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     _validar_entrada(df)
+    from .validacion_mecanica import validar_puntos
+    validar_puntos(df)
+    df = df.reset_index(drop=True)
 
     puntos = list(zip(df["X"].tolist(), df["Y"].tolist()))
     etiquetas = df["Punto"].tolist()
@@ -121,200 +108,73 @@ def ejecutar_fase_geometria(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     }
 
 
-# =============================================================================
-# FASE 02 – CARGAS POR TRAMO
-# =============================================================================
 
-def ejecutar_cargas_tramo(
-    df_tramos: pd.DataFrame,
-    *,
-    calibre: str,
-    n_fases: int,
-    v_viento_ms: float,
-    az_viento_deg: float,
-    diametro_m: float,
-    Cd: float,
-    rho: float,
-) -> pd.DataFrame:
+
+def ejecutar_cargas_tramo(df_tramos, *, calibre, n_fases, v_viento_ms,
+                          az_viento_deg, diametro_m, Cd, rho):
+    """Adaptador público conservado para consumidores anteriores."""
+    return calcular_cargas_por_tramo(df_tramos, calibre=calibre, n_fases=n_fases,
+        v_viento_ms=v_viento_ms, azimut_viento_deg=az_viento_deg,
+        diametro_conductor_m=diametro_m, Cd=Cd, rho=rho)
+
+
+def _fuerzas_desde_amarres(df, calibre, n_fases, H, viento, azimut, diametro, Cd, rho,
+                           EA, alpha, temperatura, temperatura_tendido):
+    """Adapta el Excel heredado a fuerzas 3D exactas cuando existen datos suficientes."""
+    from .geometria_amarres import alturas_amarre
+    from .modelos_datos import Conductor, EstadoClimatico, Nodo, Vano
+    from .motor_integral import _evaluar_estado
+    from .mecanica import peso_lineal_kN_m
+    h = alturas_amarre(df)
+    if H is None or h is None or 'Altitud' not in df:
+        return None
+    conductor = Conductor(calibre,peso_lineal_kN_m(calibre),diametro,H,temperatura_tendido,
+                          'Catálogo heredado; H explícita del usuario',EA,alpha)
+    estado = EstadoClimatico('Caso Excel',temperatura,viento,azimut,'Entrada del usuario',Cd,rho)
+    nodos = {str(r.Punto):Nodo(str(r.Punto),(r.X,r.Y,r.Altitud)) for r in df.itertuples()}
+    nombres = list(nodos)
+    vanos = {str(i):Vano(str(i),nombres[i],nombres[i+1],(0,0,h[i]),(0,0,h[i+1]),calibre,n_fases)
+             for i in range(len(df)-1)}
+    acciones,_,_ = _evaluar_estado(nodos,{calibre:conductor},vanos,estado)
+    filas = [{'Punto':n,**dict(zip(('Fx (kN)','Fy (kN)','Fz (kN)',
+               'Mx (kN·m)','My (kN·m)','Mz (kN·m)'),v))} for n,v in acciones.items()]
+    resultado = pd.DataFrame(filas)
+    resultado['H (kN)'] = (resultado['Fx (kN)']**2+resultado['Fy (kN)']**2)**.5
+    return resultado
+
+
+def ejecutar_todo(df, *, calibre, n_fases, v_viento_ms, az_viento_deg, diametro_m,
+                  Cd=1.2, rho=1.225, H_tendido_kN=None, EA_kN=None, alpha_por_C=None,
+                  temperatura_C=20., temperatura_tendido_C=20., despeje_min_m=None):
+    """Entrada Excel compatible; no diseña retenidas ni capacidades sin sus datos.
+
+    Para alternativas, estados múltiples, anclajes y rigidez use el proyecto
+    integral JSON. Las tablas faltantes conservan un motivo NO VERIFICABLE.
     """
-    Aquí NO debe tronar si el viento es 0.
-    El modelo físico permite caso sin viento.
-    """
-    vv = float(v_viento_ms or 0.0)
-    az = float(az_viento_deg or 0.0)
-
-    return calcular_cargas_por_tramo(
-        df_tramos=df_tramos,
-        calibre=str(calibre),
-        n_fases=int(n_fases),
-        v_viento_ms=vv,
-        azimut_viento_deg=az,
-        diametro_conductor_m=float(diametro_m),
-        Cd=float(Cd),
-        rho=float(rho),
-    )
-
-
-# =============================================================================
-# FASE 03/04 – MAESTRO POR NODO + RETENIDAS
-# =============================================================================
-
-def _armar_df_nodos(resumen: pd.DataFrame, fuerzas: pd.DataFrame) -> pd.DataFrame:
-    df_nodos = resumen[["Punto", "Poste", "Espacio Retenida", "Retenidas"]].merge(
-        fuerzas,
-        on="Punto",
-        how="left",
-    )
-    df_nodos["h_amarre (m)"] = df_nodos["Poste"].apply(lambda p: float(h_amarre_tipica_m(str(p))))
-
-    # columna booleana (contrato explícito)
-    df_nodos["Retenidas_aplican"] = (
-        (df_nodos["Retenidas"].astype(int) > 0) &
-        (df_nodos["Espacio Retenida"].apply(_si_no))
-    )
-    return df_nodos
-
-
-from .mecanica import retenida_recomendada
-
-def _calcular_retenidas(df_nodos: pd.DataFrame, calibre: str) -> pd.DataFrame:
-    return calcular_retenidas(
-        df_nodos,
-        col_punto="Punto",
-        col_H="H (kN)",
-        aplicar_si_col="Retenidas_aplican",
-        aplicar_si_val=None,  # booleano
-        params=ParamsRetenida(
-            cable_retenida=retenida_recomendada(calibre),  # <- automático
-            FS_retenida=2.0,
-            ang_retenida_deg=45.0,
-        ),
-    )
-# =============================================================================
-# FASE 03 – EJECUCIÓN TOTAL
-# =============================================================================
-
-def ejecutar_todo(
-    df: pd.DataFrame,
-    *,
-    calibre: str,
-    n_fases: int,
-    v_viento_ms: float,
-    az_viento_deg: float,
-    diametro_m: float,
-    Cd: float = 1.2,
-    rho: float = 1.225,
-) -> Dict[str, Any]:
-
-    # ============================================================
-    # 01) Geometría base
-    # ============================================================
-    geo: Dict[str, Any] = ejecutar_fase_geometria(df)
-
-    # ============================================================
-    # 02) Cargas por tramo (peso + viento)
-    # ============================================================
-    geo["cargas_tramo"] = ejecutar_cargas_tramo(
-        geo["tramos"],
-        calibre=calibre,
-        n_fases=n_fases,
-        v_viento_ms=v_viento_ms,
-        az_viento_deg=az_viento_deg,
-        diametro_m=diametro_m,
-        Cd=Cd,
-        rho=rho,
-    )
-
-    # ============================================================
-    # 03) Fuerzas en nodos (planta)
-    # ============================================================
-    geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
-        df_tramos=geo["cargas_tramo"],
-        df_resumen=geo["resumen"],
-        usar_col_w="w_resultante (kN/m)",
-        azimut_viento_deg=float(az_viento_deg or 0.0),
-    )
-
-    # ============================================================
-    # 04) DataFrame maestro por nodo
-    # ============================================================
-    geo["nodos"] = _armar_df_nodos(
-        geo["resumen"],
-        geo["fuerzas_nodo"],
-    )
-
-    # ============================================================
-    # 05) Retenidas (demanda mecánica)
-    # ============================================================
-    geo["retenidas"] = _calcular_retenidas(geo["nodos"], calibre)
-    df_ret = geo["retenidas"].copy()
-
-    # --- asegurar Poste y h_amarre por punto (SIN constantes)
-    if "Poste" not in df_ret.columns and "Poste" in geo["resumen"].columns:
-        df_ret = df_ret.merge(
-            geo["resumen"][["Punto", "Poste"]],
-            on="Punto",
-            how="left",
-        )
-
-    if "h_amarre (m)" not in df_ret.columns or df_ret["h_amarre (m)"].isna().any():
-        df_ret["h_amarre (m)"] = df_ret["Poste"].apply(
-            lambda p: h_amarre_tipica_m(str(p))
-        )
-
-    geo["retenidas"] = df_ret
-
-    # ============================================================
-    # 06) Equilibrio poste – retenida
-    # ============================================================
-    geo["equilibrio"] = equilibrar_poste_retenida(
-        df=geo["retenidas"],
-        col_H_nodo="H_sin_retenida (kN)",
-        col_T_ret="T_retenida (kN)",
-        col_h_amarre="h_amarre (m)",
-    )
-
-    # ============================================================
-    # 07) Cimentación (referencial)
-    # ============================================================
-    geo["cimentacion"] = evaluar_cimentacion(
-        df=geo["equilibrio"],
-        col_H_poste="H_poste (kN)",
-        col_h_amarre="h_amarre (m)",
-        profundidad_empotramiento_m=2.0,
-        capacidad_suelo_kN=50.0,
-    )
-
-    # ============================================================
-    # 08) Momento en el poste (USANDO H_poste REAL)
-    # ============================================================
-    geo["momento_poste"] = calcular_momento_poste(
-        df_fuerzas_nodo=geo["equilibrio"],
-        df_resumen=geo["resumen"],
-        col_H="H_poste (kN)",
-        col_poste="Poste",
-    )
-
-    # ============================================================
-    # 09) Decisión estructural FINAL
-    # ============================================================
-    geo["decision"] = decidir_soporte(
-        df_resumen=geo["resumen"],
-        df_equilibrio=geo["equilibrio"],
-        df_cimentacion=geo["cimentacion"],
-    )
-
-    # ============================================================
-    # 10) Perfil longitudinal (si hay Altitud)
-    # ============================================================
-    geo["perfil"] = analizar_perfil(
-        df,
-        tipo_poste=str(df["Poste"].iloc[0]) if "Poste" in df.columns and len(df) else "",
-        calibre=str(calibre),
-        fraccion_trabajo=0.20,
-        modo_sag="CATENARIA",
-        offset_amarre_desde_punta_m=0.10,
-        despeje_min_m=0.0,
-    )
-
+    df = df.copy().reset_index(drop=True)
+    df['Punto'] = df['Punto'].astype(str).str.strip()
+    geo = ejecutar_fase_geometria(df)
+    geo['cargas_tramo'] = ejecutar_cargas_tramo(geo['tramos'],calibre=calibre,n_fases=n_fases,
+        v_viento_ms=v_viento_ms,az_viento_deg=az_viento_deg,diametro_m=diametro_m,Cd=Cd,rho=rho)
+    fuerzas = _fuerzas_desde_amarres(df,calibre,n_fases,H_tendido_kN,v_viento_ms,
+        az_viento_deg,diametro_m,Cd,rho,EA_kN,alpha_por_C,temperatura_C,temperatura_tendido_C)
+    motivo = ('Faltan capacidades de poste, rigidez, geometría de anclajes y estudio geotécnico'
+              if fuerzas is not None else 'Faltan H de tendido, Altitud o altura real de amarre')
+    geo['fuerzas_nodo'] = fuerzas if fuerzas is not None else pd.DataFrame({
+        'Punto':df['Punto'],'Estado':'NO VERIFICABLE','Motivo':motivo})
+    geo['decision'] = pd.DataFrame({'Punto':df['Punto'],'Poste':df['Poste'],
+        'Solución':'NO VERIFICABLE','Motivo':motivo})
+    for nombre in ('nodos','retenidas','equilibrio','cimentacion','momento_poste'):
+        geo[nombre] = pd.DataFrame({'Punto':df['Punto'],'Estado':'NO VERIFICABLE','Motivo':motivo})
+    # El perfil heredado es válido sólo en el estado de tendido sin viento/hielo.
+    geo['perfil'] = analizar_perfil(df,'',calibre,H_kN=H_tendido_kN,
+        despeje_min_m=despeje_min_m) if v_viento_ms == 0 and temperatura_C == temperatura_tendido_C else None
+    geo['advertencias'] = [motivo,'Retenidas: cantidad y posición requieren diseño mecánico.',
+        'Perfil Excel limitado al tendido sin viento; usar JSON para estados termomecánicos.']
+    geo['trazabilidad'] = {'modelo':'Excel compatible, vanos retenidos, fuerzas 3D',
+        'H_tendido_kN':H_tendido_kN,'EA_kN':EA_kN,'alpha_por_C':alpha_por_C,
+        'temperatura_C':temperatura_C,'temperatura_tendido_C':temperatura_tendido_C,
+        'despeje_min_m':despeje_min_m,'calibre':calibre,'n_fases':n_fases,
+        'viento_ms':v_viento_ms,'azimut_deg':az_viento_deg,'Cd':Cd,'rho':rho,
+        'version_motor':'0.2.0-candidato','catalogo':'catalogos.py heredado; procedencia por revisar'}
     return geo

@@ -7,7 +7,7 @@ import pandas as pd
 
 def _norm_si_no(v) -> str:
     s = str(v).strip().upper()
-    return "SI" if s in ("SI", "S", "TRUE", "1") else "NO"
+    return "SI" if s in ("SI", "SÍ", "S", "TRUE", "1") else "NO"
 
 
 def _norm_col(c: str) -> str:
@@ -22,6 +22,9 @@ def _norm_col(c: str) -> str:
 
 # Mapa de columnas aceptadas -> columna interna
 MAPA_COLUMNAS = {
+    "ALTURA_AMARRE_M": "Altura_Amarre_m",
+    "ALTURA_POSTE_M": "Altura_Poste_m",
+    "EMPOTRAMIENTO_M": "Empotramiento_m",
     # Punto
     "PUNTO": "Punto",
 
@@ -59,9 +62,9 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     Lee puntos desde Excel y normaliza columnas a:
       - Punto (obligatoria)
       - X, Y (obligatorias)
-      - Altitude (opcional)
+      - Altitud (opcional)
       - Poste (opcional; si no viene, se crea vacío)
-      - Espacio Retenida (opcional; si no viene, se asume SI)
+      - Espacio Retenida (opcional; si no viene, NO VERIFICABLE)
     """
     df = pd.read_excel(archivo)
 
@@ -72,6 +75,9 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     # Renombrar usando el mapa (solo las que existan)
     rename_dict = {c: MAPA_COLUMNAS[c] for c in df.columns if c in MAPA_COLUMNAS}
     df = df.rename(columns=rename_dict)
+
+    if df.columns.duplicated().any():
+        raise ValueError("Encabezados duplicados tras normalizar")
 
     # Validación de obligatorias
     for c in ["Punto", "X", "Y"]:
@@ -88,9 +94,9 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     df["X"] = df["X"].astype(float)
     df["Y"] = df["Y"].astype(float)
 
-    # Altitude opcional
-    if "Altitud (m)" in df.columns:
-        df["Altitud (m)"] = df["Altitud (m)"].astype(float)
+    # Altitud opcional
+    if "Altitud" in df.columns:
+        df["Altitud"] = df["Altitud"].astype(float)
 
     # Poste opcional
     if "Poste" not in df.columns:
@@ -102,6 +108,8 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     if "Espacio Retenida" in df.columns:
         df["Espacio Retenida"] = df["Espacio Retenida"].apply(_norm_si_no)
     else:
-        df["Espacio Retenida"] = "SI"
+        df["Espacio Retenida"] = "NO VERIFICABLE"
 
+    from .validacion_mecanica import validar_puntos
+    validar_puntos(df)
     return df

@@ -34,7 +34,7 @@ def fuerza_residual_poste_kN(H_nodo_kN: float, H_ret_kN: float) -> float:
     Fuerza horizontal que queda en el poste.
     """
     H_poste = float(H_nodo_kN - H_ret_kN)
-    return max(H_poste, 0.0)
+    return H_poste  # Conservar signo: una retenida puede invertir la solicitación.
 
 
 def momento_poste_kNm(H_poste_kN: float, h_amarre_m: float) -> float:

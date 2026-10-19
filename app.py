@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from analisis.io_excel import leer_puntos_excel
 from analisis.catalogos import CONDUCTORES_ACSR
 from analisis.engine import ejecutar_todo
+from analisis.interfaz_integral import controles_tendido, mostrar_proyecto_integral, descargas
 
 
 # ============================================================
@@ -20,7 +21,7 @@ from analisis.engine import ejecutar_todo
 # ============================================================
 def configurar_pagina() -> None:
     st.set_page_config(page_title="Análisis Mecánico", layout="wide")
-    st.title("Análisis Mecánico (FASE 1) — Geometría + Cargas + Fuerzas por poste")
+    st.title("Análisis Mecánico — Versión candidata auditable")
 
 
 def ui_datos_proyecto() -> Dict[str, Any]:
@@ -52,7 +53,9 @@ def ui_datos_proyecto() -> Dict[str, Any]:
 
     st.sidebar.caption("Nota: 0°=Este, 90°=Norte. Dirección del viento en grados.")
 
+    tendido = controles_tendido()
     return {
+        **tendido,
         "nombre": nombre,
         "lugar": lugar,
         "cliente": cliente,
@@ -99,6 +102,8 @@ def ejecutar_calculo(df: pd.DataFrame, proyecto: Dict[str, Any]) -> Dict[str, An
         diametro_m=proyecto["diametro_m"],
         Cd=proyecto["Cd"],
         rho=proyecto["rho"],
+        **{k:proyecto[k] for k in ('H_tendido_kN','EA_kN','alpha_por_C',
+           'temperatura_C','temperatura_tendido_C','despeje_min_m')},
     )
 
 
@@ -107,7 +112,7 @@ def ejecutar_calculo(df: pd.DataFrame, proyecto: Dict[str, Any]) -> Dict[str, An
 # ============================================================
 def _tabla(df: pd.DataFrame, title: str) -> None:
     st.subheader(title)
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
 
 
 def _render_tab_entrada(df: pd.DataFrame) -> None:
@@ -118,7 +123,7 @@ def _render_tab_resumen(res: Dict[str, Any], df_entrada: pd.DataFrame) -> None:
     _tabla(res["resumen"], "Resumen por punto (estructura / retenidas)")
 
     st.divider()
-    st.subheader("Vista superior — Trayectoria y retenidas (desde Resumen por punto)")
+    st.subheader("Vista superior — Trayectoria (anclajes requieren proyecto integral)")
 
     # --- Preparar datos del Excel ---
     df_local = df_entrada.copy()
@@ -274,13 +279,13 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     perfil = res.get("perfil")
 
     if not perfil:
-        st.info("No se detectó columna 'Altitud' en el Excel, así que no se calculó el perfil.")
+        st.info("Perfil no disponible: necesita Altitud, altura real de amarre y H explícita; sólo tendido sin viento.")
         return
 
     # Tabla de vanos
     df_vanos = pd.DataFrame(perfil.get("tabla_vanos", []))
     if not df_vanos.empty:
-        st.dataframe(df_vanos, use_container_width=True)
+        st.dataframe(df_vanos, width="stretch")
 
     # Perfil (malla)
     X_prof = np.asarray(perfil.get("X_prof", []), dtype=float)
@@ -376,11 +381,9 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
             if "-" not in t and len(t) >= 4:  # casos tipo "PM40"
                 t = t[:2] + "-" + t[2:]
 
-            h = ALTURA_POSTE_M.get(t, 12.0)
-
             x_i_pt = float(dist_puntos[i])
             y_base = float(G_puntos[i])
-            y_top = y_base + h
+            y_top = float(Y_puntos[i])  # Hasta el amarre; no inventar longitud expuesta.
 
             ax.plot([x_i_pt, x_i_pt], [y_base, y_top], linestyle="--", linewidth=2, alpha=0.7)
             ax.scatter([x_i_pt], [float(Y_puntos[i])], zorder=5)
@@ -410,7 +413,7 @@ def _render_tab_retenidas(res: Dict[str, Any]) -> None:
         st.info("No hay resultados de retenidas (o no se calcularon).")
         return
 
-    st.dataframe(df_ret, use_container_width=True)
+    st.dataframe(df_ret, width="stretch")
 
     if "Cumple retenida" in df_ret.columns:
         n = len(df_ret)
@@ -456,6 +459,10 @@ def mostrar_kpis(res: Dict[str, Any]) -> None:
 # ============================================================
 def main() -> None:
     configurar_pagina()
+    modo = st.sidebar.radio('Entrada', ['Excel compatible', 'Proyecto integral JSON'])
+    if modo == 'Proyecto integral JSON':
+        mostrar_proyecto_integral()
+        return
 
     proyecto = ui_datos_proyecto()
     mostrar_resumen_proyecto(proyecto)
@@ -468,7 +475,10 @@ def main() -> None:
         df = leer_puntos_excel(archivo)
         res = ejecutar_calculo(df, proyecto)
 
+        for advertencia in res.get('advertencias',[]):
+            st.warning(advertencia)
         mostrar_tabs_resultados(df, res)
+        descargas(res,df)
         mostrar_kpis(res)
 
     except Exception as e:

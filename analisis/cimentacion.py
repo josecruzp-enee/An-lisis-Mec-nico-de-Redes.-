@@ -56,7 +56,7 @@ def evaluar_cimentacion(
     col_H_poste: str = "H_poste (kN)",
     col_h_amarre: str = "h_amarre (m)",
     profundidad_empotramiento_m: float = 2.0,
-    capacidad_suelo_kN: float = 50.0,
+    capacidad_suelo_kN: float | None = None,
 ) -> pd.DataFrame:
     """
     Evalúa la demanda en la cimentación del poste.
@@ -97,12 +97,13 @@ def evaluar_cimentacion(
         V_base_list.append(Vb)
         M_base_list.append(Mb)
         R_suelo_list.append(R)
-        cumple_list.append("SI" if R <= capacidad_suelo_kN else "NO")
+        # R=M/d es sólo un indicador; no comprueba interacción ni capacidad lateral.
+        cumple_list.append("NO VERIFICABLE")
 
     out["V_base (kN)"] = V_base_list
     out["M_base (kN·m)"] = M_base_list
     out["R_suelo_eq (kN)"] = R_suelo_list
-    out["Capacidad_suelo (kN)"] = float(capacidad_suelo_kN)
+    out["Capacidad_suelo (kN)"] = float(capacidad_suelo_kN) if capacidad_suelo_kN is not None else float("nan")
     out["Profundidad_empotramiento (m)"] = float(profundidad_empotramiento_m)
     out["Cumple cimentación"] = cumple_list
 

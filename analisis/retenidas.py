@@ -49,7 +49,10 @@ def tension_retenida_kN(H_kN: float, ang_retenida_deg: float) -> float:
     """
     T = H / cos(phi)
     """
-    H = float(H_kN or 0.0)
+    from .validacion_mecanica import finito
+    H = finito(H_kN, 'H', 0)
+    if not 0 <= ang_retenida_deg < 90:
+        raise ValueError('Ángulo respecto a horizontal fuera de [0,90)')
     phi = math.radians(float(ang_retenida_deg))
     return float(H / _cos_safe(phi))
 
@@ -196,4 +199,5 @@ def calcular_retenidas(
         "Cable retenida",
     ] if c in out.columns]
 
-    return out[cols_order] if cols_order else out
+    out['Alcance'] = 'Cable aislado idealizado; no verifica anclaje ni reparto real'
+    return out[cols_order + ['Alcance']] if cols_order else out

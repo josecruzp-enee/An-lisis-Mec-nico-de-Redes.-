@@ -83,7 +83,10 @@ def _acumular_contribuciones(
         contrib[p][1] += float(fy)
 
     for a, b, FkN in zip(tr["_A"], tr["_B"], F_tramo_kN.astype(float).tolist()):
-        Fvec = float(FkN) * u_viento
+        az = float(tr.loc[tr['_A'].eq(a) & tr['_B'].eq(b), 'Azimut (°)'].iloc[0])
+        eje = _unit_vector_from_azimut_deg(az)
+        normal = np.array([-eje[1],eje[0]])
+        Fvec = float(FkN) * normal * np.sign(normal @ u_viento)
         _add(a, 0.5 * Fvec[0], 0.5 * Fvec[1])
         _add(b, 0.5 * Fvec[0], 0.5 * Fvec[1])
 
@@ -134,6 +137,8 @@ def calcular_fuerzas_en_nodos(
 
     Nota: No mezcla Poste/Estructura/Retenidas. Eso se une en engine.py.
     """
+    if usar_col_w != 'w_viento_eff (kN/m)':
+        raise ValueError('Este auxiliar sólo acepta viento transversal, no peso ni resultante')
     _validar_entrada(df_tramos, df_resumen, usar_col_w)
 
     tr = _extraer_extremos_tramos(df_tramos)

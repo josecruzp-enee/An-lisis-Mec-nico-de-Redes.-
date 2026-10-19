@@ -28,7 +28,6 @@ DEFAULT_H_AMARRE_M: float = 7.5
 # 1) MAPA DE ALIAS (TU NOMENCLATURA -> ID NORMATIVO)
 # ============================================================
 ALIAS_POSTES: Dict[str, str] = {
-    "PM-40": "PC-12-750",
     "PC-40": "PC-12-750",
     "PC-35": "PC-10-450",
     "PC-30": "PC-9-450",
@@ -150,21 +149,13 @@ def altura_poste_m(tipo_poste: str, default_m: float = DEFAULT_ALTURA_POSTE_M) -
 # ============================================================
 # 7) CAPACIDAD HORIZONTAL (kN)
 # ============================================================
-def H_max_poste_kN(tipo_poste: str, default_kN: float = 9999.0) -> float:
-    ficha = obtener_ficha_poste(tipo_poste)
+def H_max_poste_kN(tipo_poste: str, default_kN: float = float('nan')) -> float:
+    """Capacidad admisible desconocida: las fichas actuales sólo documentan ruptura.
 
-    if ficha.get("fuente") == "CLASES_APENDICE":
-        return float(ficha["carga_horizontal_kN"])
-
-    if ficha.get("fuente") == "CONCRETO_TABLA_1":
-        kgf = ficha.get("carga_ruptura_kgf", None)
-        if kgf is not None:
-            return float(kgf_to_kN(float(kgf)))
-        lbf = ficha.get("carga_ruptura_lbf", None)
-        if lbf is not None:
-            return float(lbf_to_kN(float(lbf)))
-
-    return float(default_kN)
+    Se conserva la firma pública, pero no se admite un valor artificial de
+    respaldo. Usar resistencia_postes con capacidades y método documentados.
+    """
+    return float('nan')
 
 
 # ============================================================

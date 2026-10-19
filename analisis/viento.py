@@ -28,8 +28,11 @@ def viento_kN_m(
     Retorna:
     - w_kN_m: carga horizontal por metro (kN/m)
     """
-    if velocidad_ms <= 0 or diametro_m <= 0:
-        return 0.0
+    from .validacion_mecanica import finito
+    finito(velocidad_ms, 'velocidad', 0)
+    finito(diametro_m, 'diámetro', 0, True)
+    finito(Cd, 'Cd', 0, True)
+    finito(rho, 'densidad', 0, True)
 
     w_N_m = 0.5 * rho * Cd * diametro_m * velocidad_ms ** 2
     return float(w_N_m / 1000.0)
@@ -47,9 +50,13 @@ def proyectar_viento(
     - dirección del viento
     - dirección del conductor (tramo)
 
-    w_eff = w * |sin(theta)|
+    w_eff = w * sin(theta)^2 (velocidad normal al conductor)
 
     donde theta = az_viento - az_tramo
     """
+    from .validacion_mecanica import finito
+    finito(w_kN_m,'carga de viento',0)
+    finito(azimut_tramo_deg,'azimut tramo')
+    finito(azimut_viento_deg,'azimut viento')
     theta = math.radians(azimut_viento_deg - azimut_tramo_deg)
-    return float(abs(w_kN_m * math.sin(theta)))
+    return float(w_kN_m * math.sin(theta)**2)

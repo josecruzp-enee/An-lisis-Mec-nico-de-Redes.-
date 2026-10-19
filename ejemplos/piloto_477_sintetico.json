@@ -1,0 +1,358 @@
+{
+  "nombre": "Piloto sintético 34.5 kV, 477 MCM, 40 pies; NO USAR PARA CONSTRUIR",
+  "modelo_secciones": "vanos_retenidos",
+  "nodos": [
+    {
+      "nombre": "A",
+      "base_m": [
+        0,
+        0,
+        100
+      ]
+    },
+    {
+      "nombre": "B",
+      "base_m": [
+        40,
+        0,
+        100
+      ]
+    },
+    {
+      "nombre": "C",
+      "base_m": [
+        40,
+        40,
+        100
+      ]
+    }
+  ],
+  "conductores": [
+    {
+      "nombre": "477_sintetico",
+      "peso_kN_m": 0.009572598000000002,
+      "diametro_m": 0.02177,
+      "H_tendido_kN": 10,
+      "temperatura_tendido_C": 20,
+      "EA_kN": 16000,
+      "alpha_por_C": 1.8e-05,
+      "RTS_kN": 86.57325,
+      "fuente": "SINTÉTICO: peso/diámetro/RTS del catálogo heredado; EA, alpha y H de prueba. NO identifica Flicker."
+    }
+  ],
+  "vanos": [
+    {
+      "nombre": "A-B",
+      "inicio": "A",
+      "fin": "B",
+      "amarre_inicio_m": [
+        0,
+        0,
+        10
+      ],
+      "amarre_fin_m": [
+        0,
+        0,
+        10
+      ],
+      "conductor": "477_sintetico",
+      "cantidad": 3
+    },
+    {
+      "nombre": "B-C",
+      "inicio": "B",
+      "fin": "C",
+      "amarre_inicio_m": [
+        0,
+        0,
+        10
+      ],
+      "amarre_fin_m": [
+        0,
+        0,
+        10
+      ],
+      "conductor": "477_sintetico",
+      "cantidad": 3
+    }
+  ],
+  "estados": [
+    {
+      "nombre": "tendido",
+      "temperatura_C": 20,
+      "viento_ms": 0,
+      "azimut_deg": 0,
+      "fuente": "Hipótesis exclusiva de prueba"
+    },
+    {
+      "nombre": "calor",
+      "temperatura_C": 50,
+      "viento_ms": 0,
+      "azimut_deg": 0,
+      "fuente": "Hipótesis exclusiva de prueba"
+    },
+    {
+      "nombre": "viento",
+      "temperatura_C": 20,
+      "viento_ms": 25,
+      "azimut_deg": 90,
+      "fuente": "Hipótesis exclusiva de prueba"
+    }
+  ],
+  "combinaciones": [
+    {
+      "nombre": "tendido",
+      "estado": "tendido",
+      "fuente": "Factores unitarios para ensayo numérico"
+    },
+    {
+      "nombre": "calor",
+      "estado": "calor",
+      "fuente": "Factores unitarios para ensayo numérico"
+    },
+    {
+      "nombre": "viento",
+      "estado": "viento",
+      "fuente": "Factores unitarios para ensayo numérico"
+    }
+  ],
+  "alternativas": {
+    "A": [
+      {
+        "nombre": "Poste solo",
+        "capacidades_poste": {},
+        "cimentacion": {}
+      },
+      {
+        "nombre": "Poste con retenida a 3 m",
+        "rigidez_6x6": [
+          [
+            1000,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1000,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1000,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1000,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            1000,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1000
+          ]
+        ],
+        "fuente_rigidez": "Matriz SINTÉTICA para prueba de equilibrio; NO poste real",
+        "espacio_retenidas": true,
+        "retenidas": [
+          {
+            "amarre_m": [
+              0,
+              0,
+              10
+            ],
+            "ancla_m": [
+              2.1213203435596424,
+              -2.1213203435596424,
+              0
+            ],
+            "EA_kN": 10000
+          }
+        ],
+        "capacidades_poste": {},
+        "cimentacion": {}
+      }
+    ],
+    "B": [
+      {
+        "nombre": "Poste solo",
+        "capacidades_poste": {},
+        "cimentacion": {}
+      },
+      {
+        "nombre": "Poste con retenida a 3 m",
+        "rigidez_6x6": [
+          [
+            1000,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1000,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1000,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1000,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            1000,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1000
+          ]
+        ],
+        "fuente_rigidez": "Matriz SINTÉTICA para prueba de equilibrio; NO poste real",
+        "espacio_retenidas": true,
+        "retenidas": [
+          {
+            "amarre_m": [
+              0,
+              0,
+              10
+            ],
+            "ancla_m": [
+              2.1213203435596424,
+              -2.1213203435596424,
+              0
+            ],
+            "EA_kN": 10000
+          }
+        ],
+        "capacidades_poste": {},
+        "cimentacion": {}
+      }
+    ],
+    "C": [
+      {
+        "nombre": "Poste solo",
+        "capacidades_poste": {},
+        "cimentacion": {}
+      },
+      {
+        "nombre": "Poste con retenida a 3 m",
+        "rigidez_6x6": [
+          [
+            1000,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1000,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1000,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1000,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            1000,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1000
+          ]
+        ],
+        "fuente_rigidez": "Matriz SINTÉTICA para prueba de equilibrio; NO poste real",
+        "espacio_retenidas": true,
+        "retenidas": [
+          {
+            "amarre_m": [
+              0,
+              0,
+              10
+            ],
+            "ancla_m": [
+              2.1213203435596424,
+              -2.1213203435596424,
+              0
+            ],
+            "EA_kN": 10000
+          }
+        ],
+        "capacidades_poste": {},
+        "cimentacion": {}
+      }
+    ]
+  }
+}
