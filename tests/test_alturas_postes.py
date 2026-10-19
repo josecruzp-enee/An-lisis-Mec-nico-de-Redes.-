@@ -4,6 +4,7 @@ import unittest
 
 from analisis.norma_postes import (
     altura_expuesta_poste_m,
+    empotramiento_por_regla_m,
     altura_amarre_poste_m,
     h_amarre_norma_m,
     h_amarre_tipica_m,
@@ -33,9 +34,23 @@ class TestAlturasPostes(unittest.TestCase):
             h_amarre_norma_m("PC-40", uso="primario", empotramiento_m=1.8),
             12.19 - 1.8 - 2.0)
 
-    def test_sin_empotramiento_no_inventa_altura(self):
-        self.assertTrue(math.isnan(h_amarre_norma_m("PC-40")))
-        self.assertTrue(math.isnan(h_amarre_tipica_m("PC-40")))
+    def test_regla_general_pies(self):
+        # Criterio de proyecto, no verificación geotécnica.
+        for pies, enterrado in ((30, 5), (35, 5.5), (40, 6),
+                                (45, 6.5), (50, 7)):
+            with self.subTest(pies=pies):
+                self.assertAlmostEqual(
+                    empotramiento_por_regla_m(pies * 0.3048),
+                    enterrado * 0.3048)
+
+    def test_regla_automatica_en_catalogo(self):
+        # El catálogo tiene longitudes en metros redondeadas.
+        self.assertAlmostEqual(
+            altura_expuesta_poste_m("PC-40"), 12.19 - 6 * 0.3048)
+        self.assertAlmostEqual(
+            h_amarre_norma_m("PC-40"), 12.19 - 6 * 0.3048 - 2)
+        self.assertAlmostEqual(
+            h_amarre_tipica_m("PC-40"), 12.19 - 6 * 0.3048 - 2)
 
     def test_datos_invalidos_se_rechazan(self):
         for enterrado in (-1, float("nan"), float("inf"), 12.19):
