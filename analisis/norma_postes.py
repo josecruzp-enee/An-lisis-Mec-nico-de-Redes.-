@@ -210,7 +210,8 @@ def altura_expuesta_poste_m(tipo_poste, empotramiento_m=None, *, longitud_total_
              if longitud_total_m is None else float(longitud_total_m))
     if not math.isfinite(total) or total <= 0:
         raise ValueError("Se requiere longitud total válida del poste")
-    enterrado = (empotramiento_por_regla_m(total) if empotramiento_m is None\n                 else _medida_no_negativa(empotramiento_m, "Empotramiento"))
+    enterrado = (empotramiento_por_regla_m(total) if empotramiento_m is None
+                 else _medida_no_negativa(empotramiento_m, "Empotramiento"))
     if enterrado >= total:
         raise ValueError("Empotramiento debe ser inferior a longitud total")
     return total - enterrado
