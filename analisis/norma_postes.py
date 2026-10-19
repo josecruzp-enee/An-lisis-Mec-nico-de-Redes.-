@@ -159,34 +159,83 @@ def H_max_poste_kN(tipo_poste: str, default_kN: float = float('nan')) -> float:
 
 
 # ============================================================
-# 8) AMARRE "RÁPIDO" (compatibilidad)
+# 8) GEOMETRÍA DEL POSTE Y ALTURAS DE AMARRE
 # ============================================================
-def h_amarre_tipica_m(
-    tipo_poste: str,
-    default_m: float = DEFAULT_H_AMARRE_M,
-    offset_desde_punta_m: float = DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M,
-) -> float:
-    h = altura_poste_m(tipo_poste, default_m=max(default_m, 1.0))
-    val = h - float(offset_desde_punta_m)
-    return float(val if val > 0 else default_m)
+# La longitud nominal es la longitud TOTAL, incluida la parte enterrada.
+# Sin empotramiento medido/de diseño no existe una altura expuesta verificable.
+# NaN impide que consumidores antiguos presenten una altura inventada.
 
 
-# ============================================================
-# 9) AMARRE NORMATIVO (por catálogo)
-# ============================================================
+def _medida_no_negativa(valor, nombre):
+    """Valida una longitud en metros sin aceptar infinitos ni negativos."""
+    import math
+    dato = float(valor)
+    if not math.isfinite(dato) or dato < 0:
+        raise ValueError(f"{nombre} debe ser finito y no negativo")
+    return dato
+
+
+def altura_expuesta_poste_m(tipo_poste, empotramiento_m, *, longitud_total_m=None):
+    """Altura sobre terreno = longitud total - profundidad enterrada (m).
+
+    La longitud explícita prevalece sobre el catálogo. La longitud del catálogo
+    sólo se utiliza si la denominación del poste está reconocida.
+    """
+    import math
+    total = (altura_poste_m(tipo_poste, default_m=float("nan"))
+             if longitud_total_m is None else float(longitud_total_m))
+    if not math.isfinite(total) or total <= 0:
+        raise ValueError("Se requiere longitud total válida del poste")
+    enterrado = _medida_no_negativa(empotramiento_m, "Empotramiento")
+    if enterrado >= total:
+        raise ValueError("Empotramiento debe ser inferior a longitud total")
+    return total - enterrado
+
+
 def offset_amarre_desde_punta_m(
     tipo_poste: str,
     *,
     uso: str = "primario",
     default_m: float = DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M,
 ) -> float:
+    """Consulta la posición desde la punta, sin declarar su origen normativo.
+
+    Los offsets históricos no están validados documentalmente; son parámetros
+    preliminares. Un diseño definitivo debe introducir la cota real del amarre.
+    """
     ficha = obtener_ficha_poste(tipo_poste)
     id_norm = str(ficha.get("id", "") or "").strip().upper()
-
-    if not id_norm or ficha.get("fuente") != "CONCRETO_TABLA_1":
+    if ficha.get("fuente") != "CONCRETO_TABLA_1":
         return float(default_m)
+    return float(PUNTOS_AMARRE_DESDE_PUNTA_M.get(id_norm, {}).get(
+        str(uso).strip().lower(), default_m))
 
-    return float(PUNTOS_AMARRE_DESDE_PUNTA_M.get(id_norm, {}).get(str(uso).strip().lower(), default_m))
+
+def altura_amarre_poste_m(tipo_poste, empotramiento_m, offset_desde_punta_m,
+                         *, longitud_total_m=None):
+    """Calcula altura de amarre sobre terreno y valida que permanezca expuesta."""
+    expuesta = altura_expuesta_poste_m(
+        tipo_poste, empotramiento_m, longitud_total_m=longitud_total_m)
+    offset = _medida_no_negativa(offset_desde_punta_m, "Offset de amarre")
+    if offset >= expuesta:
+        raise ValueError("Amarre debe estar por encima del terreno")
+    return expuesta - offset
+
+
+def h_amarre_tipica_m(
+    tipo_poste: str,
+    default_m: float = DEFAULT_H_AMARRE_M,
+    offset_desde_punta_m: float = DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M,
+    *,
+    empotramiento_m: float | None = None,
+) -> float:
+    """API antigua: sin empotramiento explícito retorna NaN, no altura ficticia.
+
+    default_m se conserva exclusivamente por compatibilidad de firma.
+    """
+    if empotramiento_m is None:
+        return float("nan")
+    return altura_amarre_poste_m(tipo_poste, empotramiento_m, offset_desde_punta_m)
 
 
 def h_amarre_norma_m(
@@ -196,12 +245,16 @@ def h_amarre_norma_m(
     default_h_poste_m: float = DEFAULT_ALTURA_POSTE_M,
     default_offset_m: float = DEFAULT_OFFSET_AMARRE_DESDE_PUNTA_M,
     default_h_amarre_m: float = DEFAULT_H_AMARRE_M,
+    empotramiento_m: float | None = None,
 ) -> float:
+    """API heredada: altura amarre = longitud - empotramiento - offset.
+
+    Sin dato de empotramiento retorna NaN (no verificable). Los argumentos
+    default_h_poste_m/default_h_amarre_m se mantienen por compatibilidad,
+    pero NO se utilizan como dimensiones certificadas.
     """
-    Calcula h_amarre (m) desde terreno:
-      h_amarre = altura_poste - offset_desde_punta(uso)
-    """
-    h_poste = altura_poste_m(tipo_poste, default_m=default_h_poste_m)
-    off = offset_amarre_desde_punta_m(tipo_poste, uso=uso, default_m=default_offset_m)
-    val = float(h_poste) - float(off)
-    return float(val if val > 0 else default_h_amarre_m)
+    if empotramiento_m is None:
+        return float("nan")
+    offset = offset_amarre_desde_punta_m(
+        tipo_poste, uso=uso, default_m=default_offset_m)
+    return altura_amarre_poste_m(tipo_poste, empotramiento_m, offset)
