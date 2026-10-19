@@ -158,7 +158,7 @@ class IntegracionTest(unittest.TestCase):
         self.assertEqual(estado_conjunto([v,verificar_capacidad('poste',2,1,'kN','ensayo')]),Estado.NO_CUMPLE)
         d=puntos().drop(columns=['Altura_Amarre_m'])
         r=ejecutar_todo(d,calibre='477 MCM',n_fases=3,v_viento_ms=0,az_viento_deg=0,diametro_m=.02177)
-        self.assertIsNone(r['perfil'])
+        # Ahora el perfil aplica la regla de enterramiento cuando hay poste conocido.\n        self.assertIsNotNone(r['perfil'])\n        self.assertEqual(r['perfil']['tabla_vanos'][0]['Cumple despeje'], 'NO VERIFICABLE')
         self.assertTrue((r['decision']['Solución']=='NO VERIFICABLE').all())
 
     def test_costos_solo_alternativas_admisibles(self):
