@@ -175,7 +175,31 @@ def _medida_no_negativa(valor, nombre):
     return dato
 
 
-def altura_expuesta_poste_m(tipo_poste, empotramiento_m, *, longitud_total_m=None):
+PIES_A_METROS = 0.3048
+
+
+def empotramiento_por_regla_m(longitud_total_m):
+    """Regla del proyecto: E = 0.10 * L_pies + 2 pies.
+
+    Se aplica a la longitud total; no verifica por sí sola la estabilidad
+    geotécnica ni sustituye requisitos adicionales de cimentación.
+    Los catálogos expresan longitudes redondeadas a centímetros; si están a
+    menos de 0.03 pies de un entero se recupera su denominación en pies.
+    """
+    import math
+    longitud = float(longitud_total_m)
+    if not math.isfinite(longitud) or longitud <= 0:
+        raise ValueError("Longitud total debe ser positiva y finita")
+    pies = longitud / PIES_A_METROS
+    if abs(pies - round(pies)) < 0.03:
+        pies = round(pies)
+    enterrado = (0.10 * pies + 2.0) * PIES_A_METROS
+    if enterrado >= longitud:
+        raise ValueError("Regla de empotramiento incompatible con longitud total")
+    return enterrado
+
+
+def altura_expuesta_poste_m(tipo_poste, empotramiento_m=None, *, longitud_total_m=None):
     """Altura sobre terreno = longitud total - profundidad enterrada (m).
 
     La longitud explícita prevalece sobre el catálogo. La longitud del catálogo
@@ -186,7 +210,7 @@ def altura_expuesta_poste_m(tipo_poste, empotramiento_m, *, longitud_total_m=Non
              if longitud_total_m is None else float(longitud_total_m))
     if not math.isfinite(total) or total <= 0:
         raise ValueError("Se requiere longitud total válida del poste")
-    enterrado = _medida_no_negativa(empotramiento_m, "Empotramiento")
+    enterrado = (empotramiento_por_regla_m(total) if empotramiento_m is None\n                 else _medida_no_negativa(empotramiento_m, "Empotramiento"))
     if enterrado >= total:
         raise ValueError("Empotramiento debe ser inferior a longitud total")
     return total - enterrado
@@ -211,7 +235,7 @@ def offset_amarre_desde_punta_m(
         str(uso).strip().lower(), default_m))
 
 
-def altura_amarre_poste_m(tipo_poste, empotramiento_m, offset_desde_punta_m,
+def altura_amarre_poste_m(tipo_poste, empotramiento_m=None, offset_desde_punta_m=0.10,
                          *, longitud_total_m=None):
     """Calcula altura de amarre sobre terreno y valida que permanezca expuesta."""
     expuesta = altura_expuesta_poste_m(
@@ -229,7 +253,7 @@ def h_amarre_tipica_m(
     *,
     empotramiento_m: float | None = None,
 ) -> float:
-    """API antigua: sin empotramiento explícito retorna NaN, no altura ficticia.
+    """API antigua: sin empotramiento aplica la regla L/10 + 2 pies.
 
     default_m se conserva exclusivamente por compatibilidad de firma.
     """
