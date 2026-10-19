@@ -162,8 +162,8 @@ def H_max_poste_kN(tipo_poste: str, default_kN: float = float('nan')) -> float:
 # 8) GEOMETRÍA DEL POSTE Y ALTURAS DE AMARRE
 # ============================================================
 # La longitud nominal es la longitud TOTAL, incluida la parte enterrada.
-# Sin empotramiento medido/de diseño no existe una altura expuesta verificable.
-# NaN impide que consumidores antiguos presenten una altura inventada.
+# Sin empotramiento explícito se usa la regla geométrica del proyecto.
+# Esto no equivale a validar capacidad portante del suelo.
 
 
 def _medida_no_negativa(valor, nombre):
@@ -258,8 +258,6 @@ def h_amarre_tipica_m(
 
     default_m se conserva exclusivamente por compatibilidad de firma.
     """
-    if empotramiento_m is None:
-        return float("nan")
     return altura_amarre_poste_m(tipo_poste, empotramiento_m, offset_desde_punta_m)
 
 
@@ -274,12 +272,10 @@ def h_amarre_norma_m(
 ) -> float:
     """API heredada: altura amarre = longitud - empotramiento - offset.
 
-    Sin dato de empotramiento retorna NaN (no verificable). Los argumentos
+    Sin dato de empotramiento aplica la regla del proyecto. Los argumentos
     default_h_poste_m/default_h_amarre_m se mantienen por compatibilidad,
     pero NO se utilizan como dimensiones certificadas.
     """
-    if empotramiento_m is None:
-        return float("nan")
     offset = offset_amarre_desde_punta_m(
         tipo_poste, uso=uso, default_m=default_offset_m)
     return altura_amarre_poste_m(tipo_poste, empotramiento_m, offset)
