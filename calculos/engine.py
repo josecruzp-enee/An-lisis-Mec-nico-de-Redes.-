@@ -204,11 +204,18 @@ def ejecutar_todo(
     diametro_m: float,
     Cd: float = 1.2,
     rho: float = 1.225,
+    H_tendido_kN: float | None = None,
 ) -> Dict[str, Any]:
 
     # ============================================================
     # 01) Geometría base
     # ============================================================
+    if H_tendido_kN is None or not (0 < float(H_tendido_kN) < float('inf')):
+        raise ValueError('Introduzca H de tendido > 0 kN por conductor')
+    if 'Altitud' in df and (df['Altitud'].isna().any() or df['Altitud'].max() != df['Altitud'].min()):
+        raise ValueError('Este modelo preliminar no admite apoyos desnivelados: se requiere cálculo 3D')
+    if 'Altura_Amarre_m' in df and (df['Altura_Amarre_m'].isna().any() or df['Altura_Amarre_m'].max() != df['Altura_Amarre_m'].min()):
+        raise ValueError('Alturas de amarre distintas: se requiere modelo 3D')
     geo: Dict[str, Any] = ejecutar_fase_geometria(df)
 
     # ============================================================
@@ -225,96 +232,30 @@ def ejecutar_todo(
         rho=rho,
     )
 
-    # ============================================================
-    # 03) Fuerzas en nodos (planta)
-    # ============================================================
+    # 03) Fuerzas por apoyo: tensión horizontal + viento + peso separados
     geo["fuerzas_nodo"] = calcular_fuerzas_en_nodos(
         df_tramos=geo["cargas_tramo"],
         df_resumen=geo["resumen"],
-        usar_col_w="w_resultante (kN/m)",
-        azimut_viento_deg=float(az_viento_deg or 0.0),
+        H_tendido_kN=float(H_tendido_kN),
+        n_fases=int(n_fases),
+        azimut_viento_deg=float(az_viento_deg),
     )
 
-    # ============================================================
-    # 04) DataFrame maestro por nodo
-    # ============================================================
-    geo["nodos"] = _armar_df_nodos(
-        geo["resumen"],
-        geo["fuerzas_nodo"],
+    # No hay todavía cálculo suficiente de retenidas, poste o cimentación.
+    # Evitar afirmar cumplimiento a partir de capacidades ficticias.
+    geo["decision"] = geo["resumen"].copy()
+    geo["decision"]["H (kN)"] = geo["fuerzas_nodo"]["H (kN)"].to_numpy()
+    geo["decision"]["Cumple poste"] = "NO VERIFICABLE"
+    geo["decision"]["Cumple cimentación"] = "NO VERIFICABLE"
+    geo["decision"]["Solución"] = "NO VERIFICABLE"
+    geo["decision"]["Motivo"] = (
+        "Faltan resistencia admisible del poste, geometría y capacidad de "
+        "retenidas/anclajes, suelo y estados de carga. Modelo preliminar."
     )
-
-    # ============================================================
-    # 05) Retenidas (demanda mecánica)
-    # ============================================================
-    geo["retenidas"] = _calcular_retenidas(geo["nodos"], calibre)
-    df_ret = geo["retenidas"].copy()
-
-    # --- asegurar Poste y h_amarre por punto (SIN constantes)
-    if "Poste" not in df_ret.columns and "Poste" in geo["resumen"].columns:
-        df_ret = df_ret.merge(
-            geo["resumen"][["Punto", "Poste"]],
-            on="Punto",
-            how="left",
-        )
-
-    if "h_amarre (m)" not in df_ret.columns or df_ret["h_amarre (m)"].isna().any():
-        df_ret["h_amarre (m)"] = df_ret["Poste"].apply(
-            lambda p: h_amarre_tipica_m(str(p))
-        )
-
-    geo["retenidas"] = df_ret
-
-    # ============================================================
-    # 06) Equilibrio poste – retenida
-    # ============================================================
-    geo["equilibrio"] = equilibrar_poste_retenida(
-        df=geo["retenidas"],
-        col_H_nodo="H_sin_retenida (kN)",
-        col_T_ret="T_retenida (kN)",
-        col_h_amarre="h_amarre (m)",
-    )
-
-    # ============================================================
-    # 07) Cimentación (referencial)
-    # ============================================================
-    geo["cimentacion"] = evaluar_cimentacion(
-        df=geo["equilibrio"],
-        col_H_poste="H_poste (kN)",
-        col_h_amarre="h_amarre (m)",
-        profundidad_empotramiento_m=2.0,
-        capacidad_suelo_kN=50.0,
-    )
-
-    # ============================================================
-    # 08) Momento en el poste (USANDO H_poste REAL)
-    # ============================================================
-    geo["momento_poste"] = calcular_momento_poste(
-        df_fuerzas_nodo=geo["equilibrio"],
-        df_resumen=geo["resumen"],
-        col_H="H_poste (kN)",
-        col_poste="Poste",
-    )
-
-    # ============================================================
-    # 09) Decisión estructural FINAL
-    # ============================================================
-    geo["decision"] = decidir_soporte(
-        df_resumen=geo["resumen"],
-        df_equilibrio=geo["equilibrio"],
-        df_cimentacion=geo["cimentacion"],
-    )
-
-    # ============================================================
-    # 10) Perfil longitudinal (si hay Altitud)
-    # ============================================================
-    geo["perfil"] = analizar_perfil(
-        df,
-        tipo_poste=str(df["Poste"].iloc[0]) if "Poste" in df.columns and len(df) else "",
-        calibre=str(calibre),
-        fraccion_trabajo=0.20,
-        modo_sag="CATENARIA",
-        offset_amarre_desde_punta_m=0.10,
-        despeje_min_m=0.0,
-    )
-
+    geo["retenidas"] = pd.DataFrame()
+    geo["perfil"] = None  # No generar despejes usando una tensión arbitraria.
+    geo["advertencias"] = [
+        "Fuerzas aproximadas para apoyos nivelados y tensión impuesta. "
+        "No son una verificación de diseño."
+    ]
     return geo
