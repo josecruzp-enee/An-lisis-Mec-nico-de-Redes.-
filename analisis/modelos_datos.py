@@ -8,6 +8,13 @@ from dataclasses import dataclass
 from .validacion_mecanica import finito, vector3
 
 
+def _texto_obligatorio(valor, campo):
+    """No permite identificadores vacíos, nulos o de tipo no textual."""
+    if not isinstance(valor, str) or not valor.strip():
+        raise ValueError(f'{campo}: se requiere texto no vacío')
+    return valor
+
+
 @dataclass(frozen=True)
 class Conductor:
     """Propiedades específicas del cable; EA no se infiere de otro ACSR."""
@@ -24,6 +31,8 @@ class Conductor:
     fuente_admisible: str = ''
 
     def __post_init__(self):
+        _texto_obligatorio(self.nombre, 'nombre del conductor')
+        _texto_obligatorio(self.fuente, 'fuente del conductor')
         for nombre in ('peso_kN_m','diametro_m','H_tendido_kN'):
             finito(getattr(self, nombre), nombre, 0, True)
         finito(self.temperatura_tendido_C, 'temperatura de tendido')
@@ -32,8 +41,8 @@ class Conductor:
                 finito(getattr(self,nombre), nombre, 0, True)
         if self.alpha_por_C is not None:
             finito(self.alpha_por_C, 'alpha', 0)
-        if not self.fuente.strip():
-            raise ValueError('Identifique la fuente de los datos del conductor')
+        if self.tension_admisible_kN is not None:
+            _texto_obligatorio(self.fuente_admisible, 'fuente de tensión admisible')
 
 
 @dataclass(frozen=True)
@@ -51,6 +60,8 @@ class EstadoClimatico:
     deformacion_permanente: float = 0.0
 
     def __post_init__(self):
+        _texto_obligatorio(self.nombre, 'nombre del estado climático')
+        _texto_obligatorio(self.fuente, 'fuente del estado climático')
         for nombre in ('viento_ms','hielo_m','deformacion_permanente'):
             finito(getattr(self,nombre), nombre, 0)
         for nombre in ('Cd','rho_kg_m3'):
@@ -61,8 +72,7 @@ class EstadoClimatico:
             if self.densidad_hielo_kg_m3 is None:
                 raise ValueError('El hielo requiere densidad explícita')
             finito(self.densidad_hielo_kg_m3, 'densidad hielo', 0, True)
-        if not self.nombre.strip() or not self.fuente.strip():
-            raise ValueError('Estado climático sin nombre o fuente')
+
 
 
 @dataclass(frozen=True)
@@ -73,8 +83,7 @@ class Nodo:
 
     def __post_init__(self):
         vector3(self.base_m, 'base del nodo')
-        if not self.nombre.strip():
-            raise ValueError('Nodo sin identificador')
+        _texto_obligatorio(self.nombre, 'nombre del nodo')
 
 
 @dataclass(frozen=True)
@@ -95,8 +104,10 @@ class Vano:
             raise ValueError('Los amarres deben quedar sobre terreno')
         if isinstance(self.cantidad, bool) or not isinstance(self.cantidad, int) or self.cantidad < 1:
             raise ValueError('cantidad de conductores debe ser entero positivo')
-        if self.inicio == self.fin or not self.nombre.strip():
-            raise ValueError('Vano inválido')
+        for campo in ('nombre', 'inicio', 'fin', 'conductor'):
+            _texto_obligatorio(getattr(self, campo), campo + ' del vano')
+        if self.inicio == self.fin:
+            raise ValueError('Vano inválido: extremos idénticos')
 
 
 @dataclass(frozen=True)
@@ -114,5 +125,5 @@ class Combinacion:
         finito(self.factor_adicional, 'factor adicional', 0)
         if self.metodo not in ('servicio','resistencia','especial'):
             raise ValueError('Método de combinación desconocido')
-        if not self.nombre.strip() or not self.fuente.strip():
-            raise ValueError('Combinación sin nombre/fuente')
+        for campo in ('nombre', 'estado', 'fuente'):
+            _texto_obligatorio(getattr(self, campo), campo + ' de la combinación')
