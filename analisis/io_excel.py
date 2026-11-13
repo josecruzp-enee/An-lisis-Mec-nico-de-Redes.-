@@ -6,8 +6,17 @@ import pandas as pd
 
 
 def _norm_si_no(v) -> str:
+    """No confunde ausencia de información con ausencia de espacio."""
+    if pd.isna(v) or str(v).strip() == "":
+        return "NO VERIFICABLE"
     s = str(v).strip().upper()
-    return "SI" if s in ("SI", "S", "TRUE", "1") else "NO"
+    if s in ("SI", "SÍ", "S", "TRUE", "1", "1.0"):
+        return "SI"
+    if s in ("NO", "N", "FALSE", "0", "0.0"):
+        return "NO"
+    if s in ("NO VERIFICABLE", "DESCONOCIDO", "PENDIENTE"):
+        return "NO VERIFICABLE"
+    raise ValueError(f"Espacio Retenida: valor no reconocido {v!r}")
 
 
 def _norm_col(c: str) -> str:
@@ -59,9 +68,9 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     Lee puntos desde Excel y normaliza columnas a:
       - Punto (obligatoria)
       - X, Y (obligatorias)
-      - Altitude (opcional)
+      - Altitud (opcional)
       - Poste (opcional; si no viene, se crea vacío)
-      - Espacio Retenida (opcional; si no viene, se asume SI)
+      - Espacio Retenida (opcional; si no viene, NO VERIFICABLE)
     """
     df = pd.read_excel(archivo)
 
@@ -72,6 +81,8 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     # Renombrar usando el mapa (solo las que existan)
     rename_dict = {c: MAPA_COLUMNAS[c] for c in df.columns if c in MAPA_COLUMNAS}
     df = df.rename(columns=rename_dict)
+    if df.columns.duplicated().any():
+        raise ValueError("Encabezados duplicados tras normalizar")
 
     # Validación de obligatorias
     for c in ["Punto", "X", "Y"]:
@@ -89,8 +100,8 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     df["Y"] = df["Y"].astype(float)
 
     # Altitude opcional
-    if "Altitud (m)" in df.columns:
-        df["Altitud (m)"] = df["Altitud (m)"].astype(float)
+    if "Altitud" in df.columns:
+        df["Altitud"] = df["Altitud"].astype(float)
 
     # Poste opcional
     if "Poste" not in df.columns:
@@ -102,6 +113,8 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
     if "Espacio Retenida" in df.columns:
         df["Espacio Retenida"] = df["Espacio Retenida"].apply(_norm_si_no)
     else:
-        df["Espacio Retenida"] = "SI"
+        df["Espacio Retenida"] = "NO VERIFICABLE"
 
+    from .validacion_entrada import validar_puntos_excel
+    validar_puntos_excel(df)
     return df
