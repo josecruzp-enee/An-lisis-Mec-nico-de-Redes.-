@@ -21,7 +21,7 @@ import pandas as pd
 from analisis.norma_postes import h_amarre_norma_m
 from analisis.geometria import calcular_tramos, calcular_deflexiones, clasificar_por_angulo
 from analisis.cargas_tramo import calcular_cargas_por_tramo
-from analisis.fuerzas_nodo import calcular_fuerzas_en_nodos
+from calculos.fuerzas_nodo import calcular_fuerzas_en_nodos
 from analisis.retenidas import calcular_retenidas, ParamsRetenida
 from analisis.equilibrio_poste import equilibrar_poste_retenida
 from analisis.cimentacion import evaluar_cimentacion
