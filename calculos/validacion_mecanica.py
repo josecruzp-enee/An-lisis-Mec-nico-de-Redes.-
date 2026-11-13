@@ -5,7 +5,10 @@ import numpy as np
 
 def finito(valor: float, nombre: str, minimo=None, estricto=False) -> float:
     """Convierte un escalar finito y comprueba su dominio físico."""
-    valor = float(valor)
+    try:
+        valor = float(valor)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{nombre}: se requiere un número real finito") from exc
     if not np.isfinite(valor):
         raise ValueError(f"{nombre}: se requiere un número finito")
     if minimo is not None and (valor < minimo or (estricto and valor == minimo)):
