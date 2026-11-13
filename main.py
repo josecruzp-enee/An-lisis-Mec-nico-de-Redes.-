@@ -38,6 +38,12 @@ def ui_datos_proyecto() -> Dict[str, Any]:
     calibres = list(CONDUCTORES_ACSR.keys())
     calibre = st.sidebar.selectbox("Conductor", calibres, index=min(2, max(len(calibres) - 1, 0)))
     n_fases = st.sidebar.selectbox("Fases", [1, 2, 3], index=2)
+    H_tendido_kN = st.sidebar.number_input(
+        "Tensión horizontal de tendido (kN/conductor)",
+        min_value=0.0, value=0.0, step=0.5,
+        help="Dato explícito: 0 indica pendiente, no equivale a tensión nula."
+    )
+
 
     v_viento_ms = st.sidebar.number_input("Velocidad viento (m/s)", min_value=0.0, value=0.0, step=0.5)
     az_viento_deg = st.sidebar.number_input(
@@ -60,6 +66,7 @@ def ui_datos_proyecto() -> Dict[str, Any]:
         "fecha": str(fecha),
         "calibre": str(calibre),
         "n_fases": int(n_fases),
+        "H_tendido_kN": float(H_tendido_kN),
         "v_viento_ms": float(v_viento_ms),
         "az_viento_deg": float(az_viento_deg),
         "diametro_m": float(diametro_m),
@@ -97,6 +104,7 @@ def ejecutar_calculo(df: pd.DataFrame, proyecto: Dict[str, Any]) -> Dict[str, An
         v_viento_ms=proyecto["v_viento_ms"],
         az_viento_deg=proyecto["az_viento_deg"],
         diametro_m=proyecto["diametro_m"],
+        H_tendido_kN=proyecto["H_tendido_kN"],
         Cd=proyecto["Cd"],
         rho=proyecto["rho"],
     )
@@ -274,7 +282,7 @@ def _render_tab_perfil(df: pd.DataFrame, res: Dict[str, Any]) -> None:
     perfil = res.get("perfil")
 
     if not perfil:
-        st.info("No se detectó columna 'Altitud' en el Excel, así que no se calculó el perfil.")
+        st.info("Perfil pendiente de verificación. El modelo actual solo presenta fuerzas preliminares.")
         return
 
     # Tabla de vanos
@@ -464,10 +472,15 @@ def main() -> None:
     if not archivo:
         st.stop()
 
+    if proyecto["H_tendido_kN"] <= 0:
+        st.warning("Introducí primero la tensión de tendido por conductor (kN).")
+        st.stop()
+
     try:
         df = leer_puntos_excel(archivo)
         res = ejecutar_calculo(df, proyecto)
 
+        st.warning("Fuerzas preliminares: NO son verificación de postes, retenidas ni cimentaciones.")
         mostrar_tabs_resultados(df, res)
         mostrar_kpis(res)
 
