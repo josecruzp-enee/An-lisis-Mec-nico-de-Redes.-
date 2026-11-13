@@ -32,11 +32,11 @@ def capacidad_poste_kN(tipo_poste: str) -> float:
 
 
 def utilizacion_poste_pct(H_poste_kN: float, Hmax_kN: float) -> float:
-    return (100.0 * H_poste_kN / Hmax_kN) if Hmax_kN > 0 else 0.0
+    return (100.0 * H_poste_kN / Hmax_kN) if Hmax_kN > 0 else float("inf")
 
 
 def cumple_poste(H_poste_kN: float, Hmax_kN: float) -> str:
-    return "SI" if H_poste_kN <= Hmax_kN else "NO"
+    return "SI" if Hmax_kN > 0 and H_poste_kN <= Hmax_kN else "NO"
 
 
 # =============================================================================
@@ -56,24 +56,25 @@ def _validar_df(nombre: str, df: pd.DataFrame, columnas: list[str]) -> None:
 # =============================================================================
 
 def decidir_fila(r: pd.Series) -> Tuple[str, str]:
-    """
-    Devuelve (solución, motivo) para una fila.
-    """
+    """Clasificación preliminar: nunca aprueba una alternativa sin verificar."""
     espacio = _si_no(r["Espacio Retenida"])
     ret_req = int(r["Retenidas"])
     cumple_cim = _si_no(r.get("Cumple cimentación", "NO"))
-    cumple_p = r["Cumple poste"]
+    cumple_p = _si_no(r.get("Cumple poste", "NO"))
+    cumple_ret = _si_no(r.get("Cumple retenida", "NO"))
 
     if ret_req > 0:
-        if espacio == "SI" and cumple_cim == "SI":
-            return "RETENIDA", "Requiere retenida; sistema cumple"
         if espacio == "NO":
-            return "AUTOSOPORTADO", "Requiere retenida pero no hay espacio"
-        return "AUTOSOPORTADO", "Requiere retenida pero no cumple"
-    else:
-        if cumple_p == "SI" and cumple_cim == "SI":
-            return "POSTE SOLO", "Paso sin retenida; poste y cimentación cumplen"
-        return "AUTOSOPORTADO", "No cumple poste solo o cimentación"
+            return "REQUIERE DISEÑO", "No hay espacio: verificar solución autosoportada"
+        if cumple_ret != "SI":
+            return "REQUIERE DISEÑO", "Retenida sin capacidad comprobada o insuficiente"
+        if cumple_p != "SI" or cumple_cim != "SI":
+            return "REQUIERE DISEÑO", "Verificar poste y cimentación con retenida"
+        return "RETENIDA", "Verificación preliminar; comprobar anclaje y suelo"
+
+    if cumple_p == "SI" and cumple_cim == "SI":
+        return "POSTE SOLO", "Verificación preliminar; revisar todas las hipótesis de carga"
+    return "REQUIERE DISEÑO", "No se acredita capacidad del poste o cimentación"
 
 
 # =============================================================================
@@ -121,9 +122,11 @@ def decidir_soporte(
 
     if "Punto" not in df_equilibrio.columns and df_equilibrio.index.name == "Punto":
         df_equilibrio = df_equilibrio.reset_index()
+    df_resumen = df_resumen.copy()
+    df_equilibrio = df_equilibrio.copy()
+    df_cimentacion = df_cimentacion.copy()
     for _df in (df_resumen, df_equilibrio, df_cimentacion):
-        if "Punto" in _df.columns:
-            _df["Punto"] = _df["Punto"].astype(str).str.strip()
+        _df["Punto"] = _df["Punto"].astype(str).str.strip()
     
     # ---- DF base = mecánica real
     df = df_equilibrio.copy()
