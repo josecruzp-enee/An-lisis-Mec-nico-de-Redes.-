@@ -57,107 +57,165 @@ def _vanos_desde_excel(df):
 
 
 def mostrar_barrido_3d():
-    """Vista independiente del motor existente de Streamlit."""
-    st.subheader("Análisis termomecánico 3D — experimental")
-    st.warning(
-        "Catenaria espacial y compatibilidad termoelástica con carga vectorial "
-        "uniforme por longitud real. El viento se proyecta según el eje del vano, "
-        "no según la tangente local de la curva. No verifica postes, retenidas, "
-        "suelo, distancias de seguridad ni cumplimiento normativo."
-    )
-
-    archivo = st.file_uploader("Puntos XYZ y altura de amarre (.xlsx)", type=["xlsx"],
-                               key="archivo_barrido_3d")
+    """Pantalla sencilla: 4 parámetros de uso y opciones técnicas desplegables."""
+    st.subheader("Análisis termomecánico 3D")
     st.caption(
-        "Excel: Punto, X, Y, Altitud (cota de terreno), Altura_Amarre_m "
-        "(altura sobre terreno). Los vanos son los pares consecutivos. "
-        "Se suponen amarres fijos, no suspensión móvil."
+        "Carga el Excel y selecciona conductor, tensión de tendido y viento. "
+        "El programa calcula los estados del rango automáticamente."
     )
+    archivo = st.file_uploader(
+        "Excel de postes y coordenadas", type=["xlsx"],
+        key="archivo_barrido_3d",
+    )
+    calibres = list(CONDUCTORES_ACSR)
     with st.form("config_barrido_3d"):
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            calibre = st.selectbox("Conductor", list(CONDUCTORES_ACSR),
-                                   index=list(CONDUCTORES_ACSR).index("2/0 ACSR"))
-            cantidad = st.number_input("Conductores idénticos por vano",
-                                       min_value=1, max_value=12, value=3, step=1)
-            ea_texto = st.text_input("EA axial (kN) — ficha técnica", value="")
-            alfa_texto = st.text_input("Dilatación térmica α (1/°C) — ficha", value="")
-            fuente = st.text_input("Fuente verificable de EA y α", value="")
-        with c2:
-            t0 = st.number_input("Temperatura inicial de tendido (°C)",
-                                 value=20.0, step=1.0)
-            temperaturas = st.text_input("Temperaturas a resolver (°C)",
-                                         value="20, 40")
-            tensiones = st.text_input("Tensiones iniciales por conductor (kN)",
-                                      value="4, 6, 8")
-            rumbos = st.text_input("Viento HACIA azimut (°; 0=Este, 90=Norte)",
-                                   value="0, 180")
-        with c3:
-            vmin = st.number_input("Viento inicial (m/s)", min_value=0.0, value=0.0)
-            vmax = st.number_input("Viento final (m/s)", min_value=0.0, value=10.0)
-            paso = st.number_input("Incremento viento (m/s)", min_value=0.1,
-                                    value=1.0, step=0.1)
-            cd = st.number_input("Coeficiente Cd", min_value=0.01, value=1.2)
-            rho = st.number_input("Densidad aire (kg/m³)", min_value=0.1, value=1.225)
-        enviar = st.form_submit_button("Calcular barrido 3D", type="primary")
+        a, b, c = st.columns(3)
+        with a:
+            calibre = st.selectbox(
+                "Conductor", calibres,
+                index=calibres.index("2/0 ACSR") if "2/0 ACSR" in calibres else 0,
+            )
+        with b:
+            h0 = st.number_input(
+                "Tensión inicial por conductor (kN)",
+                min_value=0.1, value=6.0, step=0.5,
+                help="Condición de tendido del estudio. El valor 6 kN es solo "
+                     "el dato de nuestro ensayo, no una recomendación.",
+            )
+        with c:
+            vmax = st.number_input(
+                "Velocidad máxima de viento (m/s)",
+                min_value=0, max_value=80, value=20, step=1,
+            )
+        with st.expander("Configuración avanzada — opcional", expanded=False):
+            st.caption(
+                "El barrido estándar usa viento de 0 a la velocidad máxima "
+                "en pasos de 1 m/s. Direcciones: 0°, 90°, 180°, 270°."
+            )
+            col1, col2 = st.columns(2)
+            with col1:
+                cantidad = st.number_input(
+                    "Conductores idénticos por vano", min_value=1,
+                    max_value=12, value=3, step=1,
+                )
+                t0 = st.number_input(
+                    "Temperatura de tendido (°C)", value=20.0, step=1.0,
+                )
+                temperaturas = st.text_input(
+                    "Temperaturas del estudio (°C)", value="20,40",
+                )
+                tensiones = st.text_input(
+                    "Tensiones adicionales (kN), separadas por coma",
+                    value="",
+                    help="Además de la tensión principal introducida arriba.",
+                )
+                rumbos = st.text_input(
+                    "Azimuts de viento hacia (°)", value="0,90,180,270",
+                )
+            with col2:
+                cd = st.number_input("Coeficiente aerodinámico Cd",
+                                     min_value=0.01, value=1.2, step=0.05)
+                rho = st.number_input("Densidad del aire (kg/m³)",
+                                      min_value=0.1, value=1.225, step=0.01)
+                st.markdown("**Propiedades termoelásticas del conductor**")
+                propiedades = st.radio(
+                    "Origen de EA y dilatación térmica",
+                    ["Demostración con parámetros sintéticos",
+                     "Ficha técnica verificada"],
+                    help="La demostración NO genera resultados aptos para diseño.",
+                )
+                ea_texto = st.text_input("Rigidez EA (kN)", value="")
+                alfa_texto = st.text_input("Dilatación térmica α (1/°C)", value="")
+                fuente = st.text_input("Fabricante / documento / revisión",
+                                       value="")
+        enviar = st.form_submit_button("Calcular", type="primary")
 
     if not enviar:
         return
     if archivo is None:
-        st.error("Seleccione un Excel antes de calcular")
+        st.error("Primero cargá el Excel.")
         return
-
     try:
-        if not ea_texto.strip() or not alfa_texto.strip() or not fuente.strip():
-            raise ValueError("EA, α y su fuente son obligatorios; no usar valores supuestos")
-        ea, alfa = float(ea_texto), float(alfa_texto)
-        temperaturas_lista = _numeros(temperaturas, "temperaturas")
-        tensiones_lista = _numeros(tensiones, "tensiones", positivos=True)
-        rumbos_lista = _numeros(rumbos, "direcciones")
-        n_v = round((vmax-vmin)/paso)+1
-        if vmax < vmin:
-            raise ValueError("El viento final debe ser mayor o igual al inicial")
-        n_casos = n_v*len(temperaturas_lista)*len(tensiones_lista)*len(rumbos_lista)
+        t_lista = _numeros(temperaturas, "temperaturas")
+        h_lista = [float(h0)] + (_numeros(tensiones, "tensiones adicionales", True)
+                                  if tensiones.strip() else [])
+        h_lista = list(dict.fromkeys(h_lista))
+        r_lista = _numeros(rumbos, "direcciones")
+        # Carga limitada para que el cálculo interactivo sea razonable.
+        n_casos = (vmax + 1) * len(t_lista) * len(h_lista) * len(r_lista)
         if n_casos > 500:
             raise ValueError(
-                f"{n_casos} combinaciones exceden el límite interactivo de 500. "
-                "Divida el ensayo en intervalos para evitar tiempos excesivos."
+                f"Hay {n_casos} combinaciones. El límite interactivo es 500; "
+                "reducí las direcciones o temperaturas en configuración avanzada."
             )
-
         df = leer_puntos_excel(archivo)
         vanos = _vanos_desde_excel(df)
         ficha = CONDUCTORES_ACSR[calibre]
+        if propiedades == "Ficha técnica verificada":
+            if not ea_texto.strip() or not alfa_texto.strip() or not fuente.strip():
+                raise ValueError(
+                    "Para cálculo con propiedades documentadas, ingresá EA, α "
+                    "y su fuente en configuración avanzada."
+                )
+            ea = float(ea_texto)
+            alfa = float(alfa_texto)
+            fuente_modelo = fuente
+            demostracion = False
+        else:
+            # PARÁMETROS SINTÉTICOS DEL ENSAYO, nunca propiedades ACSR 2/0.
+            ea, alfa = 16000.0, 1.8e-5
+            fuente_modelo = (
+                "DEMOSTRACIÓN SINTÉTICA: EA=16000 kN, α=1.8e-5 1/°C; "
+                "NO representan ficha del conductor seleccionado"
+            )
+            demostracion = True
         resultado = ejecutar_barrido_3d(
             vanos,
             peso_kN_m=ficha["peso_kg_m"] * 9.80665 / 1000,
             diametro_m=ficha["diametro_m"],
             EA_kN=ea, alpha_por_C=alfa,
             temperatura_tendido_C=t0,
-            temperaturas_C=temperaturas_lista,
-            tensiones_iniciales_kN=tensiones_lista,
-            viento_min_ms=vmin, viento_max_ms=vmax,
-            incremento_viento_ms=paso, direcciones_viento_deg=rumbos_lista,
+            temperaturas_C=t_lista, tensiones_iniciales_kN=h_lista,
+            viento_min_ms=0, viento_max_ms=float(vmax),
+            incremento_viento_ms=1,
+            direcciones_viento_deg=r_lista,
             Cd=cd, rho_kg_m3=rho,
-            cantidad_conductores=int(cantidad), fuente_conductor=fuente,
+            cantidad_conductores=int(cantidad),
+            fuente_conductor=fuente_modelo,
         )
+        if demostracion:
+            st.error(
+                "RESULTADOS DE DEMOSTRACIÓN: se utilizaron EA y α SINTÉTICOS. "
+                "No son las propiedades del ACSR seleccionado y NO sirven "
+                "para dimensionamiento. Introducí la ficha técnica verificada "
+                "en Configuración avanzada para un análisis del material real."
+            )
+        else:
+            st.warning(
+                "Solicitaciones calculadas con las propiedades ingresadas. "
+                "Todavía NO verifica capacidad de postes, retenidas, anclajes "
+                "ni cimentación. El viento se representa por carga uniforme."
+            )
         st.success(
-            f"Estados resueltos: {len(resultado['vanos'])} por vano; "
-            f"acciones acumuladas: {len(resultado['nodos'])} por apoyo."
+            f"{n_casos} estados × {len(vanos)} vanos; "
+            f"{len(resultado['nodos'])} filas de acciones acumuladas."
         )
-        a, b = st.tabs(["Tensiones y equilibrio por vano", "Fuerzas y momentos por apoyo"])
-        with a:
+        tab1, tab2 = st.tabs(
+            ["Tensiones por vano", "Fuerzas y momentos por poste"]
+        )
+        with tab1:
             st.dataframe(resultado["vanos"], use_container_width=True)
-            st.download_button("Exportar tensiones CSV",
+            st.download_button(
+                "Descargar tensiones CSV",
                 resultado["vanos"].to_csv(index=False).encode("utf-8-sig"),
-                "tensiones_barrido_3d.csv", mime="text/csv")
-        with b:
+                "tensiones_barrido_3d.csv", mime="text/csv",
+            )
+        with tab2:
             st.dataframe(resultado["nodos"], use_container_width=True)
-            st.download_button("Exportar acciones CSV",
+            st.download_button(
+                "Descargar fuerzas y momentos CSV",
                 resultado["nodos"].to_csv(index=False).encode("utf-8-sig"),
-                "acciones_barrido_3d.csv", mime="text/csv")
-        st.caption(
-            "Estado de todas las acciones: NO VERIFICABLE para aprobación de estructura. "
-            "No deben interpretarse como combinaciones normativas."
-        )
+                "acciones_barrido_3d.csv", mime="text/csv",
+            )
     except (ValueError, TypeError, OverflowError, KeyError, ZeroDivisionError) as exc:
-        st.error(f"No se ejecutó el barrido: {exc}")
+        st.error(f"No se pudo calcular: {exc}")
