@@ -6,8 +6,23 @@ import pandas as pd
 
 
 def _norm_si_no(v) -> str:
+    """Normaliza la disponibilidad sin confundir ausencia de dato con NO.
+
+    Los valores desconocidos no son decisiones geométricas: requieren
+    verificación. Una palabra no reconocida se rechaza para evitar que una
+    errata termine descartando indebidamente una alternativa estructural.
+    """
+    if pd.isna(v) or str(v).strip() == "":
+        return "NO VERIFICABLE"
+
     s = str(v).strip().upper()
-    return "SI" if s in ("SI", "SÍ", "S", "TRUE", "1") else "NO"
+    if s in ("SI", "SÍ", "S", "TRUE", "1", "1.0"):
+        return "SI"
+    if s in ("NO", "N", "FALSE", "0", "0.0"):
+        return "NO"
+    if s in ("NO VERIFICABLE", "DESCONOCIDO", "PENDIENTE"):
+        return "NO VERIFICABLE"
+    raise ValueError(f"Espacio Retenida: valor no reconocido {v!r}")
 
 
 def _norm_col(c: str) -> str:
