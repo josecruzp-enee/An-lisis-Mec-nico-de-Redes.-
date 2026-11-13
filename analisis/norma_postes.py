@@ -150,7 +150,7 @@ def altura_poste_m(tipo_poste: str, default_m: float = DEFAULT_ALTURA_POSTE_M) -
 # ============================================================
 # 7) CAPACIDAD HORIZONTAL (kN)
 # ============================================================
-def H_max_poste_kN(tipo_poste: str, default_kN: float = 9999.0) -> float:
+def H_max_poste_kN(tipo_poste: str, default_kN: float = 0.0) -> float:
     ficha = obtener_ficha_poste(tipo_poste)
 
     if ficha.get("fuente") == "CLASES_APENDICE":
