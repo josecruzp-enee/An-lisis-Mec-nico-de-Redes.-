@@ -13,6 +13,7 @@ import streamlit as st
 from entradas.io_excel import leer_puntos_excel
 from entradas.catalogos import CONDUCTORES_ACSR
 from calculos.barrido_3d import ejecutar_barrido_3d
+from calculos.solicitaciones_poste import combinar_solicitaciones_postes
 from calculos.envolventes_3d import (
     envolventes_apoyos, envolventes_vanos, mayores_por_apoyo,
 )
@@ -203,9 +204,36 @@ def mostrar_barrido_3d():
             f"{n_casos} estados × {len(vanos)} vanos; "
             f"{len(resultado['nodos'])} filas de acciones acumuladas."
         )
+        # Sumar el viento sobre el fuste al nivel del terreno.
+        # No confundir las fuerzas SOLO de cables con acciones TOTALES.
+        acciones_combinadas = combinar_solicitaciones_postes(
+            resultado["nodos"], df, rho_kg_m3=rho, Cd_poste=cd,
+        )
+        completas = acciones_combinadas.loc[
+            acciones_combinadas["Estado viento poste"].str.startswith("INCLUIDO")
+        ].copy()
+        pendientes = acciones_combinadas.loc[
+            ~acciones_combinadas["Estado viento poste"].str.startswith("INCLUIDO"),
+            "Punto",
+        ].drop_duplicates().tolist()
+        if pendientes:
+            st.warning(
+                "Sin geometría de poste para: " + ", ".join(pendientes)
+                + ". Esos apoyos no figuran en los máximos combinados."
+            )
+        st.caption(
+            "Acciones al terreno = conductores + viento sobre fuste cónico. "
+            "El empotramiento se toma del Excel si existe; en caso contrario "
+            "se estima con 10% de la longitud + 2 pies y NO se valida. "
+            "No incluye viento sobre aisladores ni herrajes, peso propio, "
+            "capacidad estructural o interacción suelo-poste."
+        )
+        if completas.empty:
+            st.error("No hay geometrías de postes suficientes para sumar el viento.")
+            return
         # Presentación de casos gobernantes. NO implica cumplimiento estructural.
-        resumen = mayores_por_apoyo(resultado["nodos"])
-        estados_postes = envolventes_apoyos(resultado["nodos"])
+        resumen = mayores_por_apoyo(completas)
+        estados_postes = envolventes_apoyos(completas)
         estados_vanos = envolventes_vanos(resultado["vanos"])
 
         st.markdown("### Demandas máximas por poste")
@@ -229,7 +257,7 @@ def mostrar_barrido_3d():
                 "envolventes_apoyos_3d.csv", mime="text/csv",
             )
         with t2:
-            tabla = resultado["nodos"]
+            tabla = completas
             poste = st.selectbox(
                 "Poste", tabla["Punto"].drop_duplicates().tolist(),
                 key="poste_grafica_3d",
@@ -272,10 +300,10 @@ def mostrar_barrido_3d():
                 "tensiones_barrido_3d.csv", mime="text/csv",
             )
         with t4:
-            st.dataframe(resultado["nodos"], use_container_width=True)
+            st.dataframe(acciones_combinadas, use_container_width=True)
             st.download_button(
                 "Descargar fuerzas y momentos CSV",
-                resultado["nodos"].to_csv(index=False).encode("utf-8-sig"),
+                acciones_combinadas.to_csv(index=False).encode("utf-8-sig"),
                 "acciones_barrido_3d.csv", mime="text/csv",
             )
     except (ValueError, TypeError, OverflowError, KeyError, ZeroDivisionError) as exc:
