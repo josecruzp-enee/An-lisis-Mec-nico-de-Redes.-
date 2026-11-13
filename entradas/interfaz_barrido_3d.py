@@ -14,6 +14,7 @@ from entradas.io_excel import leer_puntos_excel
 from entradas.catalogos import CONDUCTORES_ACSR
 from calculos.barrido_3d import ejecutar_barrido_3d
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
+from calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
 from calculos.envolventes_3d import (
     envolventes_apoyos, envolventes_vanos, mayores_por_apoyo,
 )
@@ -238,13 +239,28 @@ def mostrar_barrido_3d():
 
         st.markdown("### Demandas máximas por poste")
         st.dataframe(resumen, use_container_width=True, hide_index=True)
+        secciones = calcular_secciones_poste(
+            resultado["nodos"], df, cantidad_secciones=21,
+            rho_kg_m3=rho, Cd_poste=cd,
+        )
+        criticas = secciones_gobernantes(secciones)
+        st.markdown("### Secciones críticas del fuste")
+        st.dataframe(criticas, use_container_width=True, hide_index=True)
+        st.caption(
+            "Acciones por secciones desde el terreno hasta la punta. "
+            "El diámetro mostrado es EXTERIOR: no se calcula tensión del "
+            "material sin espesor, refuerzo y propiedades resistentes. "
+            "No incluye peso propio ni accesorios. Se emplea un amarre "
+            "agrupado por punto; fases con alturas distintas requieren "
+            "un modelo de amarres individuales."
+        )
         st.caption(
             "H y M pueden ser gobernadas por estados diferentes. "
             "NO combine sus máximos como un único vector de cargas."
         )
-        t1, t2, t3, t4 = st.tabs([
+        t1, t2, t3, t4, t5 = st.tabs([
             "Casos gobernantes", "Curvas de viento", "Tensiones por vano",
-            "Fuerzas y momentos por poste",
+            "Fuerzas y momentos por poste", "Esfuerzos por sección",
         ])
         with t1:
             st.markdown("**Envolvente por componente de cada poste**")
@@ -305,6 +321,44 @@ def mostrar_barrido_3d():
                 "Descargar fuerzas y momentos CSV",
                 acciones_combinadas.to_csv(index=False).encode("utf-8-sig"),
                 "acciones_barrido_3d.csv", mime="text/csv",
+            )
+        with t5:
+            poste_seccion = st.selectbox(
+                "Poste para diagrama de solicitaciones",
+                secciones["Punto"].drop_duplicates().tolist(),
+                key="poste_seccion_3d",
+            )
+            corte = secciones.loc[
+                (secciones["Punto"] == poste_seccion)
+                & (secciones["Estado sección"] ==
+                   "SOLICITACIÓN, RESISTENCIA NO VERIFICABLE")
+            ].copy()
+            if corte.empty:
+                st.info("Sin geometría suficiente para obtener secciones.")
+            else:
+                caso_seccion = st.selectbox(
+                    "Caso de carga",
+                    corte["Caso"].drop_duplicates().tolist(),
+                    key="caso_seccion_3d",
+                )
+                diagrama = corte.loc[corte["Caso"] == caso_seccion]
+                st.markdown("**Momento flector a lo largo del fuste**")
+                st.line_chart(
+                    diagrama.set_index("Altura corte (m)")["M flector (kN·m)"],
+                    x_label="Altura sobre terreno (m)",
+                    y_label="Momento (kN·m)",
+                )
+                st.markdown("**Cortante transversal a lo largo del fuste**")
+                st.line_chart(
+                    diagrama.set_index("Altura corte (m)")["V transversal (kN)"],
+                    x_label="Altura sobre terreno (m)",
+                    y_label="Cortante (kN)",
+                )
+                st.dataframe(diagrama, use_container_width=True, hide_index=True)
+            st.download_button(
+                "Exportar solicitaciones por sección CSV",
+                secciones.to_csv(index=False).encode("utf-8-sig"),
+                "secciones_postes_3d.csv", mime="text/csv",
             )
     except (ValueError, TypeError, OverflowError, KeyError, ZeroDivisionError) as exc:
         st.error(f"No se pudo calcular: {exc}")
