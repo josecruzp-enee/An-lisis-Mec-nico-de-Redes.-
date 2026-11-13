@@ -7,6 +7,9 @@ on:
       - 'calculos/**'
       - 'entradas/**'
       - 'tests/**'
+      - 'main.py'
+      - 'app.py'
+      - 'salidas/**'
       - '.github/workflows/pruebas_motor.yml'
   workflow_dispatch:
 
