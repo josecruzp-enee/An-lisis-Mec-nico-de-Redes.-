@@ -13,6 +13,9 @@ import streamlit as st
 from entradas.io_excel import leer_puntos_excel
 from entradas.catalogos import CONDUCTORES_ACSR
 from calculos.barrido_3d import ejecutar_barrido_3d
+from calculos.envolventes_3d import (
+    envolventes_apoyos, envolventes_vanos, mayores_por_apoyo,
+)
 
 
 def _numeros(texto, campo, positivos=False):
@@ -200,17 +203,75 @@ def mostrar_barrido_3d():
             f"{n_casos} estados × {len(vanos)} vanos; "
             f"{len(resultado['nodos'])} filas de acciones acumuladas."
         )
-        tab1, tab2 = st.tabs(
-            ["Tensiones por vano", "Fuerzas y momentos por poste"]
+        # Presentación de casos gobernantes. NO implica cumplimiento estructural.
+        resumen = mayores_por_apoyo(resultado["nodos"])
+        estados_postes = envolventes_apoyos(resultado["nodos"])
+        estados_vanos = envolventes_vanos(resultado["vanos"])
+
+        st.markdown("### Demandas máximas por poste")
+        st.dataframe(resumen, use_container_width=True, hide_index=True)
+        st.caption(
+            "H y M pueden ser gobernadas por estados diferentes. "
+            "NO combine sus máximos como un único vector de cargas."
         )
-        with tab1:
+        t1, t2, t3, t4 = st.tabs([
+            "Casos gobernantes", "Curvas de viento", "Tensiones por vano",
+            "Fuerzas y momentos por poste",
+        ])
+        with t1:
+            st.markdown("**Envolvente por componente de cada poste**")
+            st.dataframe(estados_postes, use_container_width=True, hide_index=True)
+            st.markdown("**Envolvente de tensiones por vano**")
+            st.dataframe(estados_vanos, use_container_width=True, hide_index=True)
+            st.download_button(
+                "Descargar envolventes de apoyos CSV",
+                estados_postes.to_csv(index=False).encode("utf-8-sig"),
+                "envolventes_apoyos_3d.csv", mime="text/csv",
+            )
+        with t2:
+            tabla = resultado["nodos"]
+            poste = st.selectbox(
+                "Poste", tabla["Punto"].drop_duplicates().tolist(),
+                key="poste_grafica_3d",
+            )
+            h_graf = st.selectbox(
+                "Tensión inicial (kN)", sorted(tabla["H inicial (kN)"].unique()),
+                key="h_grafica_3d",
+            )
+            t_graf = st.selectbox(
+                "Temperatura (°C)", sorted(tabla["Temperatura (°C)"].unique()),
+                key="t_grafica_3d",
+            )
+            graf = tabla.loc[
+                (tabla["Punto"] == poste)
+                & (tabla["H inicial (kN)"] == h_graf)
+                & (tabla["Temperatura (°C)"] == t_graf)
+            ].copy()
+            graf["M resultante (kN·m)"] = (
+                graf["Mx (kN·m)"]**2 + graf["My (kN·m)"]**2
+            )**0.5
+            pivot_h = graf.pivot_table(
+                index="Viento (m/s)", columns="Azimut viento (°)",
+                values="H resultante (kN)",
+            )
+            st.markdown("**Fuerza horizontal resultante vs. viento**")
+            st.line_chart(pivot_h, x_label="Velocidad viento (m/s)",
+                          y_label="H (kN)")
+            pivot_m = graf.pivot_table(
+                index="Viento (m/s)", columns="Azimut viento (°)",
+                values="M resultante (kN·m)",
+            )
+            st.markdown("**Momento flector resultante vs. viento**")
+            st.line_chart(pivot_m, x_label="Velocidad viento (m/s)",
+                          y_label="M (kN·m)")
+        with t3:
             st.dataframe(resultado["vanos"], use_container_width=True)
             st.download_button(
                 "Descargar tensiones CSV",
                 resultado["vanos"].to_csv(index=False).encode("utf-8-sig"),
                 "tensiones_barrido_3d.csv", mime="text/csv",
             )
-        with tab2:
+        with t4:
             st.dataframe(resultado["nodos"], use_container_width=True)
             st.download_button(
                 "Descargar fuerzas y momentos CSV",
