@@ -80,7 +80,7 @@ def _calcular_deflexion_real(df_def: pd.DataFrame) -> pd.DataFrame:
 def _armar_resumen(df: pd.DataFrame, df_def: pd.DataFrame) -> pd.DataFrame:
     # remates en extremos
     resumen = df[["Punto", "Poste", "Espacio Retenida"]].copy()
-    resumen["Deflexión (°)"] = "-"
+    resumen["Deflexión (°)"] = float("nan")  # Numérico; en remates no aplica ángulo
     resumen["Estructura"] = "Remate"
     resumen["Retenidas"] = 1
 
