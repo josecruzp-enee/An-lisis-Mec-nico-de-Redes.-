@@ -134,8 +134,49 @@ def ejecutar_barrido_3d(
                             f = cantidad_conductores * fuerza
                             cargas[nombre][:3] += f
                             cargas[nombre][3:] += np.cross(r, f)
+                        # Flecha respecto a cuerda en abscisa local de la catenaria.
+                        # Mínimo vertical de (z_cable - z_cuerda) por cálculo
+                        # analítico del extremo de la curva, no por muestreo.
+                        pendiente_cuerda = float((b[2]-a[2])/cable.luz)
+                        x_flecha = cable.minimo_lineal(
+                            [0, 0, 1], pendiente=pendiente_cuerda
+                        )
+                        flecha_vertical = float(
+                            a[2] + pendiente_cuerda*x_flecha
+                            - cable.puntos(x_flecha)[2]
+                        )
+
+                        # Despeje geométrico respecto a interpolación lineal del
+                        # TERRENO ENTRE DOS APOYOS. No representa montículos,
+                        # barrancos no lineales, edificaciones o vegetación.
+                        dxy = b[:2]-a[:2]
+                        dxy2 = float(dxy@dxy)
+                        terreno_a = float(
+                            np.asarray(vano["base_inicio_m"], dtype=float)[2]
+                        )
+                        terreno_b = float(
+                            np.asarray(vano["base_fin_m"], dtype=float)[2]
+                        )
+                        grado = (terreno_b-terreno_a)*dxy/dxy2
+                        direccion_despeje = np.array(
+                            [-grado[0], -grado[1], 1.]
+                        )
+                        x_despeje = cable.minimo_lineal(direccion_despeje)
+                        punto_despeje = cable.puntos(x_despeje)
+                        progresiva = float(
+                            ((punto_despeje[:2]-a[:2])@dxy)/dxy2
+                        )
+                        terreno_interpolado = (
+                            terreno_a+(terreno_b-terreno_a)*progresiva
+                        )
+                        despeje_geom = float(
+                            punto_despeje[2]-terreno_interpolado
+                        )
                         filas_vanos.append({
                             "Caso": caso, "Vano": vano["nombre"],
+                            "Flecha vertical respecto cuerda (m)": flecha_vertical,
+                            "Despeje sobre terreno lineal (m)": despeje_geom,
+                            "Modelo terreno": "INTERPOLACIÓN ENTRE APOYOS; NO VERIFICADO",
                             "Temperatura (°C)": temperatura,
                             "Viento (m/s)": v_ms, "Azimut viento (°)": rumbo,
                             "H inicial (kN)": h0,
