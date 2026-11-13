@@ -122,7 +122,11 @@ def decidir_soporte(
 
     if "Punto" not in df_equilibrio.columns and df_equilibrio.index.name == "Punto":
         df_equilibrio = df_equilibrio.reset_index()
-    df_resumen = df_resumen.copy()\n    df_equilibrio = df_equilibrio.copy()\n    df_cimentacion = df_cimentacion.copy()\n    for _df in (df_resumen, df_equilibrio, df_cimentacion):\n        _df["Punto"] = _df["Punto"].astype(str).str.strip()
+    df_resumen = df_resumen.copy()
+    df_equilibrio = df_equilibrio.copy()
+    df_cimentacion = df_cimentacion.copy()
+    for _df in (df_resumen, df_equilibrio, df_cimentacion):
+        _df["Punto"] = _df["Punto"].astype(str).str.strip()
     
     # ---- DF base = mecánica real
     df = df_equilibrio.copy()
