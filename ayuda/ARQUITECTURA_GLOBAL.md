@@ -30,9 +30,17 @@ de cada problema de contorno mediante `solve_bvp`. Valida residuales físicos
 y rechaza la falta de convergencia. La rigidez debe venir con una fuente.
 
 **No significa que la ingeniería del sistema esté completa**. Esta fase
-sólo admite conexiones fijas/retenidas y apoyos fijos o trasladables con
-rigidez 3x3. Aún falta formular y acoplar al sistema:
-- Suspensiones con movilidad del conductor, cadenas finitas y fricción.
+admite conexiones fijas/retenidas y guías `DESLIZANTE` **ideales sin fricción**
+conservando la longitud material de toda la sección y equilibrando el módulo
+de las tensiones a cada lado de la guía. Los apoyos son fijos o trasladables
+con rigidez 3x3 documentada.
+
+Una `SUSPENSION` real (grapa con conductor sujeto, péndulo, fricción o giro
+del herraje) **no es equivalente** a una guía sin fricción y permanece
+bloqueada hasta contar con su modelo mecánico y parámetros.
+
+Aún falta formular y acoplar al sistema:
+- Suspensiones reales con cadenas finitas, articulaciones y fricción.
 - Seis grados de libertad de postes, geometría deformada y flexión/axial.
 - Ley unilateral de retenidas (sin compresión), pretensado y anclajes.
 - Interacción suelo–cimentación e incertidumbre geotécnica.
@@ -84,6 +92,9 @@ dispositivos de acople, características mecánicas y leyes de material.
 - `calculos/cable_no_lineal.py`: problema de contorno de un cable.
 - `calculos/ensamblador_global.py`: equilibrio nodal acoplado en
   traslación, referencias indeformadas y residuales.
+- `calculos/suspension_deslizante.py`: conservación de longitud natural total,
+  redistribución entre vanos y tensión continua en guías IDEALES sin fricción.
+  No se extrapola ese modelo a una grapa de suspensión real.
 - `tests/test_modelo_red.py`, `tests/test_importar_red.py`,
   `tests/test_ensamblador_global.py`: regresión numérica y de contrato.
 
