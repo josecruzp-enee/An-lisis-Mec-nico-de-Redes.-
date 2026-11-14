@@ -46,6 +46,11 @@ class BarridoNoLinealTest(unittest.TestCase):
         self.assertLess(v["Residual equilibrio (kN)"],1e-4)
         self.assertLess(v["Residual contorno (m)"],1e-4)
         self.assertLess(v["Residual compatibilidad (m)"],.001)
+        self.assertLess(v["Error poligonal longitud (m)"],.001)
+        self.assertAlmostEqual(
+            v["Longitud por derivada BVP (m)"],
+            v["Longitud cable (m)"],delta=.001,
+        )
         audit=auditar_reacciones_por_vano(r["extremos"],r["nodos"])
         self.assertLess(audit["Residual máximo carga o momento"],1e-9)
         self.assertEqual(len(r["extremos"]),2)
@@ -62,6 +67,7 @@ class BarridoNoLinealTest(unittest.TestCase):
         self.assertGreater(v["Desviación lateral en punto de flecha (m)"],0.)
         self.assertGreater(v["T máxima (kN)"],0.)
         self.assertLess(v["Residual equilibrio (kN)"],1e-4)
+        self.assertLess(v["Residual compatibilidad (m)"],.001)
         auditar_reacciones_por_vano(r["extremos"],r["nodos"])
 
     def test_solucion_sin_viento_se_reutiliza_entre_azimuts(self):
