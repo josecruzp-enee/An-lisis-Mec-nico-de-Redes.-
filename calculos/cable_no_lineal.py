@@ -27,6 +27,7 @@ import math
 
 import numpy as np
 from scipy.integrate import solve_bvp
+from scipy.optimize import minimize_scalar
 
 from .catenaria import resolver_catenaria
 from .cambio_estado import longitud_natural
@@ -187,13 +188,35 @@ def resolver_cable_no_lineal(
             f"contorno={resid_bc:g} m, equilibrio={resid_eq:g} kN"
         )
     longitud_real=float(np.trapezoid(stretch,muestra)*s1)
+
+    # Tensión máxima: búsqueda refinada sobre el interpolador BVP,
+    # no solo el máximo de la tabla de posiciones exportada.
+    # Los extremos son candidatos válidos; se refinan máximos locales.
+    puntos_busqueda=np.unique(np.r_[
+        sol.x, (sol.x[:-1]+sol.x[1:])/2,
+    ])
+    tension_busqueda=np.linalg.norm(sol.sol(puntos_busqueda)[3:6],axis=0)
+    max_tension=float(max(tension_busqueda[0],tension_busqueda[-1]))
+    for i in range(1,len(puntos_busqueda)-1):
+        if (tension_busqueda[i]>=tension_busqueda[i-1]
+                and tension_busqueda[i]>=tension_busqueda[i+1]):
+            opt=minimize_scalar(
+                lambda u:-float(np.linalg.norm(sol.sol(u)[3:6])),
+                bounds=(float(puntos_busqueda[i-1]),
+                        float(puntos_busqueda[i+1])),
+                method="bounded",options={"xatol":1e-10},
+            )
+            if not opt.success:
+                raise ValueError("No convergió búsqueda de tensión máxima")
+            max_tension=max(max_tension,float(-opt.fun))
+    max_tension=max(max_tension,float(np.max(tension_busqueda)))
     return Cable3D(
         s_material=material,xyz=posiciones,tensiones_xyz=fuerzas,
         fuerza_a=fa,fuerza_b=fb,
         longitud_natural_20_m=float(s0),
         longitud_natural_estado_m=float(s1),
         longitud_deformada_m=longitud_real,
-        tension_maxima_kN=float(np.max(normas)),
+        tension_maxima_kN=max_tension,
         residual_equilibrio_kN=resid_eq,
         residual_frontera_m=resid_bc,
         residual_ode_max=residual_ode,
