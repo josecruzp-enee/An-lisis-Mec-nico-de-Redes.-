@@ -116,6 +116,10 @@ def ejecutar_barrido_no_lineal_3d(
     )
 
     filas_vanos,filas_nodos,filas_extremos=[],[],[]
+    # Viento nulo es físicamente independiente del azimut.
+    # Reutilizar BVP solo en esa condición exacta, sin omitir
+    # ningún caso de la salida y sin ocultar parámetros ambientales.
+    cache_calma={}
     for h0 in tensiones:
         for t in temperaturas:
             for rumbo in azimuts:
@@ -123,15 +127,21 @@ def ejecutar_barrido_no_lineal_3d(
                     caso=f"H0={h0:g};T={t:g};V={viento:g};Az={rumbo:g}"
                     nodos=defaultdict(lambda:np.zeros(6))
                     for vano,a,b,ra,rb in geometria:
-                        cable=resolver_cable_no_lineal(
-                            a,b,peso_kN_m=w,diametro_m=d,
-                            EA_kN=ea,alpha_por_C=alpha,
-                            H_tendido_kN=h0,temperatura_tendido_C=t0,
-                            temperatura_estado_C=t,
-                            velocidad_viento_ms=viento,
-                            azimut_viento_deg=rumbo,
-                            rho_kg_m3=rho,Cd=cd,tolerancia=tol,
-                        )
+                        clave_calma=(vano["nombre"],h0,t)
+                        if viento==0 and clave_calma in cache_calma:
+                            cable=cache_calma[clave_calma]
+                        else:
+                            cable=resolver_cable_no_lineal(
+                                a,b,peso_kN_m=w,diametro_m=d,
+                                EA_kN=ea,alpha_por_C=alpha,
+                                H_tendido_kN=h0,temperatura_tendido_C=t0,
+                                temperatura_estado_C=t,
+                                velocidad_viento_ms=viento,
+                                azimut_viento_deg=rumbo,
+                                rho_kg_m3=rho,Cd=cd,tolerancia=tol,
+                            )
+                            if viento==0:
+                                cache_calma[clave_calma]=cable
                         if cable.residual_equilibrio_kN>max(1e-5,10*tol):
                             raise ValueError(
                                 f"{caso}/{vano['nombre']}: falla equilibrio BVP"
