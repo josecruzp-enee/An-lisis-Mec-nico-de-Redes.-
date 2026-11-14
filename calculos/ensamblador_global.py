@@ -4,15 +4,15 @@ Cada vano utiliza un problema de contorno no lineal con carga local de
 viento. La longitud natural de tendido se fija UNA VEZ sobre la geometría
 de referencia y se conserva durante las iteraciones de los desplazamientos.
 
-Versión del ensamblador: únicamente conexiones ANCLAJE/FIJA y nodos
-trasladables con rigidez 3x3 DOCUMENTADA. Las suspensiones deslizantes,
-rotaciones del poste, retenidas, cimentación no lineal y efectos dinámicos
-se RECHAZAN, no se sustituyen por elementos ficticios. Este solver
+Versión del ensamblador: conexiones ANCLAJE/FIJA y DESLIZANTE ideal
+con conservación de longitud total y tensión continua en cada guía.
+Nodos trasladables con rigidez 3x3 DOCUMENTADA. Las suspensiones con
+grapa real, rotaciones, retenidas y cimentación no lineal SE RECHAZAN. Este solver
 NO representa todavía toda la red físicamente y NO aprueba estructuras.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
 
 import numpy as np
@@ -22,6 +22,7 @@ from .modelo_red import RedMecanica
 from .catenaria import resolver_catenaria
 from .cambio_estado import longitud_natural
 from .cable_no_lineal import resolver_cable_no_lineal
+from .suspension_deslizante import resolver_seccion_deslizante
 from .validacion_mecanica import finito, vector3
 
 
@@ -37,6 +38,7 @@ class ResultadoRed:
     iteraciones: int
     residual_max_kN: float
     estado: str
+    secciones_deslizantes: dict = field(default_factory=dict)
 
 
 def _material(ficha,nombre):
@@ -70,12 +72,12 @@ def _preparar(red, materiales,rigideces):
     if not isinstance(red,RedMecanica):
         raise ValueError("Se requiere RedMecanica validada")
     red.validar()
-    if any(v.conexion_origen not in ("ANCLAJE","FIJA") or
-           v.conexion_destino not in ("ANCLAJE","FIJA")
+    if any(v.conexion_origen == "SUSPENSION" or
+           v.conexion_destino == "SUSPENSION"
            for v in red.vanos.values()):
         raise ValueError(
-            "Suspensión o deslizamiento no implementado en el ensamblador: "
-            "no está permitido convertirlo a anclaje fijo"
+            "Suspensión con grapa real no implementada: "
+            "no está permitido convertirla a guía deslizante o anclaje"
         )
     matrices={}
     for nombre,n in red.apoyos.items():
@@ -141,7 +143,32 @@ def resolver_equilibrio_global(
             desplazamientos[n]=np.array(x[3*i:3*i+3])
         fuerzas={n:np.zeros(3) for n in red.apoyos}
         vanos={}
+        secciones_deslizantes={}
+        grupos=red._agrupar_secciones()
+        identificadores_deslizantes=set()
+        for (circuito,seccion),grupo in grupos.items():
+            if any(v.conexion_origen=="DESLIZANTE" or
+                   v.conexion_destino=="DESLIZANTE" for v in grupo):
+                if len(grupo)<2:
+                    raise ValueError("Guía deslizante sin sección de varios vanos")
+                resultado_seccion=resolver_seccion_deslizante(
+                    red,materiales,circuito=circuito,seccion=seccion,
+                    temperatura_C=t,viento_ms=v,azimut_deg=az,
+                    rho_kg_m3=rho,Cd=cd,
+                    tolerancia_equilibrio_kN=tol,
+                    tolerancia_bvp=tolerancia_bvp,
+                    apoyos_desplazados_m=desplazamientos,
+                )
+                secciones_deslizantes[(circuito,seccion)]=resultado_seccion
+                identificadores_deslizantes.update(
+                    vano.nombre for vano in grupo
+                )
+                vanos.update(resultado_seccion.vanos)
+                for nombre,fuerza in resultado_seccion.fuerzas_apoyos_kN.items():
+                    fuerzas[nombre]+=fuerza
         for vano in red.vanos.values():
+            if vano.nombre in identificadores_deslizantes:
+                continue
             m=materiales[vano.conductor]
             a=(np.asarray(red.apoyos[vano.origen].base_m)
                +vano.amarre_origen_m+desplazamientos[vano.origen])
@@ -167,7 +194,7 @@ def resolver_equilibrio_global(
                elasticidad.get(n,np.zeros(3))
             for n in red.apoyos
         }
-        return desplazamientos,fuerzas,elasticidad,residual,vanos
+        return desplazamientos,fuerzas,elasticidad,residual,vanos,secciones_deslizantes
 
     if moviles:
         inicial=np.zeros(3*len(moviles))
@@ -195,7 +222,7 @@ def resolver_equilibrio_global(
     else:
         x=np.array([])
         evaluaciones=1
-    desplazamientos,fuerzas,elasticidad,residuales,vanos=evaluar(x)
+    desplazamientos,fuerzas,elasticidad,residuales,vanos,secciones_deslizantes=evaluar(x)
     max_res=max((float(np.linalg.norm(residuales[n]))
                  for n in moviles),default=0.)
     if max_res>tol:
@@ -216,5 +243,6 @@ def resolver_equilibrio_global(
         vanos=vanos,
         iteraciones=evaluaciones,
         residual_max_kN=max_res,
-        estado="EQUILIBRIO DE TRASLACIÓN; NO VERIFICACIÓN ESTRUCTURAL",
+        estado="EQUILIBRIO DE TRASLACIÓN Y GUÍAS IDEALES; NO VERIFICACIÓN ESTRUCTURAL",
+        secciones_deslizantes=secciones_deslizantes,
     )
