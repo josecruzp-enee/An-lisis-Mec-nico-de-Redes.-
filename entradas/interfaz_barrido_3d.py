@@ -12,7 +12,7 @@ import streamlit as st
 
 from entradas.io_excel import leer_puntos_excel
 from entradas.catalogos import CONDUCTORES_ACSR
-from calculos.barrido_3d import ejecutar_barrido_3d
+from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
 from calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
@@ -72,8 +72,10 @@ def mostrar_barrido_3d():
     """Pantalla sencilla: 4 parámetros de uso y opciones técnicas desplegables."""
     st.subheader("Análisis termomecánico 3D")
     st.caption(
-        "Carga el Excel y selecciona conductor, tensión de tendido y viento. "
-        "El programa calcula los estados del rango automáticamente."
+        "Módulo 01 — Conductores. El motor no lineal calcula tensiones, "
+        "flechas y fuerzas en cada extremo, con viento local y variación "
+        "térmica. Esta vista presupone amarres fijos: no debe utilizarse "
+        "como cálculo de continuidad de suspensiones o de red completa."
     )
     archivo = st.file_uploader(
         "Excel de postes y coordenadas", type=["xlsx"],
@@ -181,7 +183,7 @@ def mostrar_barrido_3d():
                 "NO representan ficha del conductor seleccionado"
             )
             demostracion = True
-        resultado = ejecutar_barrido_3d(
+        resultado = ejecutar_barrido_no_lineal_3d(
             vanos,
             peso_kN_m=ficha["peso_kg_m"] * 9.80665 / 1000,
             diametro_m=ficha["diametro_m"],
@@ -210,12 +212,21 @@ def mostrar_barrido_3d():
         else:
             st.warning(
                 "Solicitaciones calculadas con las propiedades ingresadas. "
-                "Todavía NO verifica capacidad de postes, retenidas, anclajes "
-                "ni cimentación. El viento se representa por carga uniforme."
+                "El conductor se resuelve con BVP no lineal y viento "
+                "normal a la tangente local. Los vanos siguen modelados "
+                "con amarres fijos; NO hay continuidad automática ni "
+                "verificación de postes, anclajes o cimentaciones."
             )
         st.success(
             f"{n_casos} estados × {len(vanos)} vanos; "
-            f"{len(resultado['nodos'])} filas de acciones acumuladas."
+            f"{len(resultado['nodos'])} filas de acciones acumuladas. "
+            "Motor: problema de contorno 3D no lineal (BVP)."
+        )
+        st.caption(
+            "Cada vano: amarres fijos, conductor flexible con elasticidad "
+            "axial lineal y coeficiente de arrastre constante. "
+            "Las flechas usan la curva BVP; el despeje respecto al terreno "
+            "lineal NO reemplaza un levantamiento topográfico."
         )
         st.caption(
             "Auditoría de cargas por extremos: "
