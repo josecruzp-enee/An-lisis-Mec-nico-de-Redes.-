@@ -22,7 +22,7 @@ No hay aprobaciones estructurales en este módulo.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
 
 import numpy as np
@@ -50,6 +50,21 @@ class Cable3D:
     residual_ode_max: float
     nodos_malla: int
     modelo: str
+    _solucion: object = field(repr=False, compare=False)
+    _inicio: np.ndarray = field(repr=False, compare=False)
+
+    def puntos(self, u):
+        """Posición 3D para coordenada material NORMALIZADA u en [0,1].
+
+        Se evalúa el interpolador del BVP en la coordenada solicitada,
+        evitando interpolaciones lineales de una tabla poco densa.
+        """
+        u = np.asarray(u, dtype=float)
+        if not np.isfinite(u).all() or np.any((u < 0) | (u > 1)):
+            raise ValueError("La coordenada material u debe estar entre 0 y 1")
+        if u.ndim == 0:
+            return self._solucion(float(u))[:3] + self._inicio
+        return self._solucion(u)[:3].T + self._inicio
 
 
 def _aerodinamica(t, viento, rho, cd, diametro, peso):
@@ -184,4 +199,5 @@ def resolver_cable_no_lineal(
         residual_ode_max=residual_ode,
         nodos_malla=int(sol.x.size),
         modelo="BVP 3D no lineal: viento perpendicular a tangente local",
+        _solucion=sol.sol, _inicio=a.copy(),
     )
