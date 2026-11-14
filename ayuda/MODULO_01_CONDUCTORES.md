@@ -21,6 +21,37 @@ topografía. La pantalla existente del barrido emplea amarres fijos aunque
 reciba tres o más postes. La conectividad real de suspensiones se estudiará
 con el ensamblador global y sus leyes de unión.
 
+## Fuentes externas incorporadas (control de ingeniería)
+
+**Viakon — Manual del Electricista, junio de 2020, pp. 18–20:**
+tabla ACSR por **calibre + nombre del ave** (p.ej. 2/0 QUAIL, 477
+HAWK/FLICKER), construcción de alambres, diámetros, peso por longitud,
+carga nominal de ruptura y resistencia eléctrica.
+https://viakon.com/wp-content/uploads/2020/11/ManualElectricista_2020.pdf
+
+**Nexans — T-ACSR Cable Stress and Strain Characteristics:** tabla
+de E inicial/final y alfa inicial/final por **construcción Al/acero**.
+https://www.nexans.com.br/.rest/eservice/dam/v1/file/223724/StressStrainACSR_es.pdf
+
+**Trefinasa — Overhead Conductors, ACSR:** fuente externa secundaria
+para contraste de módulo final y coeficiente de expansión por
+configuración 6+1, 6+7 y 26+7.
+https://www.trefinasa.com/wp-content/uploads/2017/04/overhead_conductors_trefinasa_2016web.pdf
+
+La tabla Nexans es de **otro fabricante**. No transforma una ficha
+Viakon en ficha certificada de elasticidad y creep. El modo opcional
+de referencia utiliza E_final, α_final y área metálica total calculada
+de los alambres para un **estudio comparativo no apto para diseño**.
+En particular, el modelo actual sigue siendo una elasticidad axial
+lineal; no reproduce automáticamente el cambio de módulo durante
+el tendido y las curvas de tensión-deformación completas.
+
+**Control mecánico automático:** se evalúa para cada caso
+`T_max / T_ruptura_nominal`. Igualar o superar 1 detecta demanda
+compatible con rotura nominal; un valor menor **NO significa CUMPLE**,
+pues aún faltan los límites de servicio EDS/EDA/condiciones de diseño
+y los coeficientes aplicables.
+
 ## Cálculos implementados
 
 1. Geometría 3D de cada vano y desniveles entre amarres.
@@ -32,7 +63,7 @@ con el ensamblador global y sus leyes de unión.
 7. Geometría espacial: flecha vertical relativa a cuerda y desviación lateral.
 8. Despeje frente a terreno **lineal interpolado**: solo referencia,
    nunca certificación de libramientos en montaña o frente a obstáculos.
-9. Momento por producto vectorial brazo-amarrre x fuerza para cada poste.
+9. Momento por producto vectorial brazo-amarre x fuerza para cada poste.
 10. Auditoría por extremo de vano: suma completa Fx,Fy,Fz,Mx,My,Mz.
 11. Envolventes que preservan caso físico: tensión máxima, flecha,
     mínimo despeje de referencia y fuerzas de cada poste.
@@ -71,6 +102,9 @@ parámetros materiales y de los casos de diseño aplicables.
 ## Archivos vigentes
 
 - `calculos/cable_no_lineal.py` — problema de contorno.
+- `entradas/catalogo_viakon_acsr.py` — datos nominales Viakon por ave.
+- `entradas/referencias_mecanicas_acsr.py` — E/alpha finales Nexans por configuración, solo comparación.
+- `calculos/diagnostico_tension_acsr.py` — cribado T_max/ruptura por caso.
 - `calculos/barrido_no_lineal_3d.py` — barridos y resultados por vano.
 - `calculos/cambio_estado.py` — referencia de compatibilidad.
 - `calculos/auditoria_cargas.py` — trazabilidad de cargas.
