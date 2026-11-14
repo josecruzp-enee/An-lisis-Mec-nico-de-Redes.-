@@ -64,6 +64,23 @@ class BarridoNoLinealTest(unittest.TestCase):
         self.assertLess(v["Residual equilibrio (kN)"],1e-4)
         auditar_reacciones_por_vano(r["extremos"],r["nodos"])
 
+    def test_solucion_sin_viento_se_reutiliza_entre_azimuts(self):
+        from unittest.mock import patch
+        from calculos.cable_no_lineal import resolver_cable_no_lineal
+        vanos,args=datos()
+        args.update(direcciones_viento_deg=[0,90,180,270],
+                    viento_min_ms=0,viento_max_ms=0)
+        with patch(
+            "calculos.barrido_no_lineal_3d.resolver_cable_no_lineal",
+            wraps=resolver_cable_no_lineal
+        ) as resolver:
+            resultados=ejecutar_barrido_no_lineal_3d(vanos,**args)
+        self.assertEqual(resolver.call_count,1)
+        self.assertEqual(len(resultados["vanos"]),4)
+        self.assertEqual(len(resultados["extremos"]),8)
+        t=resultados["vanos"]["T máxima (kN)"]
+        self.assertAlmostEqual(t.max(),t.min(),places=8)
+
     def test_expansion_termica_y_casos_independientes(self):
         vanos,args=datos()
         args.update(temperaturas_C=[20.,40.])
