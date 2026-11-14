@@ -13,6 +13,7 @@ import streamlit as st
 from entradas.io_excel import leer_puntos_excel
 from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR
 from entradas.referencias_mecanicas_acsr import referencia_mecanica_nexans
+from calculos.diagnostico_tension_acsr import diagnosticar_tensiones, resumen_tensiones
 from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
@@ -138,6 +139,7 @@ def mostrar_barrido_3d():
                     ["Demostración con parámetros sintéticos",
                      "Referencia Nexans por construcción (solo comparativa)",
                      "Ficha técnica verificada"],
+                    index=1,
                     help="La demostración NO genera resultados aptos para diseño.",
                 )
                 ea_texto = st.text_input("Rigidez EA (kN)", value="")
@@ -212,6 +214,8 @@ def mostrar_barrido_3d():
             cantidad_conductores=int(cantidad),
             fuente_conductor=fuente_modelo,
         )
+        diagnostico_tension = diagnosticar_tensiones(resultado["vanos"], calibre)
+        resumen_tension = resumen_tensiones(diagnostico_tension)
         # Se comprueba ANTES de mostrar resultados que la carga de todos
         # los extremos de vano coincide con las seis componentes por poste.
         auditoria = auditar_reacciones_por_vano(
@@ -264,6 +268,19 @@ def mostrar_barrido_3d():
             "Las flechas usan la curva BVP; el despeje respecto al terreno "
             "lineal NO reemplaza un levantamiento topográfico."
         )
+        st.markdown("### Control de tensión del conductor")
+        st.dataframe(resumen_tension, use_container_width=True, hide_index=True)
+        st.caption(
+            "La carga nominal de ruptura de Viakon no es la tensión "
+            "admisible de diseño. Una relación inferior a 1 no representa "
+            "cumplimiento de tensión EDS/EDA ni de la norma aplicable."
+        )
+        if (diagnostico_tension["Relación T máxima / ruptura"] >= 1).any():
+            st.error(
+                "Se han calculado casos que alcanzan o superan la "
+                "carga nominal de ruptura del conductor. El cálculo "
+                "no acredita que esos estados puedan existir sin falla."
+            )
         st.caption(
             "Auditoría de cargas por extremos: "
             f"{auditoria['Filas extremos']} registros y residual máximo "
