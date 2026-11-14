@@ -12,6 +12,7 @@ import streamlit as st
 
 from entradas.io_excel import leer_puntos_excel
 from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR
+from entradas.tabla_catalogo_acsr import tabla_catalogo_acsr
 from entradas.referencias_mecanicas_acsr import referencia_mecanica_nexans
 from calculos.diagnostico_tension_acsr import diagnosticar_tensiones, resumen_tensiones
 from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
@@ -84,6 +85,20 @@ def mostrar_barrido_3d():
         key="archivo_barrido_3d",
     )
     calibres = list(CONDUCTORES_VIAKON_ACSR)
+    with st.expander("Consultar catálogo de conductores ACSR", expanded=False):
+        tabla_acsr = tabla_catalogo_acsr()
+        st.caption(
+            "Datos nominales: Viakon. Columnas de E/EA/alpha: "
+            "referencias comparativas Nexans por construcción; "
+            "NO propiedades certificadas de Viakon."
+        )
+        st.dataframe(tabla_acsr, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Exportar catálogo ACSR CSV",
+            tabla_acsr.to_csv(index=False).encode("utf-8-sig"),
+            file_name="catalogo_acsr_viakon_referencias.csv",
+            mime="text/csv",
+        )
     with st.form("config_barrido_3d"):
         a, b, c = st.columns(3)
         with a:
