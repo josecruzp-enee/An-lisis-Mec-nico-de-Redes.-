@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 
 from entradas.io_excel import leer_puntos_excel
-from entradas.catalogos import CONDUCTORES_ACSR
+from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR
 from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
@@ -81,13 +81,13 @@ def mostrar_barrido_3d():
         "Excel de postes y coordenadas", type=["xlsx"],
         key="archivo_barrido_3d",
     )
-    calibres = list(CONDUCTORES_ACSR)
+    calibres = list(CONDUCTORES_VIAKON_ACSR)
     with st.form("config_barrido_3d"):
         a, b, c = st.columns(3)
         with a:
             calibre = st.selectbox(
                 "Conductor", calibres,
-                index=calibres.index("2/0 ACSR") if "2/0 ACSR" in calibres else 0,
+                index=calibres.index("2/0 ACSR — QUAIL") if "2/0 ACSR — QUAIL" in calibres else 0,
             )
         with b:
             h0 = st.number_input(
@@ -164,7 +164,7 @@ def mostrar_barrido_3d():
             )
         df = leer_puntos_excel(archivo)
         vanos = _vanos_desde_excel(df)
-        ficha = CONDUCTORES_ACSR[calibre]
+        ficha = CONDUCTORES_VIAKON_ACSR[calibre]
         if propiedades == "Ficha técnica verificada":
             if not ea_texto.strip() or not alfa_texto.strip() or not fuente.strip():
                 raise ValueError(
@@ -173,14 +173,14 @@ def mostrar_barrido_3d():
                 )
             ea = float(ea_texto)
             alfa = float(alfa_texto)
-            fuente_modelo = fuente
+            fuente_modelo = ficha["documento"] + " (peso/diámetro); EA/α: " + fuente
             demostracion = False
         else:
             # PARÁMETROS SINTÉTICOS DEL ENSAYO, nunca propiedades ACSR 2/0.
             ea, alfa = 16000.0, 1.8e-5
             fuente_modelo = (
                 "DEMOSTRACIÓN SINTÉTICA: EA=16000 kN, α=1.8e-5 1/°C; "
-                "NO representan ficha del conductor seleccionado"
+                "NO representan ficha del conductor seleccionado; masa y diámetro Viakon"
             )
             demostracion = True
         resultado = ejecutar_barrido_no_lineal_3d(
@@ -201,6 +201,16 @@ def mostrar_barrido_3d():
         # los extremos de vano coincide con las seis componentes por poste.
         auditoria = auditar_reacciones_por_vano(
             resultado["extremos"], resultado["nodos"]
+        )
+        st.caption(
+            "Conductor: " + ficha["nombre_mostrado"]
+            + " · construcción " + str(ficha["hilos_aluminio"])
+            + "/" + str(ficha["hilos_acero"])
+            + " (Al/acero) · diámetro " + str(ficha["diametro_mm"])
+            + " mm · peso " + str(ficha["peso_kg_km"])
+            + " kg/km · ruptura nominal " + str(ficha["TR_kgf"])
+            + " kgf. Fuente: " + ficha["documento"]
+            + ". La carga de ruptura NO es tensión admisible."
         )
         if demostracion:
             st.error(
