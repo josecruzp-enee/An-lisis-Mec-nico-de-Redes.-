@@ -67,8 +67,22 @@ def mostrar_modelo_red():
         b.metric("Vanos",len(red.vanos))
         c.metric("Secciones mecánicas",len(red.secciones()))
         st.markdown("#### Secciones de tendido identificadas")
-        st.dataframe(pd.DataFrame(red.secciones()),
-                     use_container_width=True,hide_index=True)
+        secciones = pd.DataFrame(red.secciones())
+        estados = []
+        for registro in red.secciones():
+            tipos = set()
+            for nombre in registro["Identificadores"]:
+                vano = red.vanos[nombre]
+                tipos.update((vano.conexion_origen, vano.conexion_destino))
+            if "SUSPENSION" in tipos:
+                estado = "PENDIENTE: grapa/cadena de suspensión real"
+            elif "DESLIZANTE" in tipos:
+                estado = "IMPLEMENTADO: guía IDEAL sin fricción"
+            else:
+                estado = "IMPLEMENTADO: amarres sin deslizamiento"
+            estados.append(estado)
+        secciones["Estado modelo mecánico"] = estados
+        st.dataframe(secciones, use_container_width=True, hide_index=True)
         st.markdown("#### Conexiones por apoyo")
         filas=[]
         enlaces=red.apoyos_conectados()
@@ -83,9 +97,11 @@ def mostrar_modelo_red():
                      hide_index=True)
         st.caption(
             f"Componentes conexas: {len(red.componentes_conexas())}. "
-            "Los apoyos con suspensión no se convierten en anclajes; "
-            "el ensamblador actual rechazará esos casos hasta disponer "
-            "del modelo de movilidad de las suspensiones."
+            "El ensamblador admite amarres fijos y guías DESLIZANTE "
+            "ideales con continuidad de tensión y longitud natural total. "
+            "Las suspensiones con grapa real siguen pendientes y NO se "
+            "reemplazan por una guía sin fricción. Esta vista no ejecuta "
+            "un dimensionamiento estructural."
         )
     except (ValueError,TypeError,KeyError) as exc:
         st.error(f"Red mecánica inválida: {exc}")
