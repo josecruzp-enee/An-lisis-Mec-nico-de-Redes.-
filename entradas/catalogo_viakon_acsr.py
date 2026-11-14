@@ -17,6 +17,7 @@ que sea posible; las claves históricas conservan código explícito.
 from __future__ import annotations
 
 from copy import deepcopy
+from math import pi, isfinite
 
 FUENTE_VIAKON_ACSR = "https://viakon.com/wp-content/uploads/2020/11/ManualElectricista_2020.pdf"
 DOCUMENTO_VIAKON = "Viakon, Manual del Electricista, junio 2020, ACSR"
@@ -46,6 +47,14 @@ _FILAS = (
 def _construir():
     catalogo={}
     for (clave,codigo,calibre,na,da,ns,ds,area,diametro,masa,rotura,r20,pagina) in _FILAS:
+        # La sección declarada por Viakon corresponde al ALUMINIO, no
+        # al área compuesta de acero + aluminio. Detecta errores de copia.
+        area_al_hilos = na * pi * (da / 2)**2
+        if not isfinite(area_al_hilos) or abs(area_al_hilos-area)/area > .015:
+            raise ValueError(
+                f"{codigo}: área nominal Al incompatible con {na} hilos "
+                f"de diámetro {da} mm: {area_al_hilos:.3f} vs {area:g} mm²"
+            )
         catalogo[clave] = {
             "fabricante": "Viakon",
             "familia": "ACSR, aluminio 1350-H19 / alma acero galvanizado",
