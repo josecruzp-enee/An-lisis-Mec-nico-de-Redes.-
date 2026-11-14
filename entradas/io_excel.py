@@ -178,7 +178,7 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
 
     Coordenadas y longitudes expresadas en metros.
     """
-    df = pd.read_excel(archivo)
+    df = archivo.copy() if isinstance(archivo, pd.DataFrame) else pd.read_excel(archivo)
 
     if df.empty:
         raise ValueError("El archivo Excel está vacío.")
