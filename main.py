@@ -466,8 +466,14 @@ def main() -> None:
     st.set_page_config(page_title="Análisis Mecánico", layout="wide")
     modo = st.sidebar.radio(
         "Módulo de análisis",
-        ["Fase 1 — fuerzas en planta", "Barrido termomecánico 3D"],
+        ["Fase 1 — fuerzas en planta", "Barrido termomecánico 3D",
+         "Red completa — conectividad"],
     )
+    if modo == "Red completa — conectividad":
+        from entradas.interfaz_red_global import mostrar_modelo_red
+        st.title("Modelo mecánico de una red completa")
+        mostrar_modelo_red()
+        return
     if modo == "Barrido termomecánico 3D":
         from entradas.interfaz_barrido_3d import mostrar_barrido_3d
         st.title("Análisis Mecánico — Barrido termomecánico 3D")
