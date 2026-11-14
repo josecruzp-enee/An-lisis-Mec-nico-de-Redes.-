@@ -68,6 +68,7 @@ def resolver_cable_no_lineal(
     velocidad_viento_ms, azimut_viento_deg,
     rho_kg_m3=1.225, Cd=1.2, deformacion_permanente=0.0,
     tolerancia=1e-5, max_nodos=12000, puntos=80,
+    longitud_natural_referencia_m=None,
 ):
     """Resuelve el BVP 3D para UN vano con amarres fijos.
 
@@ -97,7 +98,13 @@ def resolver_cable_no_lineal(
         raise ValueError("Longitud natural térmica no positiva")
 
     referencia=resolver_catenaria(a,b,[0,0,-w],H0)
-    s0=longitud_natural(referencia,ea)
+    # Para el sistema global la longitud natural inicial proviene de
+    # la configuración de tendido y NO puede actualizarse al mover apoyos.
+    if longitud_natural_referencia_m is None:
+        s0=longitud_natural(referencia,ea)
+    else:
+        s0=finito(longitud_natural_referencia_m,
+                  "longitud natural referencia",0,True)
     s1=s0*factor
     rumbo_v=np.array([math.cos(rumbo),math.sin(rumbo),0.])
     V=velocidad*rumbo_v
