@@ -131,15 +131,45 @@ class RedMecanica:
                     f"{apoyo}/{circuito}/{seccion}: derivación mecánica no "
                     "definida; separar secciones o declarar dispositivo específico"
                 )
-        # Una sección sin anclajes en extremos carece de condiciones de contorno.
+        # Una sección de tendido sin dispositivos intermedios especiales es
+        # una cadena conectada con exactamente dos anclajes en sus extremos.
+        # Un ramal, ciclo o doble anclaje interior se modela por otras
+        # secciones explícitas, nunca se oculta en un vano regulador.
         for clave,vlist in self._agrupar_secciones().items():
-            anclajes=sum(
-                con in ("ANCLAJE","FIJA")
-                for v in vlist for con in (v.conexion_origen,v.conexion_destino)
-            )
-            if anclajes < 2:
+            vecinos=defaultdict(set)
+            conexiones=defaultdict(list)
+            for v in vlist:
+                vecinos[v.origen].add(v.destino)
+                vecinos[v.destino].add(v.origen)
+                conexiones[v.origen].append(v.conexion_origen)
+                conexiones[v.destino].append(v.conexion_destino)
+            extremos=[n for n,tipos in conexiones.items() if len(tipos)==1]
+            if len(extremos)!=2 or any(len(tipos)>2 for tipos in conexiones.values()):
                 raise ValueError(
-                    f"Sección {clave}: sin al menos dos extremos anclados"
+                    f"Sección {clave}: no es una cadena entre dos anclajes"
+                )
+            if any(conexiones[n][0] not in ("ANCLAJE","FIJA") for n in extremos):
+                raise ValueError(
+                    f"Sección {clave}: cada extremo debe estar anclado"
+                )
+            if any(
+                any(t in ("ANCLAJE","FIJA") for t in conexiones[n])
+                for n in conexiones if n not in extremos
+            ):
+                raise ValueError(
+                    f"Sección {clave}: anclaje interno; divida la sección"
+                )
+            vistos=set()
+            cola=deque([extremos[0]])
+            while cola:
+                actual=cola.popleft()
+                if actual in vistos:
+                    continue
+                vistos.add(actual)
+                cola.extend(vecinos[actual]-vistos)
+            if len(vistos)!=len(conexiones):
+                raise ValueError(
+                    f"Sección {clave}: vanos desconectados"
                 )
 
     def _agrupar_secciones(self):
