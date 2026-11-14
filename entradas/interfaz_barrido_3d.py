@@ -17,6 +17,7 @@ from entradas.referencias_mecanicas_acsr import referencia_mecanica_nexans
 from calculos.diagnostico_tension_acsr import diagnosticar_tensiones, resumen_tensiones
 from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano
+from calculos.resumen_calidad_bvp import resumen_calidad_bvp
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
 from calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
 from calculos.resistencia_postes import (
@@ -294,6 +295,18 @@ def mostrar_barrido_3d():
             "Las flechas usan la curva BVP; el despeje respecto al terreno "
             "lineal NO reemplaza un levantamiento topográfico."
         )
+        with st.expander("Calidad numérica del Módulo 01", expanded=False):
+            st.caption(
+                "Máximos de residuales identificados por caso y vano. "
+                "El residual de compatibilidad compara la longitud del "
+                "cable por derivada geométrica con la obtenida por "
+                "integración constitutiva. El error poligonal es distinto. "
+                "La convergencia NO demuestra resistencia ni cumplimiento."
+            )
+            st.dataframe(
+                resumen_calidad_bvp(resultado["vanos"]),
+                use_container_width=True,hide_index=True,
+            )
         st.markdown("### Control de tensión del conductor")
         st.dataframe(resumen_tension, use_container_width=True, hide_index=True)
         st.caption(
