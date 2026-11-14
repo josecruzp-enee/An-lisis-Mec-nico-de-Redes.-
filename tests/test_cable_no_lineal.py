@@ -48,6 +48,23 @@ class CablesNoLinealesTest(unittest.TestCase):
         self.assertGreater(float(np.max(np.abs(r.xyz[:,1]))),1e-4)
         self.assertTrue(np.isfinite(r.tensiones_xyz).all())
 
+    def test_tension_maxima_no_es_solo_muestra_gruesa(self):
+        r=resolver(velocidad_viento_ms=27,azimut_viento_deg=80)
+        # Cotejo independiente en una rejilla más densa, evaluando la
+        # interpolación del BVP y no solo sus nodos de exportación.
+        u=np.linspace(0,1,6001)
+        from_spline=r._solucion(u)[3:6]
+        max_denso=float(np.linalg.norm(from_spline,axis=0).max())
+        self.assertGreaterEqual(r.tension_maxima_kN+1e-8,max_denso)
+        self.assertGreaterEqual(
+            r.tension_maxima_kN+1e-8,
+            float(np.linalg.norm(r.fuerza_a))
+        )
+        self.assertGreaterEqual(
+            r.tension_maxima_kN+1e-8,
+            float(np.linalg.norm(r.fuerza_b))
+        )
+
     def test_expansion_termica_cambia_tension(self):
         caliente=resolver(temperatura_estado_C=40)
         base=resolver()
