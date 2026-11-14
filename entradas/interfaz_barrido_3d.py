@@ -15,6 +15,9 @@ from entradas.catalogos import CONDUCTORES_ACSR
 from calculos.barrido_3d import ejecutar_barrido_3d
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
 from calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
+from calculos.resistencia_postes import (
+    cribar_resistencia_postes, resumen_resistencia_postes, COLUMNAS_CAPACIDADES,
+)
 from calculos.analisis_retenidas_red import (
     leer_configuraciones_retenidas, evaluar_retenidas_en_barrido,
 )
@@ -264,6 +267,29 @@ def mostrar_barrido_3d():
         criticas = secciones_gobernantes(secciones)
         st.markdown("### Secciones críticas del fuste")
         st.dataframe(criticas, use_container_width=True, hide_index=True)
+        # Las resistencias se leen de una ficha de diseño por sección.
+        # La ausencia de ficha NUNCA se suple con carga de ruptura nominal.
+        capacidades_tabla = None
+        capacidades_cribado = None
+        resumen_cribado = None
+        if "Capacidades" in pd.ExcelFile(BytesIO(archivo.getvalue())).sheet_names:
+            capacidades_tabla = pd.read_excel(
+                BytesIO(archivo.getvalue()), sheet_name="Capacidades"
+            )
+            capacidades_cribado = cribar_resistencia_postes(
+                secciones, capacidades_tabla
+            )
+            resumen_cribado = resumen_resistencia_postes(capacidades_cribado)
+        if resumen_cribado is not None:
+            st.markdown("### Cribado de capacidad resistente documentada")
+            st.dataframe(resumen_cribado,
+                         use_container_width=True, hide_index=True)
+            st.warning(
+                "Una demanda que exceda su límite individual queda "
+                "identificada. Estar por debajo NO equivale a CUMPLE: "
+                "faltan las interacciones mecánicas, estabilidad, "
+                "estado real del poste y verificación de cimentación."
+            )
         st.caption(
             "Acciones por secciones desde el terreno hasta la punta. "
             "El diámetro mostrado es EXTERIOR: no se calcula tensión del "
@@ -276,10 +302,10 @@ def mostrar_barrido_3d():
             "H y M pueden ser gobernadas por estados diferentes. "
             "NO combine sus máximos como un único vector de cargas."
         )
-        t1, t2, t3, t4, t5, t6 = st.tabs([
+        t1, t2, t3, t4, t5, t6, t7 = st.tabs([
             "Casos gobernantes", "Curvas de viento", "Tensiones por vano",
             "Fuerzas y momentos por poste", "Esfuerzos por sección",
-            "Retenidas XYZ",
+            "Retenidas XYZ", "Resistencia de postes",
         ])
         with t1:
             st.markdown("**Envolvente por componente de cada poste**")
@@ -407,6 +433,62 @@ def mostrar_barrido_3d():
                     "Descargar demanda de retenidas CSV",
                     retenidas_detalles.to_csv(index=False).encode("utf-8-sig"),
                     "demanda_retenidas_xyz.csv", mime="text/csv",
+                )
+        with t7:
+            st.caption(
+                "Para comprobar límites resistentes, agregá al Excel una "
+                "hoja 'Capacidades' con resistencias de DISEÑO por poste "
+                "y altura de corte, con fuente y criterio aplicable. "
+                "No se utiliza la carga de ruptura nominal como admisible."
+            )
+            # Exportación de las cotas analizadas, SIN INVENTAR resistencias.
+            cotas = secciones.loc[
+                secciones["Estado sección"] ==
+                "SOLICITACIÓN, RESISTENCIA NO VERIFICABLE",
+                ["Punto", "Altura corte (m)"]
+            ].drop_duplicates().copy()
+            cotas.rename(
+                columns={"Altura corte (m)": "Altura_corte_m"},
+                inplace=True,
+            )
+            plantilla = pd.DataFrame(
+                {k: cotas[k].tolist() if k in cotas
+                 else [None] * len(cotas) for k in COLUMNAS_CAPACIDADES}
+            )
+            archivo_capacidad = BytesIO()
+            with pd.ExcelWriter(archivo_capacidad, engine="openpyxl") as writer:
+                plantilla.to_excel(
+                    writer, sheet_name="Capacidades", index=False
+                )
+            st.download_button(
+                "Descargar plantilla de capacidades por sección",
+                archivo_capacidad.getvalue(),
+                file_name="plantilla_capacidades_postes.xlsx",
+                mime=("application/vnd.openxmlformats-officedocument."
+                      "spreadsheetml.sheet"),
+            )
+            st.caption(
+                "Completar todas las resistencias: Mx_Rd_kNm, My_Rd_kNm, "
+                "V_Rd_kN, N_comp_Rd_kN, N_trac_Rd_kN, Mz_Rd_kNm. "
+                "Cada valor requiere Fuente y Criterio_diseno. "
+                "Los datos deben provenir de una verificación mecánica "
+                "documentada, no de los diámetros exteriores."
+            )
+            if capacidades_cribado is None:
+                st.info(
+                    "No existe hoja Capacidades. Los postes siguen "
+                    "con resistencia NO VERIFICABLE."
+                )
+            else:
+                st.dataframe(
+                    capacidades_cribado, use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Exportar cribado resistente CSV",
+                    capacidades_cribado.to_csv(index=False).encode("utf-8-sig"),
+                    "cribado_resistencia_postes.csv",
+                    mime="text/csv",
                 )
     except (ValueError, TypeError, OverflowError, KeyError, ZeroDivisionError) as exc:
         st.error(f"No se pudo calcular: {exc}")
