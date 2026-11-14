@@ -44,6 +44,7 @@ def _norm_col(columna: str) -> str:
 MAPA_COLUMNAS = {
     # Identificación
     "PUNTO": "Punto",
+    "FIJACION": "Fijacion",
 
     # Coordenadas UTM
     "X": "X",
