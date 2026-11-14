@@ -12,6 +12,7 @@ import streamlit as st
 
 from entradas.io_excel import leer_puntos_excel
 from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR
+from entradas.referencias_mecanicas_acsr import referencia_mecanica_nexans
 from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
@@ -135,6 +136,7 @@ def mostrar_barrido_3d():
                 propiedades = st.radio(
                     "Origen de EA y dilatación térmica",
                     ["Demostración con parámetros sintéticos",
+                     "Referencia Nexans por construcción (solo comparativa)",
                      "Ficha técnica verificada"],
                     help="La demostración NO genera resultados aptos para diseño.",
                 )
@@ -175,6 +177,18 @@ def mostrar_barrido_3d():
             alfa = float(alfa_texto)
             fuente_modelo = ficha["documento"] + " (peso/diámetro); EA/α: " + fuente
             demostracion = False
+            referencia_no_certificada = False
+        elif propiedades == "Referencia Nexans por construcción (solo comparativa)":
+            ref = referencia_mecanica_nexans(calibre)
+            ea = ref["EA_final_referencia_kN"]
+            alfa = ref["alpha_final_referencia_por_C"]
+            fuente_modelo = (
+                ficha["documento"] + " (masa y diámetro); "
+                + "Nexans E FINAL y alpha FINAL por construcción "
+                + ref["configuracion"] + " (solo comparación): " + ref["fuente"]
+            )
+            demostracion = False
+            referencia_no_certificada = True
         else:
             # PARÁMETROS SINTÉTICOS DEL ENSAYO, nunca propiedades ACSR 2/0.
             ea, alfa = 16000.0, 1.8e-5
@@ -183,6 +197,7 @@ def mostrar_barrido_3d():
                 "NO representan ficha del conductor seleccionado; masa y diámetro Viakon"
             )
             demostracion = True
+            referencia_no_certificada = False
         resultado = ejecutar_barrido_no_lineal_3d(
             vanos,
             peso_kN_m=ficha["peso_kg_m"] * 9.80665 / 1000,
@@ -218,6 +233,17 @@ def mostrar_barrido_3d():
                 "No son las propiedades del ACSR seleccionado y NO sirven "
                 "para dimensionamiento. Introducí la ficha técnica verificada "
                 "en Configuración avanzada para un análisis del material real."
+            )
+        elif referencia_no_certificada:
+            st.warning(
+                "ESTUDIO COMPARATIVO: módulo elástico FINAL y dilatación "
+                "FINAL de Nexans para una construcción equivalente, "
+                "NO datos certificados de Viakon ni del estado inicial "
+                "de tendido. No apto para dimensionamiento. "
+                "Se mantienen las limitaciones de amarres fijos y "
+                "elasticidad lineal. "
+                f"E_final={ref['E_final_GPa']:.2f} GPa; "
+                f"EA={ea:.1f} kN; alpha={alfa:.3e} 1/°C."
             )
         else:
             st.warning(
