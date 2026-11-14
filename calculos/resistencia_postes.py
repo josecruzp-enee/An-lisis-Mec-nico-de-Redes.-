@@ -24,14 +24,13 @@ from .validacion_mecanica import finito
 
 COLUMNAS_CAPACIDADES = (
     "Punto", "Altura_corte_m", "Mx_Rd_kNm", "My_Rd_kNm",
-    "V_Rd_kN", "N_Rd_kN", "Mz_Rd_kNm",
+    "V_Rd_kN", "N_comp_Rd_kN", "N_trac_Rd_kN", "Mz_Rd_kNm",
     "Fuente", "Criterio_diseno",
 )
 DEMANDAS = (
     ("Mx (kN·m)", "Mx_Rd_kNm"),
     ("My (kN·m)", "My_Rd_kNm"),
     ("V transversal (kN)", "V_Rd_kN"),
-    ("N axial (kN)", "N_Rd_kN"),
     ("Mz (kN·m)", "Mz_Rd_kNm"),
 )
 
@@ -48,7 +47,7 @@ def validar_capacidades(capacidades):
         if out[c].isna().any() or out[c].astype(str).str.strip().isin(("", "nan")).any():
             raise ValueError(f"Capacidades: {c} no puede estar vacío")
         out[c] = out[c].astype(str).str.strip()
-    for c in ("Altura_corte_m",) + tuple(col for _, col in DEMANDAS):
+    for c in ("Altura_corte_m", "N_comp_Rd_kN", "N_trac_Rd_kN") + tuple(col for _, col in DEMANDAS):
         out[c] = out[c].map(
             lambda x: finito(x,c,0,c!="Altura_corte_m")
         )
@@ -106,6 +105,10 @@ def cribar_resistencia_postes(secciones, capacidades, *, tolerancia_cota_m=1e-5)
             ratio=abs(valor)/float(limite[capacidad])
             ratios[demanda]=ratio
             base[f"Ratio {demanda}"]=ratio
+        axial=finito(fila["N axial (kN)"],"N axial (kN)")
+        limite_axial = ("N_comp_Rd_kN" if axial < 0 else "N_trac_Rd_kN")
+        ratios["N axial (kN)"]=abs(axial)/float(limite[limite_axial])
+        base["Ratio N axial (kN)"]=ratios["N axial (kN)"]
         peor=max(ratios,key=ratios.get)
         maximo=ratios[peor]
         base.update({
