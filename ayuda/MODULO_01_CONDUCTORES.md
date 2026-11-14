@@ -95,9 +95,36 @@ parámetros materiales y de los casos de diseño aplicables.
   libramiento en un módulo especializado.
 - Casos físicos adicionales según proyecto: hielo, cambios de sección,
   concentraciones en herrajes, límites de viento y efectos dinámicos.
-- Validación de referencia adicional (casos benchmark por desnivel,
-  vanos largos, convergencia de malla, estudios de sensibilidad).
+- Ampliar la validación de referencia (los benchmarks de vano
+  de 225 m, 68 m de desnivel, viento oblicuo y doble malla YA ESTÁN
+  implementados y pasan). Quedan por contrastar casos medidos,
+  series de estados térmicos y múltiples configuraciones materiales.
 - Optimización computacional y seguimiento de cálculo en redes extensas.
+
+## Mejoras de ingeniería y rendimiento incorporadas
+
+- Tensión máxima del conductor calculada por búsqueda sobre el
+  interpolador continuo del BVP, no solo sobre una tabla de 150 puntos.
+- Optimización de estado SIN VIENTO: reutiliza un BVP entre azimuts,
+  conservando las filas y casos de salida para trazabilidad.
+- Comparación por caso de `T_max/T_ruptura`, con interrupción de
+  verificaciones posteriores cuando se alcanza/supera la carga nominal
+  de ruptura. Esta barrera NO sustituye un factor de seguridad.
+- Catálogo Viakon de múltiples construcciones por ave; control de
+  coherencia del área de aluminio `N*pi*d²/4` contra la sección
+  nominal declarada.
+- Catálogo heredado de Fase 1 mapeado a las mismas fichas Viakon,
+  sin dos listas independientes de peso y ruptura.
+- Tabla de catálogo visible y exportable en CSV desde Streamlit,
+  separando fuentes nominales de referencias mecánicas.
+- Ensayos CI de dispersión por temperatura/viento, conservación de
+  cargas por extremos, interpolador BVP y documentación de fuentes.
+
+**Limitación:** la ausencia de datos certificado de fabricante para
+curvas completas tensión-deformación, creep y estado inicial/final
+continúa impidiendo declarar completo el Módulo 01 para diseño de red
+real. Ningún resultado de sensibilidad Nexans debe imprimirse como
+cálculo certificado Viakon.
 
 ## Archivos vigentes
 
@@ -105,6 +132,7 @@ parámetros materiales y de los casos de diseño aplicables.
 - `entradas/catalogo_viakon_acsr.py` — datos nominales Viakon por ave.
 - `entradas/referencias_mecanicas_acsr.py` — E/alpha finales Nexans por configuración, solo comparación.
 - `calculos/diagnostico_tension_acsr.py` — cribado T_max/ruptura por caso.
+- `entradas/tabla_catalogo_acsr.py` — exportación y contraste de fuentes.
 - `calculos/barrido_no_lineal_3d.py` — barridos y resultados por vano.
 - `calculos/cambio_estado.py` — referencia de compatibilidad.
 - `calculos/auditoria_cargas.py` — trazabilidad de cargas.
