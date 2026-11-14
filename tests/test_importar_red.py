@@ -42,6 +42,25 @@ class ImportacionRedTest(unittest.TestCase):
         red=leer_red_excel(libro(continuo=False))
         self.assertEqual(len(red.secciones()),2)
 
+    def test_no_infiere_apoyo_fijo_si_falta_fijacion(self):
+        puntos=pd.DataFrame({
+            "Punto":["P1","P2"],"X":[0.,40.],"Y":[0.,0.],
+            "Altitud":[0.,0.],"Poste":["PC-40","PC-40"],
+        })
+        vanos=pd.DataFrame({
+            "Vano":["V1"],"Inicio":["P1"],"Fin":["P2"],
+            "Circuito":["C1"],"Seccion":["S1"],"Conductor":["2/0 ACSR"],
+            "Conexion_Inicio":["ANCLAJE"],"Conexion_Fin":["ANCLAJE"],
+            "Altura_Inicio_m":[9.5],"Altura_Fin_m":[9.5],
+        })
+        archivo=BytesIO()
+        with pd.ExcelWriter(archivo,engine="openpyxl") as escritor:
+            puntos.to_excel(escritor,sheet_name="Puntos",index=False)
+            vanos.to_excel(escritor,sheet_name="Vanos",index=False)
+        archivo.seek(0)
+        with self.assertRaisesRegex(ValueError,"Fijacion explícita"):
+            leer_red_excel(archivo)
+
     def test_hoja_ausente_no_autocompleta_conexiones(self):
         datos=BytesIO()
         pd.DataFrame({
