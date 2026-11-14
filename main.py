@@ -36,7 +36,18 @@ def ui_datos_proyecto() -> Dict[str, Any]:
     st.sidebar.header("Parámetros de cálculo")
 
     calibres = list(CONDUCTORES_ACSR.keys())
-    calibre = st.sidebar.selectbox("Conductor", calibres, index=min(2, max(len(calibres) - 1, 0)))
+    calibre = st.sidebar.selectbox(
+        "Conductor", calibres,
+        index=min(2, max(len(calibres) - 1, 0)),
+        format_func=lambda k: (
+            f"{k} — {CONDUCTORES_ACSR[k]['nombre_pajarito']}"
+        ),
+        help=(
+            "Fase 1 preliminar: cada calibre histórico usa la construcción "
+            "Viakon indicada. Para elegir otras aves del mismo calibre, "
+            "utilizá el Módulo 01 / Barrido termomecánico 3D."
+        ),
+    )
     n_fases = st.sidebar.selectbox("Fases", [1, 2, 3], index=2)
     H_tendido_kN = st.sidebar.number_input(
         "Tensión horizontal de tendido (kN/conductor)",
