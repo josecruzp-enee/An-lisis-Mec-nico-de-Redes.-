@@ -183,9 +183,30 @@ def ejecutar_barrido_no_lineal_3d(
                         longitud_poligonal=float(np.sum(
                             np.linalg.norm(np.diff(p,axis=0),axis=1)
                         ))
-                        error_longitud=abs(
+                        error_poligonal=abs(
                             longitud_poligonal-cable.longitud_deformada_m
                         )
+                        # Comprobación INDEPENDIENTE sobre la derivada
+                        # geométrica del spline BVP: integral |dr/du|.
+                        # A diferencia de la poligonal, mide la consistencia
+                        # entre geometría diferencial y ley constitutiva.
+                        derivadas=cable._solucion(u,1)[:3]
+                        longitud_diferencial=float(np.trapezoid(
+                            np.linalg.norm(derivadas,axis=0),u
+                        ))
+                        error_compatibilidad=abs(
+                            longitud_diferencial-cable.longitud_deformada_m
+                        )
+                        limite_compatibilidad=max(
+                            2e-4,2e-6*cable.longitud_deformada_m
+                        )
+                        if error_compatibilidad>limite_compatibilidad:
+                            raise ValueError(
+                                f"{caso}/{vano['nombre']}: "
+                                "incompatibilidad geométrica BVP "
+                                f"{error_compatibilidad:.6g} m supera "
+                                f"{limite_compatibilidad:.6g} m"
+                            )
                         filas_vanos.append({
                             "Caso":caso,"Vano":vano["nombre"],**geom,
                             "Temperatura (°C)":t,"Viento (m/s)":viento,
@@ -197,7 +218,9 @@ def ejecutar_barrido_no_lineal_3d(
                             "T máxima (kN)":cable.tension_maxima_kN,
                             "Longitud cable (m)":cable.longitud_deformada_m,
                             "Residual equilibrio (kN)":cable.residual_equilibrio_kN,
-                            "Residual compatibilidad (m)":error_longitud,
+                            "Residual compatibilidad (m)":error_compatibilidad,
+                            "Error poligonal longitud (m)":error_poligonal,
+                            "Longitud por derivada BVP (m)":longitud_diferencial,
                             "Residual contorno (m)":cable.residual_frontera_m,
                             "Residual BVP RMS máximo":cable.residual_ode_max,
                             "Nodos malla BVP":cable.nodos_malla,
