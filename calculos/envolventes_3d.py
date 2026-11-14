@@ -67,18 +67,37 @@ def envolventes_vanos(vanos):
         ["T extremo A (kN)", "T extremo B (kN)"]
     ].max(axis=1)
     resultados = []
+    magnitudes=["T mayor extremo (kN)", "H resuelta (kN)"]
+    # El BVP con arrastre local puede tener un máximo de tensión entre
+    # amarres y una componente horizontal diferente en cada extremo.
+    if "T máxima (kN)" in tabla:
+        magnitudes.insert(0,"T máxima (kN)")
+    if "Flecha vertical respecto cuerda (m)" in tabla:
+        magnitudes.append("Flecha vertical respecto cuerda (m)")
+    if "Despeje sobre terreno lineal (m)" in tabla:
+        magnitudes.append("Despeje sobre terreno lineal (m)")
     for nombre, grupo in tabla.groupby("Vano", sort=False):
-        for magnitud in ("T mayor extremo (kN)", "H resuelta (kN)"):
-            fila = grupo.loc[grupo[magnitud].idxmax()]
+        for magnitud in magnitudes:
+            if magnitud=="Despeje sobre terreno lineal (m)":
+                fila=grupo.loc[grupo[magnitud].idxmin()]
+            else:
+                fila=grupo.loc[grupo[magnitud].idxmax()]
             resultados.append({
                 "Vano": nombre, "Magnitud": magnitud,
                 "Valor gobernante": float(fila[magnitud]),
-                "Unidad": "kN", "Caso gobernante": fila["Caso"],
+                "Unidad": "m" if magnitud in (
+                    "Flecha vertical respecto cuerda (m)",
+                    "Despeje sobre terreno lineal (m)"
+                ) else "kN", "Caso gobernante": fila["Caso"],
                 "Viento (m/s)": fila["Viento (m/s)"],
                 "Azimut viento (°)": fila["Azimut viento (°)"],
                 "Temperatura (°C)": fila["Temperatura (°C)"],
                 "H inicial (kN)": fila["H inicial (kN)"],
-                "Estado": "SOLICITACIÓN, NO VERIFICABLE",
+                "Estado": (
+                    "REFERENCIA TERRENO LINEAL; NO VERIFICADO"
+                    if magnitud=="Despeje sobre terreno lineal (m)" else
+                    "SOLICITACIÓN, NO VERIFICABLE"
+                ),
             })
     return pd.DataFrame(resultados)
 
