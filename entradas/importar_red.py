@@ -35,6 +35,13 @@ def leer_red_excel(archivo):
     puntos=leer_puntos_excel(libro.parse("Puntos"))
     if "Altitud" not in puntos or puntos["Altitud"].isna().any():
         raise ValueError("Cada apoyo requiere cota Altitud")
+    if "Fijacion" not in puntos or puntos["Fijacion"].isna().any():
+        raise ValueError(
+            "Cada apoyo requiere Fijacion explícita (FIJO o MOVIL); "
+            "no se presupone que el poste sea rígido"
+        )
+    if puntos["Poste"].astype(str).str.strip().eq("").any():
+        raise ValueError("Cada apoyo requiere un identificador de Poste")
     datos=libro.parse("Vanos")
     faltan=[c for c in COLUMNAS_VANOS if c not in datos.columns]
     if faltan:
@@ -43,9 +50,7 @@ def leer_red_excel(archivo):
         raise ValueError("Hoja Vanos: contiene celdas requeridas vacías")
     apoyos=[]
     for _,r in puntos.iterrows():
-        fijacion=str(r.get("Fijacion","FIJO")).strip().upper()
-        if not fijacion or fijacion=="NAN":
-            fijacion="FIJO"
+        fijacion=str(r["Fijacion"]).strip().upper()
         apoyos.append({
             "nombre":str(r["Punto"]),
             "base_m":(float(r["X"]),float(r["Y"]),float(r["Altitud"])),
