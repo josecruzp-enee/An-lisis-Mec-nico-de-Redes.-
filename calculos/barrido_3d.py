@@ -109,7 +109,7 @@ def ejecutar_barrido_3d(
     rumbos = [finito(az, "azimut viento") % 360 for az in direcciones_viento_deg]
     velocidades = _secuencia_viento(viento_min_ms, viento_max_ms, incremento_viento_ms)
 
-    filas_vanos, filas_nodos = [], []
+    filas_vanos, filas_nodos, filas_extremos = [], [], []
     for h0 in tensiones:
         for temperatura in temperaturas:
             for rumbo in rumbos:
@@ -128,12 +128,32 @@ def ejecutar_barrido_3d(
                         err = float(np.linalg.norm(residual))
                         if not np.isfinite(err) or err > 1e-7:
                             raise ValueError(f"{caso}/{vano['nombre']}: desequilibrio {err} kN")
-                        for nombre, r, fuerza in (
-                            (vano["inicio"], ra, fa), (vano["fin"], rb, fb)
+                        for extremo, nombre, r, fuerza in (
+                            ("A", vano["inicio"], ra, fa),
+                            ("B", vano["fin"], rb, fb),
                         ):
                             f = cantidad_conductores * fuerza
+                            momento = np.cross(r, f)
                             cargas[nombre][:3] += f
-                            cargas[nombre][3:] += np.cross(r, f)
+                            cargas[nombre][3:] += momento
+                            filas_extremos.append({
+                                "Caso": caso, "Vano": vano["nombre"],
+                                "Extremo": extremo, "Punto": nombre,
+                                "Temperatura (°C)": temperatura,
+                                "Viento (m/s)": v_ms,
+                                "Azimut viento (°)": rumbo,
+                                "H inicial (kN)": h0,
+                                "Conductores idénticos": cantidad_conductores,
+                                "Altura amarre (m)": float(r[2]),
+                                "Fx (kN)": float(f[0]),
+                                "Fy (kN)": float(f[1]),
+                                "Fz (kN)": float(f[2]),
+                                "Mx (kN·m)": float(momento[0]),
+                                "My (kN·m)": float(momento[1]),
+                                "Mz (kN·m)": float(momento[2]),
+                                "Fuente conductor": fuente_conductor,
+                                "Estado": "ACCIONES DE CONDUCTOR, NO VERIFICACIÓN",
+                            })
                         # Flecha vertical respecto a la cuerda espacial:
                         # se compara la elevación del cable con la recta
                         # entre amarres a la misma PROGRESIVA HORIZONTAL.
@@ -221,6 +241,7 @@ def ejecutar_barrido_3d(
     return {
         "vanos": pd.DataFrame(filas_vanos),
         "nodos": pd.DataFrame(filas_nodos),
+        "extremos": pd.DataFrame(filas_extremos),
         "parametros": {
             "velocidades_m_s": velocidades, "tensiones_iniciales_kN": tensiones,
             "temperaturas_C": temperaturas, "direcciones_viento_deg": rumbos,
