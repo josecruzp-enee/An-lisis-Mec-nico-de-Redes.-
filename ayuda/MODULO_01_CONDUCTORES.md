@@ -75,6 +75,14 @@ y los coeficientes aplicables.
 - Solución de la catenaria sin viento como referencia analítica.
 - Condición de extremos y residual de fuerzas para viento oblicuo.
 - Cambio de estado con temperatura distinta a la del tendido.
+- Contraste BVP vs. catenaria analítica más compatibilidad de
+  longitud natural para calor y frío, en vanos nivelados y con desnivel.
+- Verificación geométrica independiente de compatibilidad del BVP:
+  integrar |dr/du| y compararlo con la longitud que surge de integrar
+  el estiramiento constitutivo; el error de longitud de una poligonal
+  de puntos es una métrica DISTINTA.
+- Pruebas de invariancia física respecto de coordenadas UTM grandes,
+  rotación del eje horizontal/viento y sentido de definición del vano.
 - Geometría de flecha contra muestreo numérico independiente.
 - Conservación de las seis componentes al acumular cargas por apoyo.
 - Envolventes preservando el caso gobernante y unidades correctas.
@@ -133,7 +141,10 @@ cálculo certificado Viakon.
 - `entradas/referencias_mecanicas_acsr.py` — E/alpha finales Nexans por configuración, solo comparación.
 - `calculos/diagnostico_tension_acsr.py` — cribado T_max/ruptura por caso.
 - `entradas/tabla_catalogo_acsr.py` — exportación y contraste de fuentes.
-- `calculos/barrido_no_lineal_3d.py` — barridos y resultados por vano.
+- `calculos/barrido_no_lineal_3d.py` — barridos, chequeo de longitud
+  geométrica/constitutiva y resultados por vano.
+- `tests/test_cambio_estado_vs_bvp.py` — comparación analítica independiente.
+- `tests/test_invariancias_cable_bvp.py` — independencia de origen y ejes.
 - `calculos/cambio_estado.py` — referencia de compatibilidad.
 - `calculos/auditoria_cargas.py` — trazabilidad de cargas.
 - `calculos/envolventes_3d.py` — casos gobernantes.
