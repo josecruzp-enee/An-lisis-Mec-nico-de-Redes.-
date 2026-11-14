@@ -77,7 +77,7 @@ def _construir():
     return catalogo
 
 
-CONDUCTORES_VIAKON_ACSR = _constru()
+CONDUCTORES_VIAKON_ACSR = _construir()
 
 
 def ficha_viakon_acsr(clave):
