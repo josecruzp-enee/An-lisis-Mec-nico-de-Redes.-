@@ -13,6 +13,7 @@ import streamlit as st
 from entradas.io_excel import leer_puntos_excel
 from entradas.catalogos import CONDUCTORES_ACSR
 from calculos.barrido_3d import ejecutar_barrido_3d
+from calculos.auditoria_cargas import auditar_reacciones_por_vano
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
 from calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
 from calculos.resistencia_postes import (
@@ -194,6 +195,11 @@ def mostrar_barrido_3d():
             cantidad_conductores=int(cantidad),
             fuente_conductor=fuente_modelo,
         )
+        # Se comprueba ANTES de mostrar resultados que la carga de todos
+        # los extremos de vano coincide con las seis componentes por poste.
+        auditoria = auditar_reacciones_por_vano(
+            resultado["extremos"], resultado["nodos"]
+        )
         if demostracion:
             st.error(
                 "RESULTADOS DE DEMOSTRACIÓN: se utilizaron EA y α SINTÉTICOS. "
@@ -210,6 +216,12 @@ def mostrar_barrido_3d():
         st.success(
             f"{n_casos} estados × {len(vanos)} vanos; "
             f"{len(resultado['nodos'])} filas de acciones acumuladas."
+        )
+        st.caption(
+            "Auditoría de cargas por extremos: "
+            f"{auditoria['Filas extremos']} registros y residual máximo "
+            f"{auditoria['Residual máximo carga o momento']:.2e}. "
+            "Desglose disponible en Fuerzas y momentos por poste."
         )
         # Sumar el viento sobre el fuste al nivel del terreno.
         # No confundir las fuerzas SOLO de cables con acciones TOTALES.
@@ -362,6 +374,21 @@ def mostrar_barrido_3d():
             )
         with t4:
             st.dataframe(acciones_combinadas, use_container_width=True)
+            with st.expander("Ver aporte de cada vano y extremo", expanded=False):
+                st.caption(
+                    "Cargas de conductores antes de sumar viento sobre el poste. "
+                    "Cada fila identifica el caso climático, vano y apoyo; "
+                    "la suma de las seis componentes se audita automáticamente."
+                )
+                st.dataframe(
+                    resultado["extremos"], use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Exportar aportes por extremo CSV",
+                    resultado["extremos"].to_csv(index=False).encode("utf-8-sig"),
+                    "cargas_por_vano_y_extremo.csv", mime="text/csv",
+                )
             st.download_button(
                 "Descargar fuerzas y momentos CSV",
                 acciones_combinadas.to_csv(index=False).encode("utf-8-sig"),
