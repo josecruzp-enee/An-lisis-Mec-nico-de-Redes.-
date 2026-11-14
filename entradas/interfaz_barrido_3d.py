@@ -15,6 +15,9 @@ from entradas.catalogos import CONDUCTORES_ACSR
 from calculos.barrido_3d import ejecutar_barrido_3d
 from calculos.solicitaciones_poste import combinar_solicitaciones_postes
 from calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
+from calculos.analisis_retenidas_red import (
+    leer_configuraciones_retenidas, evaluar_retenidas_en_barrido,
+)
 from calculos.envolventes_3d import (
     envolventes_apoyos, envolventes_vanos, mayores_por_apoyo,
 )
@@ -237,6 +240,21 @@ def mostrar_barrido_3d():
         estados_postes = envolventes_apoyos(completas)
         estados_vanos = envolventes_vanos(resultado["vanos"])
 
+        # La hoja opcional Retenidas contiene puntos XYZ REALES relativos
+        # a la base de cada poste. Si no existe, no se asume geometría.
+        retenidas_estado = None
+        retenidas_detalles = None
+        from io import BytesIO
+        if "Retenidas" in pd.ExcelFile(BytesIO(archivo.getvalue())).sheet_names:
+            tabla_retenidas = pd.read_excel(
+                BytesIO(archivo.getvalue()), sheet_name="Retenidas"
+            )
+            geometria_retenidas = leer_configuraciones_retenidas(
+                tabla_retenidas
+            )
+            retenidas_estado, retenidas_detalles = evaluar_retenidas_en_barrido(
+                completas, geometria_retenidas
+            )
         st.markdown("### Demandas máximas por poste")
         st.dataframe(resumen, use_container_width=True, hide_index=True)
         secciones = calcular_secciones_poste(
@@ -258,9 +276,10 @@ def mostrar_barrido_3d():
             "H y M pueden ser gobernadas por estados diferentes. "
             "NO combine sus máximos como un único vector de cargas."
         )
-        t1, t2, t3, t4, t5 = st.tabs([
+        t1, t2, t3, t4, t5, t6 = st.tabs([
             "Casos gobernantes", "Curvas de viento", "Tensiones por vano",
             "Fuerzas y momentos por poste", "Esfuerzos por sección",
+            "Retenidas XYZ",
         ])
         with t1:
             st.markdown("**Envolvente por componente de cada poste**")
@@ -360,5 +379,34 @@ def mostrar_barrido_3d():
                 secciones.to_csv(index=False).encode("utf-8-sig"),
                 "secciones_postes_3d.csv", mime="text/csv",
             )
+        with t6:
+            st.caption(
+                "Para evaluar retenidas, agregá al mismo libro Excel una hoja "
+                "'Retenidas' con columnas: Punto, Retenida, Amarre_X_m, "
+                "Amarre_Y_m, Amarre_Z_m, Anclaje_X_m, Anclaje_Y_m, "
+                "Anclaje_Z_m. Las coordenadas son locales respecto a la "
+                "base del poste en metros. Opcionales: T_limite_kN y "
+                "Fuente_limite. No se presupone ninguna orientación."
+            )
+            if retenidas_estado is None:
+                st.info(
+                    "No hay hoja 'Retenidas' en el Excel. "
+                    "El análisis de postes se mantiene sin retenidas."
+                )
+            else:
+                st.warning(
+                    "Estudio de FACTIBILIDAD ESTÁTICA, no diseño: "
+                    "se determina si las direcciones XYZ podrían equilibrar "
+                    "momentos con cables que solo trabajan a tracción. "
+                    "No se han modelado pretensiones, elongación, "
+                    "deformación del poste ni interacción de anclajes y suelo."
+                )
+                st.dataframe(retenidas_estado, use_container_width=True)
+                st.dataframe(retenidas_detalles, use_container_width=True)
+                st.download_button(
+                    "Descargar demanda de retenidas CSV",
+                    retenidas_detalles.to_csv(index=False).encode("utf-8-sig"),
+                    "demanda_retenidas_xyz.csv", mime="text/csv",
+                )
     except (ValueError, TypeError, OverflowError, KeyError, ZeroDivisionError) as exc:
         st.error(f"No se pudo calcular: {exc}")
