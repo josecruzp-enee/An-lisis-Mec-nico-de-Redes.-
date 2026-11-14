@@ -169,6 +169,17 @@ def mostrar_barrido_3d():
         df = leer_puntos_excel(archivo)
         vanos = _vanos_desde_excel(df)
         ficha = CONDUCTORES_VIAKON_ACSR[calibre]
+        # Un estado inicial que ya iguala la rotura nominal no debe
+        # ingresar al BVP lineal como si el cable permaneciera íntegro.
+        limite_rotura=float(ficha["carga_rotura_kN"])
+        for tension_inicial in h_lista:
+            if tension_inicial >= limite_rotura:
+                raise ValueError(
+                    "La tensión inicial por conductor "
+                    f"{tension_inicial:g} kN alcanza o supera la "
+                    f"ruptura nominal Viakon de {limite_rotura:.3f} kN. "
+                    "No se calcula un cable ficticiamente intacto."
+                )
         if propiedades == "Ficha técnica verificada":
             if not ea_texto.strip() or not alfa_texto.strip() or not fuente.strip():
                 raise ValueError(
@@ -281,6 +292,7 @@ def mostrar_barrido_3d():
                 "carga nominal de ruptura del conductor. El cálculo "
                 "no acredita que esos estados puedan existir sin falla."
             )
+            st.stop()
         st.caption(
             "Auditoría de cargas por extremos: "
             f"{auditoria['Filas extremos']} registros y residual máximo "
