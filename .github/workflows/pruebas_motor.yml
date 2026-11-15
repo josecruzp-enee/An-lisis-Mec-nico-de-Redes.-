@@ -12,6 +12,18 @@ on:
       - 'app.py'
       - 'salidas/**'
       - '.github/workflows/pruebas_motor.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Analisis_mecanico_conductores/**'
+      - 'calculos/**'
+      - 'entradas/**'
+      - 'tests/**'
+      - 'main.py'
+      - 'app.py'
+      - 'salidas/**'
+      - 'requirements.txt'
+      - '.github/workflows/pruebas_motor.yml'
   workflow_dispatch:
 
 permissions:
