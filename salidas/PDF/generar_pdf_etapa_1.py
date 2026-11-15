@@ -128,7 +128,8 @@ class DocumentoConIndice(BaseDocTemplate):
     def afterFlowable(self, flowable):
         titulo=getattr(flowable, "_indice_texto",None)
         if titulo is not None:
-            clave=f"toc_{self.seq.nextf('toc')}"
+            import re
+            clave="toc_"+re.sub(r"[^a-z0-9]+","_",titulo.lower()).strip("_")
             self.canv.bookmarkPage(clave)
             self.notify("TOCEntry",(0,titulo,self.page,clave))
 
@@ -174,7 +175,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
         p=_par(t,estilo)
         # Únicamente títulos de capítulo (no apartados numerados 3.1, 3.2).
         import re
-        if re.match(r"^[1-8]\\. (?!\\d)",t) or t.startswith("Anexos técnicos"):
+        if re.match(r"^[1-8][.] ",t) or t.startswith("Anexos técnicos"):
             p._indice_texto=t
         return p
 
@@ -188,7 +189,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
         # KeepTogether protege título y las primeras filas de tablas extensas.
         filas=_tabla(df,disponible,estilos)
         st.append(CondPageBreak(100))
-        st.append(_par(t,estilos["Heading2"]))
+        st.append(par_titulo(t,estilos["Heading2"]))
         st.append(Spacer(1,4))
         st.extend(filas)
         st.append(Spacer(1,8))
@@ -268,8 +269,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     def par_metodo(t, estilo):
         return par_titulo(t,estilo)
     st.extend(paginas_metodologia(par_metodo,estilos,propiedades,disponible))
-    titulo("3.7. Nomenclatura y unidades")
-    tabla("3.7. Símbolos empleados",pd.DataFrame(
+    tabla("3.7. Nomenclatura y unidades",pd.DataFrame(
         NOMENCLATURA,columns=["Símbolo","Definición","Unidad"]
     ))
     st.append(PageBreak())
