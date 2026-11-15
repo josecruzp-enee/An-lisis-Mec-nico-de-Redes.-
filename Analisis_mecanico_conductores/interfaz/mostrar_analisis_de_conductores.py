@@ -17,6 +17,7 @@ from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee impo
     leer_catalogo_enee,seleccionar_conductor_enee,
 )
 from Analisis_mecanico_conductores.verificaciones.perfil_limites_tension_checa import construir_hipotesis_checa_acsr
+from Analisis_mecanico_conductores.tension_tendido.ejecutar_analisis_integral_de_conductores import ejecutar_analisis_integral
 
 
 COLUMNAS=(
@@ -196,24 +197,22 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
         hip=construir_hipotesis_checa_acsr(rotura)
         st.dataframe(hip,use_container_width=True,hide_index=True)
         st.warning(
-            "Checa: solo límites dinámicos de tensión de cada día y horas frías. "
-            "No sustituye la comprobación normativa de tensión máxima con viento/hielo."
+            "Checa: límites dinámicos TCD/THF. Viento e hielo del barrido "
+            "no constituyen verificaciones normativas."
         )
-    limites=pd.to_numeric(hip["T_limite_kN"],errors="raise")
-    if (limites>=rotura).any():
-        raise ValueError(
-            "Los límites introducidos deben ser menores que "
-            "la ruptura nominal de la fuente seleccionada: "+str(round(rotura,3))+" kN"
-        )
-    return resolver_seccion_regulacion(
-        puntos,hipotesis=hip,
-        temperaturas_tabla_C=[0,10,20,30,40],
-        peso_kN_m=peso_kN_m,
-        diametro_m=diametro_m,
-        EA_kN=ea,alpha_por_C=dilatacion,
-        fuente_material=origen,
+    return ejecutar_analisis_integral(
+        puntos,
+        propiedades={
+            "peso_kN_m":peso_kN_m,
+            "diametro_m":diametro_m,
+            "EA_kN":ea,
+            "alpha_por_C":dilatacion,
+            "ruptura_kN":rotura,
+            "fuente":origen,
+        },
         temperatura_tendido_C=temperatura,
-        H_min_kN=.05*rotura,H_max_kN=.95*rotura,
-        Cd=Cd,rho_kg_m3=rho,
+        perfil_tension=("Checa" if tabla is None else "Manual"),
+        hipotesis_manuales=hip if tabla is not None else None,
         configuracion_barrido=configuracion_barrido,
+        Cd=Cd,rho=rho,
     )
