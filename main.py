@@ -20,7 +20,7 @@ from calculos.engine import ejecutar_todo
 # ============================================================
 def configurar_pagina() -> None:
     st.set_page_config(page_title="Análisis Mecánico", layout="wide")
-    st.title("Análisis Mecánico (FASE 1) — Geometría + Cargas + Fuerzas por poste")
+    st.title("Etapa 1 — Análisis mecánico de conductores")
 
 
 def ui_datos_proyecto() -> Dict[str, Any]:
@@ -497,7 +497,7 @@ def main() -> None:
     st.set_page_config(page_title="Análisis Mecánico", layout="wide")
     modo = st.sidebar.radio(
         "Módulo de análisis",
-        ["Fase 1 — fuerzas en planta", "Barrido termomecánico 3D",
+        ["Etapa 1 — conductores", "Barrido termomecánico 3D",
          "Tendido inverso — hipótesis climáticas",
          "Red completa — conectividad"],
     )
@@ -517,7 +517,7 @@ def main() -> None:
         mostrar_barrido_3d()
         return
 
-    st.title("Análisis Mecánico (FASE 1) — Geometría + Cargas + Fuerzas por poste")
+    st.title("Etapa 1 — Análisis mecánico de conductores")
     proyecto = ui_datos_proyecto()
     mostrar_resumen_proyecto(proyecto)
 
