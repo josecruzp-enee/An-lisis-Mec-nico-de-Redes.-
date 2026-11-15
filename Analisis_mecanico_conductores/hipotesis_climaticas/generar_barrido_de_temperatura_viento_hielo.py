@@ -118,6 +118,10 @@ def _resolver_estado(evaluador, H0, temperatura_C, viento_kmh, hielo_mm,
                      densidad_hielo_kg_m3):
     """Resuelve carga de viento + hielo con una sola formulación termoelástica."""
     viento_ms=viento_kmh/3.6
+    if getattr(evaluador,"modelo_vanos_fijos",False):
+        return evaluador.evaluar_estado_con_hielo(
+            H0,temperatura_C,viento_ms,hielo_mm,densidad_hielo_kg_m3
+        )
     if hielo_mm==0:
         return evaluador.evaluar_estado(H0,temperatura_C,viento_ms)
     peso_extra=_peso_hielo_kN_m(
@@ -182,12 +186,15 @@ def ejecutar_barrido_climatico(puntos, H_tendido_kN, evaluador, configuracion):
                 "Viento (km/h)":viento_kmh,
                 "Viento (m/s)":viento_kmh/3.6,
                 "Hielo radial (mm)":hielo_mm,
-                "H estado (kN)":H,
+                "H estado (kN)":(H[i] if isinstance(H,(list,tuple)) else H),
                 "T máxima vano (kN)":tensiones[i],
                 "Flecha vertical (m)":flecha,
                 "Desviación lateral máxima (m)":lateral,
                 "Carga viento (kN/m)":viento,
-                "Residual compatibilidad (m)":residual,
+                "Residual compatibilidad (m)":(
+                    residual[i] if isinstance(residual,(list,tuple))
+                    else residual
+                ),
                 "Estado":"EXPLORATORIO; NO LÍMITE DE DISEÑO",
             })
     detalle=pd.DataFrame(filas)
