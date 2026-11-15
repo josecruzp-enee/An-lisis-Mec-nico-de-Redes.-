@@ -524,9 +524,10 @@ def main() -> None:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         st.caption(
-            "Sección de regulación ideal con catenaria 3D por vano y "
-            "compatibilidad termoelástica. Acepta amarres desnivelados "
-            "con cotas documentadas. No solicita H inicial."
+            "Distribución con conductor fijado a aisladores de espiga. "
+            "Se calcula H inicial de tendido contra límites documentados "
+            "y se resuelve el cambio de estado INDEPENDIENTE por vano. "
+            "Admite desniveles. No solicita H inicial."
         )
     archivo = ui_cargar_excel()
     if not archivo:
@@ -540,8 +541,9 @@ def main() -> None:
         habilitar_bvp=st.checkbox(
             "Activar análisis avanzado BVP 3D (amarres fijos)",
             key="habilitar_bvp_3d_en_etapa1",
-            help=("Es un estudio separado de la regulación ideal "
-                  "automática; reutiliza el mismo Excel."),
+            help=("Estudio BVP con tensiones iniciales prescritas; "
+                  "el cálculo estándar dimensiona una H inicial y "
+                  "resuelve cada vano tras fijación."),
         )
         if habilitar_bvp:
             from entradas.interfaz_barrido_3d import mostrar_barrido_3d
@@ -551,13 +553,16 @@ def main() -> None:
         if proyecto["modo_tension"].startswith("Calcular"):
             from Analisis_mecanico_conductores.geometria.calcular_vanos_y_vano_regulador import resumen_geometrico
             geo = resumen_geometrico(df)
-            st.subheader("Geometría y vano regulador")
-            c1,c2,c3=st.columns(3)
+            st.subheader("Geometría de vanos independientes")
+            c1,c2=st.columns(2)
             c1.metric("Vanos",str(geo["n_vanos"]))
             c2.metric("Longitud total",f"{geo['longitud_total_m']:.2f} m")
-            c3.metric("Vano regulador (Checa)",f"{geo['vano_regulador_m']:.2f} m")
             st.dataframe(geo["tramos"],use_container_width=True,hide_index=True)
-            st.caption(geo["hipotesis_geometrica"])
+            st.caption(
+                "Cada vano se modela con amarres fijos y longitud natural "
+                "independiente. El equivalente de Checa NO se utiliza "
+                "para calcular tensiones de servicio."
+            )
             if not geo["nivelado_confirmado"]:
                 if geo.get("requiere_3d"):
                     st.info(
@@ -611,10 +616,9 @@ def main() -> None:
                     f"Tensión de tendido calculada: "
                     f"{r.H_tendido_kN:.4f} kN por conductor"
                 )
-            c1,c2,c3=st.columns(3)
-            c1.metric("Vano regulador",f"{r.vano_regulador_m:.2f} m")
-            c2.metric("Longitud total sección",f"{r.longitud_tramo_m:.2f} m")
-            c3.metric("Relación crítica T/límite",f"{r.relacion_maxima:.4f}")
+            c1,c2=st.columns(2)
+            c1.metric("Longitud total de línea",f"{r.longitud_tramo_m:.2f} m")
+            c2.metric("Relación crítica T/límite",f"{r.relacion_maxima:.4f}")
             st.caption(
                 f"Hipótesis gobernante: {r.caso_gobernante}. {r.modelo}. "
                 "La cota de búsqueda activa no equivale a límite "
@@ -656,11 +660,10 @@ def main() -> None:
                 key="descarga_memoria_pdf_etapa1",
             )
             st.warning(
-                "Sección ideal de regulación 3D: los resultados de catenaria "
-                "incluyen vanos desnivelados, pero NO modelan fricción de "
-                "grapas, remates internos ni transferencia de cargas reales "
-                "entre postes. Sin verificación de estructuras, terreno "
-                "intermedio ni libramientos."
+                "Distribución con amarre fijo por vano: H inicial común se "
+                "asume como procedimiento de tendido; los estados en "
+                "servicio se calculan independientemente. No se verifican "
+                "herraje de espiga, postes, terreno ni libramientos."
             )
             return
         res = ejecutar_calculo(df, proyecto)
