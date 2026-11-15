@@ -17,6 +17,7 @@ from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import fin
 from entradas.catalogos import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
+from Analisis_mecanico_conductores.verificaciones.perfil_limites_tension_checa import construir_hipotesis_checa_acsr
 
 
 def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225, configuracion_barrido=None):
@@ -97,7 +98,13 @@ def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225, co
         diametro=float(ficha["diametro_m"])
         rotura=float(ficha["carga_rotura_kN"])
         fuente=str(fila["Fuente"]).strip()
-    hip=libro.parse("Hipotesis")
+    perfil_tension=str(fila.get("Perfil_Tension","")).strip().upper()
+    if perfil_tension in ("CHECA","CHECA TCD/THF","CHECA_TCD_THF"):
+        hip=construir_hipotesis_checa_acsr(rotura)
+    elif perfil_tension in ("","MANUAL"):
+        hip=libro.parse("Hipotesis")
+    else:
+        raise ValueError("Perfil_Tension debe ser Checa o Manual")
     if "T_limite_kN" not in hip:
         raise ValueError("Hipotesis requiere T_limite_kN documentada")
     for _,h in hip.iterrows():
@@ -139,6 +146,7 @@ def plantilla_regulacion():
         "Estado_Elasticidad":"Final",
         "EA_kN":None,"Alpha_por_C":None,
         "Temperatura_tendido_C":None,"Fuente":"",
+        "Perfil_Tension":"Manual",
     }])
     hip=pd.DataFrame([{
         "Hipotesis":"Estado_1","Temperatura_C":None,"Viento_ms":None,
