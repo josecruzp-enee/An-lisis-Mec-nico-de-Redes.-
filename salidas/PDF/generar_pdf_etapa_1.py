@@ -328,6 +328,26 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             "modelo convencional declarados. No se emite dictamen de cumplimiento "
             "normativo estructural ni certificación de seguridad.",
             estilos["NotaPDF"]))
+        titulo("8.1. Fuentes técnicas y trazabilidad")
+        st.append(_par(
+            "Propiedades del conductor: "+str(propiedades["fuente"])+
+            ". La fuente indicada identifica los datos mecánicos usados "
+            "en esta corrida y debe acompañar al archivo de cálculo.",
+            estilos["NotaPDF"]))
+        if referencias:
+            st.append(Spacer(1,5))
+            for fuente in referencias:
+                st.append(_par(
+                    "Criterios de tensión: "+fuente+
+                    ". Referencia técnica del método de Checa; no equivale "
+                    "a una declaración de conformidad con normas ENEE.",
+                    estilos["NotaPDF"]))
+        st.append(Spacer(1,6))
+        st.append(_par(
+            "Trazabilidad numérica: los valores proceden de la tabla "
+            "de tendido, hipótesis y barrido generados por el motor. "
+            "No se han aplicado nuevos cálculos al elaborar el PDF.",
+            estilos["NotaPDF"]))
         st.append(PageBreak())
         titulo("Anexos técnicos - Barrido climático")
         st.append(_par(
