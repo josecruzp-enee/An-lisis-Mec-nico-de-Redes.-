@@ -507,7 +507,7 @@ def main() -> None:
         mostrar_modelo_red()
         return
     if modo == "Tendido inverso — hipótesis climáticas":
-        from entradas.interfaz_tendido_inverso import mostrar_tendido_inverso
+        from Analisis_mecanico_conductores.interfaz.mostrar_tendido_inverso_un_vano import mostrar_tendido_inverso
         st.title("Análisis Mecánico — Tensión y tabla de tendido")
         mostrar_tendido_inverso()
         return
