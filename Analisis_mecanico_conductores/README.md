@@ -59,6 +59,30 @@ crea ninguna segunda formulación física.
 los resultados numéricos. Todas las propiedades y límites de ensayos
 de código son sintéticos y no equivalen a diseño autorizado.
 
+## Propiedades ENEE disponibles automáticamente
+
+- Datos: `conductores/propiedades_mecanicas_acsr_enee.json` (11 ACSR,
+  Tabla 16, valores originales sin modificación).
+- Lector único: `conductores/seleccionar_propiedades_enee.py`.
+- Se identifica cada construcción por **calibre y ave** (p. ej.
+  `2/0` + `QUAIL`), sin seleccionar únicamente por calibre.
+- **E inicial/final** se elige explícitamente. La conversión es
+  `EA_kN = E_kgf_mm2 × A_mm2 × 9.80665 / 1000`.
+- Peso, diámetro, ruptura y dilatación se toman de **la misma ficha
+  ENEE**, sin combinarlos con datos Viakon.
+- **Streamlit:** opción `ENEE — Tabla 16` en propiedades termoelásticas,
+  más selector de estado `Inicial` o `Final`.
+- **Excel:** hoja `Materiales`, columnas `Fuente_Propiedades=ENEE`
+  y `Estado_Elasticidad=Final` (o `Inicial`). Se exige temperatura de
+  tendido, hipótesis climáticas y límites documentados.
+- El modo manual y la referencia Nexans se conservan para compatibilidad.
+  El catálogo Viakon sigue independiente.
+
+**Límite técnico:** seleccionar E final no representa por sí mismo
+fluencia ni permite afirmar que se ha calculado una flecha final
+dependiente del tiempo. K y K' están archivados, pero aún no integrados
+en las ecuaciones.
+
 ## Dependencias y compatibilidad
 
 Las rutas anteriores en `calculos/` y `entradas/` **no contienen ya
