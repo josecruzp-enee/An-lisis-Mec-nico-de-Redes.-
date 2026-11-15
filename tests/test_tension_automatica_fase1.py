@@ -9,7 +9,7 @@ from io import BytesIO
 import pandas as pd
 
 from entradas.catalogos import CONDUCTORES_ACSR
-from entradas.tension_automatica_fase1 import calcular_tension_desde_libro
+from entradas.tension_automatica_fase1 import calcular_tension_desde_libro, plantilla_tension_automatica
 
 
 def _entrada(puntos=2, incluir_limites=True):
@@ -34,7 +34,6 @@ def _entrada(puntos=2, incluir_limites=True):
         "Diametro_m":f["diametro_m"],
         "EA_kN":15000.,
         "Alpha_por_C":1.91e-5,
-        "H_tendido_kN":8.,
         "Temperatura_tendido_C":20.,
         "Fuente":"Propiedades SINTÉTICAS para prueba, no ficha de fabricante",
     }])
@@ -56,6 +55,13 @@ def _entrada(puntos=2, incluir_limites=True):
 
 
 class AutoFase1Test(unittest.TestCase):
+    def test_plantilla_no_pide_H_y_no_inventa_limites(self):
+        libro=pd.read_excel(BytesIO(plantilla_tension_automatica()),sheet_name=None)
+        self.assertEqual(set(libro),{"Puntos","Vanos","Materiales","Hipotesis"})
+        self.assertNotIn("H_tendido_kN",libro["Materiales"].columns)
+        self.assertTrue(libro["Hipotesis"]["T_limite_kN"].isna().all())
+        self.assertTrue(libro["Materiales"]["EA_kN"].isna().all())
+
     def test_tension_surge_de_hipotesis_no_de_usuario(self):
         buff,pts=_entrada()
         res=calcular_tension_desde_libro(buff,pts,"2/0 ACSR")
