@@ -43,6 +43,22 @@ class TendidoInversoTest(unittest.TestCase):
         )
         self.assertTrue(all(x["Residual equilibrio (kN)"]<1e-4 for x in r.tabla_tendido))
 
+    def test_formula_parabolica_de_resumen_solo_como_benchmark(self):
+        # Resumen ISEP p.6: f ≈ g*a²/(8P), para vano horizontal,
+        # flecha pequeña y carga gravitatoria uniforme.
+        x=args()
+        x["inicio"]=(0,0,12)
+        x["fin"]=(45,0,12)
+        x["temperaturas_tabla_C"]=[20]
+        x["hipotesis"]=[HipotesisTendido(
+            "base",20,0,0,100,"Referencia de prueba","Benchmark"
+        )]
+        r=dimensionar_tension_tendido(**x)
+        flecha_bvp=r.tabla_tendido[0]["Flecha vertical sobre cuerda (m)"]
+        parabola=x["peso_kN_m"]*45**2/(8*r.H_tendido_kN)
+        # El modelo analítico aproximado NO se usa para calcular el BVP.
+        self.assertLess(abs(flecha_bvp-parabola)/parabola,.04)
+
     def test_limite_superior_activo_no_inventa_optimo(self):
         x=args()
         x["hipotesis"]=[HipotesisTendido(
