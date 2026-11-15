@@ -95,6 +95,18 @@ class Etapa1Desnivel3DTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"Altitud parcial"):
             resolver_seccion_regulacion(**entradas(df))
 
+    def test_no_asumir_amarre_en_suelo_si_altitudes_difieren(self):
+        df=puntos()
+        df=df.drop(columns=["Altura_Amarre_m"])
+        with self.assertRaisesRegex(ValueError,"Altura_Amarre_m"):
+            resolver_seccion_regulacion(**entradas(df))
+
+    def test_no_asumir_terreno_nivelado_si_alturas_difieren(self):
+        df=puntos(cotas=(0.,0.,0.),amarres=(9.,11.,9.))
+        df=df.drop(columns=["Altitud"])
+        with self.assertRaisesRegex(ValueError,"Altitud completa"):
+            resolver_seccion_regulacion(**entradas(df))
+
     def test_nivelados_preservan_flecha_legacy(self):
         from Analisis_mecanico_conductores.flechas.calcular_flecha_vertical_de_catenaria import (
             calcular_flecha_vertical_de_catenaria,
