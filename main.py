@@ -497,28 +497,20 @@ def main() -> None:
     modo = st.sidebar.radio(
         "Módulo de análisis",
         ["Etapa 1 — conductores",
-         "CFE — claro de diseño y claros regla",
-         "Ensayo CFE — inicial y final",
+         "Corridas por vano — Checa",
          "Tendido inverso — hipótesis climáticas",
          "Red completa — conectividad"],
     )
-    if modo == "CFE — claro de diseño y claros regla":
-        st.title("Análisis CFE — condición inicial/final vinculadas")
+    if modo == "Corridas por vano — Checa":
+        st.title("Corridas mecánicas de conductores por vano")
         archivo = ui_cargar_excel()
         if not archivo:
             st.stop()
         puntos = leer_puntos_excel(archivo)
-        from Analisis_mecanico_conductores.interfaz.mostrar_ensayo_cfe_claro_diseno import mostrar_ensayo_cfe_diseno
-        mostrar_ensayo_cfe_diseno(puntos)
-        return
-    if modo == "Ensayo CFE — inicial y final":
-        st.title("Etapa 1 — Corridas de tensión y flecha CFE")
-        archivo = ui_cargar_excel()
-        if not archivo:
-            st.stop()
-        puntos = leer_puntos_excel(archivo)
-        from Analisis_mecanico_conductores.interfaz.mostrar_calculo_cfe_inicial_final import mostrar_calculo_cfe
-        mostrar_calculo_cfe(puntos)
+        from Analisis_mecanico_conductores.interfaz.mostrar_corridas_por_vano_checa import (
+            mostrar_corridas_por_vano_checa,
+        )
+        mostrar_corridas_por_vano_checa(puntos)
         return
     if modo == "Red completa — conectividad":
         from entradas.interfaz_red_global import mostrar_modelo_red
