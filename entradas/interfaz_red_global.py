@@ -29,9 +29,9 @@ def _plantilla():
     vanos=pd.DataFrame({
         "Vano":["V1","V2"],"Inicio":["P1","P2"],
         "Fin":["P2","P3"],"Circuito":["C1","C1"],
-        "Seccion":["S1","S2"],"Conductor":["2/0 ACSR"]*2,
-        "Conexion_Inicio":["ANCLAJE","ANCLAJE"],
-        "Conexion_Fin":["ANCLAJE","ANCLAJE"],
+        "Seccion":["S1","S1"],"Conductor":["2/0 ACSR"]*2,
+        "Conexion_Inicio":["ANCLAJE","SUSPENSION"],
+        "Conexion_Fin":["SUSPENSION","ANCLAJE"],
         "Altura_Inicio_m":[9.5,9.5],"Altura_Fin_m":[9.5,9.5],
     })
     materiales=pd.DataFrame([{
@@ -53,6 +53,23 @@ def _plantilla():
     return memoria.getvalue()
 
 
+def _plantilla_calculo():
+    """Caso de cálculo de dos vanos realmente anclados, sin suspensiones."""
+    libro=pd.ExcelFile(BytesIO(_plantilla()))
+    puntos=libro.parse("Puntos")
+    vanos=libro.parse("Vanos")
+    vanos["Seccion"]=["S1","S2"]
+    vanos["Conexion_Inicio"]=["ANCLAJE","ANCLAJE"]
+    vanos["Conexion_Fin"]=["ANCLAJE","ANCLAJE"]
+    salida=BytesIO()
+    with pd.ExcelWriter(salida,engine="openpyxl") as writer:
+        puntos.to_excel(writer,index=False,sheet_name="Puntos")
+        vanos.to_excel(writer,index=False,sheet_name="Vanos")
+        libro.parse("Materiales").to_excel(writer,index=False,sheet_name="Materiales")
+        libro.parse("Hipotesis").to_excel(writer,index=False,sheet_name="Hipotesis")
+    return salida.getvalue()
+
+
 def mostrar_modelo_red():
     st.subheader("Modelo global de la red — conectividad")
     st.info(
@@ -65,11 +82,18 @@ def mostrar_modelo_red():
         file_name="plantilla_red_mecanica.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+    st.download_button(
+        "Descargar plantilla para cálculo de dos vanos anclados",
+        _plantilla_calculo(),
+        file_name="plantilla_calculo_red.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
     st.caption(
-        "La plantilla muestra una red FICTICIA con dos vanos anclados "
-        "y contiene Puntos, Vanos, Materiales e Hipotesis. "
-        "Completá las propiedades mecánicas y los estados climáticos "
-        "antes de calcular; la plantilla NO incluye valores de diseño. "
+        "La primera plantilla conserva una SUSPENSIÓN real para "
+        "validar conectividad (su cálculo está pendiente). La segunda "
+        "representa DOS secciones ancladas calculables. Ambas traen "
+        "Puntos, Vanos, Materiales e Hipotesis; los valores de diseño "
+        "quedan vacíos para que no se inventen. "
         "No se deducen suspensiones ni remates de manera automática."
     )
     archivo=st.file_uploader(
