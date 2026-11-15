@@ -53,7 +53,7 @@ def ejecutar_analisis_integral(
             raise ValueError("El límite declarado alcanza la ruptura nominal")
     return resolver_seccion_regulacion(
         puntos,hipotesis=hip,
-        temperaturas_tabla_C=[0,10,20,30,40,50],
+        temperaturas_tabla_C=[0,10,20,30,40],
         peso_kN_m=finito(propiedades["peso_kN_m"],"peso",0,True),
         diametro_m=finito(propiedades["diametro_m"],"diámetro",0,True),
         EA_kN=finito(propiedades["EA_kN"],"EA",0,True),
