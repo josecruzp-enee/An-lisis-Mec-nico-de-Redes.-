@@ -81,7 +81,7 @@ class MemoriaPDFTest(unittest.TestCase):
         self.assertIn("Referencia técnica",texto)
         # El índice debe incluir al menos un número de página.
         import re
-        self.assertRegex(texto_indice, r"\\b[2-9]\\s+1[.] Resumen ejecutivo")
+        self.assertRegex(texto_indice, r"[2-9]\s+1[.] Resumen ejecutivo")
 
     def test_faltan_etapas_y_datos_no_se_omiten(self):
         with self.assertRaisesRegex(ValueError,"etapa 2"):
