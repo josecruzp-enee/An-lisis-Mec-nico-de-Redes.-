@@ -123,8 +123,12 @@ def calcular_tension_desde_libro(libro_excel, puntos, conductor, *, Cd=1.2, rho=
     # Intervalo NUMÉRICO de búsqueda, NO tensión admisible.
     # Los límites climáticos documentados, no este intervalo,
     # controlan la tensión final aceptable.
-    Hmin=0.0001*limite_rotura
-    Hmax=(1.-1e-5)*limite_rotura
+    # Dominio de búsqueda NUMÉRICO de la primera versión:
+    # 5 % a 95 % de ruptura. No son límites admisibles normativos.
+    # Si la solución requiere salir de ese dominio, se informa que
+    # no está determinada: jamás se presenta la cota como 'segura'.
+    Hmin=.05*limite_rotura
+    Hmax=.95*limite_rotura
     if any(h.tension_limite_kN>=limite_rotura for h in hip):
         raise ValueError(
             "Un límite de diseño no puede igualar/superar "
