@@ -22,6 +22,8 @@ proyecto. No incluye dimensionamiento de postes, retenidas ni cimentaciones.
 | `hipotesis_climaticas/` | `evaluar_estados_climaticos_catenaria_3d.py` | Barrido analítico de cargas y temperaturas |
 | `hipotesis_climaticas/` | `evaluar_estados_climaticos_bvp_3d.py` | Barrido físico BVP por vano |
 | `tension_tendido/` | `calcular_tension_y_flechas_de_seccion.py` | Regulación convencional multivano |
+| `tension_tendido/` | `evaluar_estados_de_la_seccion.py` | Evaluar cargas y tensiones por estado climático mediante un motor único |
+| `tension_tendido/` | `construir_resultados_regulacion.py` | Crear tablas de hipótesis, flechas y tendido sin recalcular la física |
 | `tension_tendido/` | `calcular_tension_inversa_de_un_vano.py` | Optimización inversa 3D de un vano fijo |
 | `tension_tendido/` | `resolver_seccion_deslizante_ideal.py` | Sección con guías ideales sin fricción, distinta de una grapa real |
 | `flechas/` | `calcular_flecha_vertical_de_catenaria.py` | Flecha vertical de catenaria con amarres nivelados |
@@ -34,6 +36,28 @@ proyecto. No incluye dimensionamiento de postes, retenidas ni cimentaciones.
 | `entradas/` | `leer_datos_y_calcular_regulacion.py` | Adaptar Excel a cálculo convencional |
 | `interfaz/` | `mostrar_analisis_de_conductores.py` | Capturar parámetros en Streamlit sin modificar Excel |
 | `pruebas/` | `test_identidad_de_importaciones.py` | Verifica que ambas rutas importan la misma función |
+
+## Refactorización de regulación (sin cambios de modelo)
+
+La función pública `resolver_seccion_regulacion` sigue siendo el
+punto de entrada de la Etapa 1. Conserva su firma, sus resultados,
+sus validaciones y la selección de tensión bajo hipótesis documentadas.
+
+Ahora delega en:
+- `EvaluadorEstadosRegulacion.evaluar_estado()`: estados por
+  temperatura y viento, compatibilidad de longitudes y tensiones
+  de extremo
+- `construir_tablas_de_hipotesis()`: tabla de estados y flechas
+- `construir_tabla_de_tendido()`: tabla a temperaturas sin viento
+- `calcular_flecha_vertical_de_catenaria()`: mínima elevación del
+  conductor respecto de amarres nivelados
+
+La clase evaluadora mantiene caché de estados repetidos, y no
+crea ninguna segunda formulación física.
+
+**Regresión:** añadir y conservar pruebas de la interfaz pública y de
+los resultados numéricos. Todas las propiedades y límites de ensayos
+de código son sintéticos y no equivalen a diseño autorizado.
 
 ## Dependencias y compatibilidad
 
