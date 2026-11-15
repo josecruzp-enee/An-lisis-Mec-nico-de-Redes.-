@@ -46,7 +46,7 @@ def mostrar_ensayo_cfe_diseno(puntos):
                 help="No es el claro regla. Debe justificarse por estructuras, despejes y cálculo CFE.",
             )
             flecha=st.number_input(
-                "Flecha inicial de diseño a 50°C, condición FINAL (m)",
+                "Flecha de referencia a 50°C, condición FINAL (m)",
                 min_value=.01,value=1.50,step=.05,
                 help="CFE emplea 1.5 m como punto de partida en casos específicos; no universal.",
             )
