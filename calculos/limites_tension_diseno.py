@@ -30,7 +30,7 @@ def validar_criterios_tension(criterios: pd.DataFrame) -> pd.DataFrame:
     faltan=[c for c in COLUMNAS_CRITERIO if c not in criterios.columns]
     if faltan:
         raise ValueError("Faltan columnas de criterios: "+", ".join(faltan))
-    datos=criterios.loc[:,COLUMNAS_CRITERIO].copy()
+    datos=criterios.loc[:,list(COLUMNAS_CRITERIO)].copy()
     for c in ("Clase_estado", "Fuente_limite", "Criterio_diseno"):
         if datos[c].isna().any():
             raise ValueError(f"{c}: campo requerido")
@@ -70,7 +70,7 @@ def evaluar_tensiones_diseno(vanos: pd.DataFrame,
     if clases_por_caso["Caso"].isna().any() or clases_por_caso["Caso"].duplicated().any():
         raise ValueError("Clases: caso vacío o duplicado")
     lim=validar_criterios_tension(criterios)
-    res=vanos.loc[:,columnas].copy()
+    res=vanos.loc[:,list(columnas)].copy()
     if res[["Caso", "Vano"]].isna().any().any() or res.duplicated(["Caso","Vano"]).any():
         raise ValueError("Resultados sin identificación única de vano/caso")
     valores=pd.to_numeric(res["T máxima (kN)"],errors="raise")
