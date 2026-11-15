@@ -14,6 +14,7 @@ from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de
 from entradas.catalogos import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.referencias_mecanicas_acsr_nexans import referencia_mecanica_nexans
+from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
 
 
 COLUMNAS=(
@@ -52,10 +53,16 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225):
         fuente_tipo=st.radio(
             "Propiedades termoelásticas",
             [
+                "ENEE — Tabla 16 (propiedades automáticas)",
                 "Ficha técnica documentada",
                 "Referencia Nexans por construcción (comparativa)",
             ],
         )
+        estado_enee=st.selectbox(
+            "Estado elástico ENEE",["Final","Inicial"],
+            help="Selecciona E final o inicial; no calcula creep."
+        )
+        st.caption("Modo ENEE: EA, dilatación, diámetro, peso y ruptura provienen exclusivamente de Tabla 16.")
         c1,c2,c3=st.columns(3)
         with c1:
             temperatura=st.number_input(
@@ -87,7 +94,23 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225):
     if not enviar:
         return None
     hip=_leer_hipotesis_usuario(tabla)
-    if fuente_tipo.startswith("Referencia"):
+    if fuente_tipo.startswith("ENEE"):
+        propiedades=seleccionar_desde_clave_viakon(nombre,estado_enee)
+        ea=propiedades["EA_kN"]
+        dilatacion=propiedades["alpha_por_C"]
+        origen=propiedades["fuente"]
+        peso_kN_m=propiedades["peso_kN_m"]
+        diametro_m=propiedades["diametro_m"]
+        rotura=propiedades["ruptura_kN"]
+        st.info(
+            f"ENEE {propiedades['nombre']} · {estado_enee}: "
+            f"E = {propiedades['E_kgf_mm2']:g} kgf/mm², "
+            f"A = {propiedades['area_mm2']:g} mm², "
+            f"EA = {ea:,.2f} kN; "
+            f"α = {dilatacion:.6g} 1/°C. "
+            "Estos valores no incluyen creep ni límites admisibles."
+        )
+    elif fuente_tipo.startswith("Referencia"):
         referencia=referencia_mecanica_nexans(nombre)
         ea=referencia["EA_final_referencia_kN"]
         dilatacion=referencia["alpha_final_referencia_por_C"]
@@ -106,18 +129,21 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225):
         ea=float(EA)
         dilatacion=float(alpha)
         origen=fuente.strip()
-    rotura=float(ficha["carga_rotura_kN"])
+    if not fuente_tipo.startswith("ENEE"):
+        rotura=float(ficha["carga_rotura_kN"])
+        peso_kN_m=float(ficha["peso_kg_m"])*9.80665/1000
+        diametro_m=float(ficha["diametro_m"])
     limites=pd.to_numeric(hip["T_limite_kN"],errors="raise")
     if (limites>=rotura).any():
         raise ValueError(
             "Los límites introducidos deben ser menores que "
-            "la ruptura nominal Viakon: "+str(round(rotura,3))+" kN"
+            "la ruptura nominal de la fuente seleccionada: "+str(round(rotura,3))+" kN"
         )
     return resolver_seccion_regulacion(
         puntos,hipotesis=hip,
         temperaturas_tabla_C=[0,10,20,30,40],
-        peso_kN_m=float(ficha["peso_kg_m"])*9.80665/1000,
-        diametro_m=float(ficha["diametro_m"]),
+        peso_kN_m=peso_kN_m,
+        diametro_m=diametro_m,
         EA_kN=ea,alpha_por_C=dilatacion,
         fuente_material=origen,
         temperatura_tendido_C=temperatura,
