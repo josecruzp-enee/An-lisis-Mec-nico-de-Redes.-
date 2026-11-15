@@ -33,6 +33,14 @@ from scipy.optimize import brentq
 from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import resolver_cambio_estado, vano_regulador
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
+from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion import (
+    EvaluadorEstadosRegulacion,
+    calcular_cargas_transversales_por_vano as _cargas,
+)
+from Analisis_mecanico_conductores.tension_tendido.construir_resultados_regulacion import (
+    construir_tablas_de_hipotesis,
+    construir_tabla_de_tendido,
+)
 
 
 @dataclass
@@ -93,22 +101,6 @@ def _geometria(puntos):
     return xyz,luces
 
 
-def _cargas(xyz, peso, diametro, velocidad, cd, rho):
-    v=finito(velocidad,"viento",0)
-    wv=.5*finito(rho,"rho",0,True)*finito(cd,"Cd",0,True)*diametro*v*v/1000
-    resultado=[]
-    for a,b in zip(xyz[:-1],xyz[1:]):
-        d=b[:2]-a[:2]
-        normal=np.array([-d[1],d[0],0.])/np.linalg.norm(d)
-        resultado.append((np.array([0.,0.,-peso]),
-                          np.array([wv*normal[0],wv*normal[1],-peso])))
-    return resultado,wv
-
-
-from Analisis_mecanico_conductores.flechas.calcular_flecha_vertical_de_catenaria import (
-    calcular_flecha_vertical_de_catenaria as _flecha,
-)
-
 def resolver_seccion_regulacion(
     puntos, *, hipotesis, temperaturas_tabla_C,
     peso_kN_m, diametro_m, EA_kN, alpha_por_C, fuente_material,
@@ -149,37 +141,20 @@ def resolver_seccion_regulacion(
         if not str(h["Fuente_limite"]).strip() or not str(h["Criterio_diseno"]).strip():
             raise ValueError("Falta fuente o criterio de un límite")
         finito(h["T_limite_kN"],"límite de tensión",0,True)
-    referencia=[(a,b,np.array([0.,0.,-peso])) for a,b in zip(xyz[:-1],xyz[1:])]
+    evaluador=EvaluadorEstadosRegulacion(
+        xyz,peso,d,ea,alpha,t0,Cd,rho_kg_m3
+    )
+    estado=evaluador.evaluar_estado
 
-    @lru_cache(maxsize=None)
-    def estado(h0,temperatura,viento):
-        cargas,wv=_cargas(xyz,peso,d,viento,Cd,rho_kg_m3)
-        parejas=[(a,b,c[0],c[1])
-                 for (a,b,_),c in zip(referencia,cargas)]
-        dt=float(temperatura)-t0
-        if dt==0 and viento==0:
-            h_estado=h0
-            residuo=0.
-        else:
-            calculo=resolver_cambio_estado(
-                parejas,h0,ea,alpha,dt,tolerancia_m=1e-8
-            )
-            h_estado=calculo["H_kN"]
-            residuo=calculo["residual_m"]
-        cables=[resolver_catenaria(a,b,q1,h_estado)
-                for a,b,q0,q1 in parejas]
-        # Mayor tensión ocurre en un extremo de cada catenaria.
-        tensiones=[max(float(c.tension(0)),float(c.tension(c.luz)))
-                   for c in cables]
-        return h_estado,tensiones,cables,residuo,wv
-
-    def max_relacion(h):
-        razones=[]
-        for _,caso in hipotesis.iterrows():
-            _,tmax,_,_,_=estado(float(h),
-                float(caso["Temperatura_C"]),float(caso["Viento_ms"]))
-            razones.append(max(tmax)/float(caso["T_limite_kN"]))
-        return max(razones)
+    def max_relacion(H_referencia_kN):
+        """Mayor cociente tensión real/límite de todas las hipótesis."""
+        return max(
+            max(estado(
+                float(H_referencia_kN),
+                float(caso["Temperatura_C"]),float(caso["Viento_ms"])
+            )[1])/float(caso["T_limite_kN"])
+            for _,caso in hipotesis.iterrows()
+        )
 
     hs=np.linspace(hmin,hmax,9)
     muestra=np.array([max_relacion(float(h)) for h in hs])
@@ -194,58 +169,22 @@ def resolver_seccion_regulacion(
         lambda h:max_relacion(float(h))-1,hmin,hmax,
         xtol=1e-7,rtol=1e-9
     ))
-    filas_hip=[]
-    filas_flechas=[]
-    for _,caso in hipotesis.iterrows():
-        h,tmax,cables,residuo,wv=estado(
-            hopt,float(caso["Temperatura_C"]),float(caso["Viento_ms"])
-        )
-        filas_hip.append({
-            "Hipótesis":str(caso["Hipotesis"]),
-            "Temperatura (°C)":float(caso["Temperatura_C"]),
-            "Viento (m/s)":float(caso["Viento_ms"]),
-            "H estado (kN)":h,
-            "T máxima sección (kN)":max(tmax),
-            "Límite (kN)":float(caso["T_limite_kN"]),
-            "Relación T/límite":max(tmax)/float(caso["T_limite_kN"]),
-            "Fuente límite":str(caso["Fuente_limite"]),
-            "Residual compatibilidad (m)":residuo,
-        })
-        for i,(c,a,b) in enumerate(zip(cables,xyz[:-1],xyz[1:])):
-            filas_flechas.append({
-                "Hipótesis":str(caso["Hipotesis"]),
-                "Vano":str(puntos.iloc[i]["Punto"])+" → "+str(puntos.iloc[i+1]["Punto"]),
-                "Luz (m)":float(luces[i]),
-                "Flecha vertical (m)":_flecha(c,a,b),
-                "T máxima vano (kN)":tmax[i],
-                "H estado (kN)":h,
-                "Viento transversal (kN/m)":wv,
-            })
-    mayor=max(filas_hip,key=lambda r:r["Relación T/límite"])
-    if mayor["Relación T/límite"]>1+1e-5:
+    tabla_hipotesis,tabla_flechas=construir_tablas_de_hipotesis(
+        puntos,xyz,luces,hipotesis,hopt,estado
+    )
+    peor=tabla_hipotesis.loc[tabla_hipotesis["Relación T/límite"].idxmax()]
+    if peor["Relación T/límite"]>1+1e-5:
         raise ValueError("Las hipótesis de tensión no se satisfacen")
-    tabla=[]
-    for temp in temps:
-        h,_,cables,residuo,_=estado(hopt,temp,0.)
-        for i,(c,a,b) in enumerate(zip(cables,xyz[:-1],xyz[1:])):
-            tabla.append({
-                "Temperatura (°C)":temp,
-                "Vano":str(puntos.iloc[i]["Punto"])+" → "+str(puntos.iloc[i+1]["Punto"]),
-                "H del estado (kN)":h,
-                "Flecha vertical (m)":_flecha(c,a,b),
-                "T extremo A (kN)":float(c.tension(0)),
-                "T extremo B (kN)":float(c.tension(c.luz)),
-                "Residual compatibilidad (m)":residuo,
-            })
+    tabla_tendido=construir_tabla_de_tendido(puntos,xyz,temps,hopt,estado)
     return ResultadoRegulacion(
         H_tendido_kN=hopt,
         vano_regulador_m=vano_regulador(luces),
         longitud_tramo_m=float(sum(luces)),
-        hipotesis=pd.DataFrame(filas_hip),
-        flechas=pd.DataFrame(filas_flechas),
-        tabla_tendido=pd.DataFrame(tabla),
-        caso_gobernante=mayor["Hipótesis"],
-        relacion_maxima=float(mayor["Relación T/límite"]),
+        hipotesis=tabla_hipotesis,
+        flechas=tabla_flechas,
+        tabla_tendido=tabla_tendido,
+        caso_gobernante=peor["Hipótesis"],
+        relacion_maxima=float(peor["Relación T/límite"]),
         cota_busqueda_activa=activo,
         modelo="Sección convencional de regulación: H común y redistribución ideal; cargas de viento transversales máximas por vano",
     )
