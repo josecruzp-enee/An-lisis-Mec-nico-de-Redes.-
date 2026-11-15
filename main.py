@@ -554,13 +554,25 @@ def main() -> None:
                 st.info("El Excel no confirma amarres de igual altura. Se calcula la geometría, pero tensión y flecha convencionales requieren cotas y alturas completas.")
             from entradas.regulacion_fase1 import ejecutar_regulacion_fase1
             from io import BytesIO
-            with st.spinner(
-                "Resolviendo la sección reguladora y los estados climáticos..."
-            ):
-                r=ejecutar_regulacion_fase1(
-                    BytesIO(archivo.getvalue()),df,proyecto["calibre"],
+            # Mantener compatibilidad con Excel antiguo de puntos:
+            # si faltan Materiales/Hipotesis, completar directamente en UI.
+            hojas=pd.ExcelFile(BytesIO(archivo.getvalue())).sheet_names
+            if {"Materiales","Hipotesis"}.issubset(hojas):
+                with st.spinner(
+                    "Resolviendo la sección reguladora y sus estados..."
+                ):
+                    r=ejecutar_regulacion_fase1(
+                        BytesIO(archivo.getvalue()),df,proyecto["calibre"],
+                        Cd=proyecto["Cd"],rho=proyecto["rho"],
+                    )
+            else:
+                from entradas.interfaz_regulacion_directa import mostrar_calculo_directo
+                r=mostrar_calculo_directo(
+                    df,proyecto["calibre"],
                     Cd=proyecto["Cd"],rho=proyecto["rho"],
                 )
+                if r is None:
+                    return
             if r.cota_busqueda_activa:
                 st.warning(
                     f"Se verificaron las hipótesis hasta H = "
