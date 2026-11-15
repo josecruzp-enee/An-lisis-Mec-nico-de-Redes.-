@@ -534,23 +534,20 @@ def main() -> None:
 
     try:
         df = leer_puntos_excel(archivo)
-        with st.expander(
-            "Análisis avanzado 3D BVP — amarres fijos (opcional)",
-            expanded=False,
-        ):
-            st.caption(
-                "Estudio de amarres fijos, diferente de la sección ideal "
-                "de regulación automática. No se mezclan los resultados."
+        # Activación explícita para no mezclar un segundo modelo en el
+        # cálculo habitual. NO anidar expanders de Streamlit: el propio
+        # formulario BVP contiene expanders de configuración.
+        habilitar_bvp=st.checkbox(
+            "Activar análisis avanzado BVP 3D (amarres fijos)",
+            key="habilitar_bvp_3d_en_etapa1",
+            help=("Es un estudio separado de la regulación ideal "
+                  "automática; reutiliza el mismo Excel."),
+        )
+        if habilitar_bvp:
+            from entradas.interfaz_barrido_3d import mostrar_barrido_3d
+            mostrar_barrido_3d(
+                archivo_compartido=archivo,puntos_compartidos=df,
             )
-            habilitar_bvp=st.checkbox(
-                "Activar análisis avanzado BVP 3D",
-                key="habilitar_bvp_3d_en_etapa1",
-            )
-            if habilitar_bvp:
-                from entradas.interfaz_barrido_3d import mostrar_barrido_3d
-                mostrar_barrido_3d(
-                    archivo_compartido=archivo,puntos_compartidos=df,
-                )
         if proyecto["modo_tension"].startswith("Calcular"):
             from Analisis_mecanico_conductores.geometria.calcular_vanos_y_vano_regulador import resumen_geometrico
             geo = resumen_geometrico(df)
