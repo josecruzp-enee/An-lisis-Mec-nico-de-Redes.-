@@ -13,6 +13,7 @@ import pandas as pd
 from reportlab.graphics.shapes import Drawing, Line, String
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
+from .metodologia_pdf_etapa_1 import paginas_metodologia, grafico_variable
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
@@ -157,21 +158,56 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     st=[]
 
     def titulo(t):
-        st.append(CondPageBreak(65))
-        st.append(Spacer(1,8))
+        st.append(CondPageBreak(94))
+        st.append(Spacer(1,7))
         st.append(_par(t,estilos["Heading2"]))
-        st.append(Spacer(1,5))
+        st.append(Spacer(1,4))
 
     def tabla(t,df):
-        titulo(t)
-        st.extend(_tabla(df,disponible,estilos))
+        # KeepTogether protege título y las primeras filas de tablas extensas.
+        filas=_tabla(df,disponible,estilos)
+        st.append(CondPageBreak(100))
+        st.append(_par(t,estilos["Heading2"]))
+        st.append(Spacer(1,4))
+        st.extend(filas)
         st.append(Spacer(1,8))
 
+    # Portada independiente; no se utilizan gráficos o logotipos inventados.
+    st.append(Spacer(1,52))
     st.append(_par("MEMORIA DE CÁLCULO MECÁNICO DE CONDUCTORES",
                    estilos["TituloPDF"]))
-    st.append(_par("ETAPA 1 | SECCIÓN CONVENCIONAL DE REGULACIÓN",
+    st.append(Spacer(1,15))
+    st.append(_par("ETAPA 1 - SECCIÓN CONVENCIONAL DE REGULACIÓN",
                    estilos["Title"]))
-    st.append(Spacer(1,12))
+    st.append(Spacer(1,40))
+    st.append(_par("Proyecto: "+str(proyecto.get("nombre") or "No informado"),
+                   estilos["Heading2"]))
+    st.append(_par("Ubicación: "+str(proyecto.get("lugar") or "No informada"),
+                   estilos["Normal"]))
+    st.append(_par("Conductor: "+str(proyecto.get("conductor") or proyecto.get("calibre") or "No informado"),
+                   estilos["Normal"]))
+    st.append(_par("Fecha: "+str(proyecto.get("fecha") or date.today()),
+                   estilos["Normal"]))
+    st.append(Spacer(1,35))
+    st.append(_par(
+        "DOCUMENTO DE ANÁLISIS MECÁNICO. No constituye aprobación "
+        "normativa ni autorización de construcción.",estilos["NotaPDF"]))
+    st.append(PageBreak())
+    st.append(_par("ÍNDICE DE CONTENIDO",estilos["Heading1"]))
+    for linea in (
+        "1. Resumen ejecutivo",
+        "2. Alcance, parámetros y datos de entrada",
+        "3. Metodología matemática implementada",
+        "4. Propiedades mecánicas y criterios",
+        "5. Hipótesis y flechas por vano",
+        "6. Gráficos y tabla de tendido",
+        "7. Condiciones gobernantes",
+        "8. Conclusiones y limitaciones",
+        "Anexos A-C. Corridas climáticas y diagnóstico",
+    ):
+        st.append(_par(linea,estilos["Normal"]))
+        st.append(Spacer(1,4))
+    st.append(Spacer(1,11))
     metadatos=pd.DataFrame([
         {"Campo":"Proyecto","Detalle":proyecto.get("nombre","No informado")},
         {"Campo":"Municipio / lugar","Detalle":proyecto.get("lugar","No informado")},
@@ -193,7 +229,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
         {"Indicador":"Estados climáticos explorados","Resultado":str(resultado.barrido["total_estados"]) if resultado.barrido else "No ejecutado"},
     ])
     st.extend(_tabla(resumen,disponible,estilos))
-    titulo("2. Alcance y metodología")
+    titulo("2. Alcance y parámetros")
     st.append(_par(resultado.modelo,estilos["NotaPDF"]))
     st.append(_par(
         "Se evalúan compatibilidad termoelástica y catenarias bajo una tensión "
@@ -209,23 +245,29 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
         "creep. El barrido de viento y hielo es exploratorio y no sustituye "
         "criterios normativos de carga ni una aprobación para construcción.",
         estilos["NotaPDF"]))
+    st.append(Spacer(1,11))
+    st.extend(paginas_metodologia(_par,estilos,propiedades))
     st.append(PageBreak())
 
-    tabla("3. Puntos y geometría de entrada",puntos)
+    tabla("2. Puntos y geometría de entrada",puntos)
     if geometria is not None:
-        tabla("3.1. Geometría de vanos",geometria)
+        tabla("2.1. Geometría de vanos",geometria)
     tabla("4. Propiedades mecánicas documentadas",pd.DataFrame([
         {"Propiedad":str(k),"Valor":_texto(v)} for k,v in propiedades.items()
     ]))
     tabla("5. Hipótesis de cálculo y límites",resultado.hipotesis)
     tabla("6. Flechas por vano e hipótesis",resultado.flechas)
-    graf=_grafico_tension(resultado.tabla_tendido,disponible)
-    if graf is not None:
-        st.append(KeepTogether([
-            Spacer(1,8), _par("7. Tensión horizontal frente a temperatura", estilos["Heading2"]),
-            Spacer(1,5),graf,
-        ]))
-    tabla("8. Tabla de tendido completa",resultado.tabla_tendido)
+    # Ambas figuras provienen de las tablas YA calculadas.
+    for columna,etiqueta,titulo_fig in (
+        ("H del estado (kN)","H (kN)","6.1. Tensión horizontal frente a temperatura"),
+        ("Flecha vertical (m)","Flecha (m)","6.2. Flecha vertical máxima frente a temperatura"),
+    ):
+        graf=grafico_variable(resultado.tabla_tendido,columna,etiqueta,disponible)
+        if graf is not None:
+            st.append(KeepTogether([
+                _par(titulo_fig,estilos["Heading2"]),Spacer(1,5),graf,
+            ]))
+    tabla("6.3. Tabla de tendido completa",resultado.tabla_tendido)
     if resultado.barrido:
         # Tabla principal de condiciones extremas: solo el valor que gobierna
         # y la condición física que lo causa; los demás valores están en anexo.
@@ -240,13 +282,13 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             "Hielo radial (mm)":"Hielo (mm)",
         }
         cols=[c for c in principales if c in gobernantes.columns]
-        tabla("9. Condiciones gobernantes del barrido",
+        tabla("7. Condiciones gobernantes del barrido",
               gobernantes[cols].rename(columns=principales))
         st.append(_par(
             "El barrido climático es EXPLORATORIO: no equivale a un límite "
             "de diseño ni certifica simultaneidad meteorológica.",
             estilos["NotaPDF"]))
-        titulo("10. Conclusiones y limitaciones")
+        titulo("8. Conclusiones y limitaciones")
         st.append(_par(
             f"En esta sección, la tensión de referencia calculada es "
             f"{resultado.H_tendido_kN:.4f} kN por conductor y la hipótesis "
