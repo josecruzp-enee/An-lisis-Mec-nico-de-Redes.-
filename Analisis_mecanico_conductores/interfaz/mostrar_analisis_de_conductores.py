@@ -1,9 +1,8 @@
-"""Formulario para una sección de regulación con Excel SOLO de puntos.
+"""Interfaz de regulación con propiedades ENEE y límites Checa automáticos.
 
-El archivo de coordenadas sigue siendo el mismo. No se repite peso ni
-diámetro: se leen del catálogo nominal Viakon; las propiedades de otro
-fabricante únicamente se usan en modo de referencia comparativa.
-No inventar tensiones admisibles: cada hipótesis exige fuente y límite.
+El archivo histórico de coordenadas no necesita columnas mecánicas.
+Los modos manuales y comparativo Nexans permanecen como alternativas.
+El perfil Checa es una referencia técnica, no una norma ENEE.
 """
 from __future__ import annotations
 
@@ -46,8 +45,8 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
     ficha=CONDUCTORES_VIAKON_ACSR[nombre]
     st.subheader("Completar el cálculo sin modificar tu Excel")
     st.caption(
-        "Los puntos ya están cargados. Solo faltan las propiedades "
-        "termoelásticas y los estados climáticos con límites documentados."
+        "Los puntos ya están cargados. ENEE y Checa completan automáticamente "
+        "las propiedades y los límites dinámicos; podés elegir alternativas."
     )
     with st.form("calculo_directo_checa"):
         st.markdown("**Propiedades del conductor**")
@@ -63,19 +62,44 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
             "Estado elástico ENEE",["Final","Inicial"],
             help="Selecciona E final o inicial; no calcula creep."
         )
-        st.caption("Modo ENEE: EA, dilatación, diámetro, peso y ruptura provienen exclusivamente de Tabla 16.")
-        c1,c2,c3=st.columns(3)
-        with c1:
-            temperatura=st.number_input(
-                "Temperatura de referencia (°C)",value=20.0,
-            )
-        with c2:
-            EA=st.text_input("Rigidez axial EA (kN)",value="")
-        with c3:
-            alpha=st.text_input("Dilatación α (1/°C)",value="")
-        fuente=st.text_input(
-            "Fuente documental de las propiedades",value=""
+        temperatura=st.number_input(
+            "Temperatura de tendido / referencia (°C)",value=20.0,
         )
+        EA=alpha=fuente=""
+        if fuente_tipo.startswith("ENEE"):
+            try:
+                vista=seleccionar_desde_clave_viakon(nombre,estado_enee)
+            except (KeyError,ValueError) as exc:
+                st.error(
+                    "El conductor seleccionado no está en la Tabla 16 ENEE. "
+                    "Seleccioná uno del catálogo ENEE o utilizá ficha manual. "
+                    +str(exc)
+                )
+                vista=None
+            if vista is not None:
+                st.write(
+                    f"**ENEE {vista['nombre']} · {estado_enee}:** "
+                    f"EA = {vista['EA_kN']:,.2f} kN · "
+                    f"α = {vista['alpha_por_C']:.6g} 1/°C · "
+                    f"peso = {vista['peso_kg_m']:.4f} kg/m · "
+                    f"diámetro = {vista['diametro_m']*1000:.2f} mm · "
+                    f"rotura = {vista['ruptura_kN']:.3f} kN"
+                )
+                st.caption(vista["fuente"])
+        elif fuente_tipo.startswith("Ficha"):
+            c1,c2=st.columns(2)
+            with c1:
+                EA=st.text_input("Rigidez axial EA (kN)",value="")
+            with c2:
+                alpha=st.text_input("Dilatación α (1/°C)",value="")
+            fuente=st.text_input(
+                "Fuente documental de las propiedades",value=""
+            )
+        else:
+            st.caption(
+                "Referencia Nexans por construcción equivalente: "
+                "valores comparativos, no ficha de producto."
+            )
         st.markdown("**Criterio de tensión mecánica**")
         perfil_tension=st.radio(
             "Perfil de límites",
@@ -107,20 +131,18 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
         return None
     hip=(_leer_hipotesis_usuario(tabla) if tabla is not None else None)
     if fuente_tipo.startswith("ENEE"):
-        propiedades=seleccionar_desde_clave_viakon(nombre,estado_enee)
+        if vista is None:
+            st.error("No se puede calcular con conductor ENEE no catalogado.")
+            return None
+        propiedades=vista
         ea=propiedades["EA_kN"]
         dilatacion=propiedades["alpha_por_C"]
         origen=propiedades["fuente"]
         peso_kN_m=propiedades["peso_kN_m"]
         diametro_m=propiedades["diametro_m"]
         rotura=propiedades["ruptura_kN"]
-        st.info(
-            f"ENEE {propiedades['nombre']} · {estado_enee}: "
-            f"E = {propiedades['E_kgf_mm2']:g} kgf/mm², "
-            f"A = {propiedades['area_mm2']:g} mm², "
-            f"EA = {ea:,.2f} kN; "
-            f"α = {dilatacion:.6g} 1/°C. "
-            "Estos valores no incluyen creep ni límites admisibles."
+        st.caption(
+            "Modelo elástico lineal ENEE: no incluye predicción de creep."
         )
     elif fuente_tipo.startswith("Referencia"):
         referencia=referencia_mecanica_nexans(nombre)
