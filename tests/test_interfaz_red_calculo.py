@@ -28,10 +28,13 @@ class PlantillaRedCalculableTest(unittest.TestCase):
 
     def test_plantilla_completada_ejecuta_dos_vanos_reales(self):
         h=self._libro()
-        h["Materiales"].loc[0,[
-            "Peso_kN_m","Diametro_m","EA_kN","Alpha_por_C",
-            "H_tendido_kN","Temperatura_tendido_C","Fuente",
-        ]]=[.008,.020,16000,1.91e-5,8.,20.,"ENSAYO SINTÉTICO"]
+        for campo,valor in {
+            "Peso_kN_m":.008,"Diametro_m":.020,"EA_kN":16000.,
+            "Alpha_por_C":1.91e-5,"H_tendido_kN":8.,
+            "Temperatura_tendido_C":20.,
+        }.items():
+            h["Materiales"].loc[0,campo]=valor
+        h["Materiales"]["Fuente"]="ENSAYO SINTÉTICO"
         h["Hipotesis"].loc[0,[
             "Temperatura_C","Viento_ms","Azimut_deg",
         ]]=[20.,0.,0.]
