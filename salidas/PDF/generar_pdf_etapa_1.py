@@ -199,7 +199,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     st.append(_par("MEMORIA DE CÁLCULO MECÁNICO DE CONDUCTORES",
                    estilos["TituloPDF"]))
     st.append(Spacer(1,15))
-    st.append(_par("ETAPA 1 - SECCIÓN CONVENCIONAL DE REGULACIÓN",
+    st.append(_par("ETAPA 1 - DISTRIBUCIÓN CON AMARRES FIJOS",
                    estilos["Title"]))
     st.append(Spacer(1,40))
     st.append(_par("Proyecto: "+str(proyecto.get("nombre") or "No informado"),
@@ -287,7 +287,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     for referencia in referencias:
         st.append(_par("Fuente del criterio: "+referencia,estilos["NotaPDF"]))
     st.append(Spacer(1,7))
-    tabla("6. Flechas por vano e hipótesis",resultado.flechas)
+    tabla("6. Flechas y tensiones por vano e hipótesis",resultado.flechas)
     # Ambas figuras provienen de las tablas YA calculadas.
     for columna,etiqueta,titulo_fig in (
         ("H del estado (kN)","H máxima entre vanos (kN)","6.1. Envolvente de H por temperatura"),
