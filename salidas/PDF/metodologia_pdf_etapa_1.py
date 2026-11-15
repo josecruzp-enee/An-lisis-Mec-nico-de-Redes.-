@@ -16,8 +16,9 @@ def paginas_metodologia(par, estilos, propiedades, ancho=680):
     """Párrafos técnicos con las expresiones del código implementado."""
     bloques=[
         ("3. Metodología y modelo mecánico", [
-            "El análisis se aplica a una sección de regulación ideal con amarres "
-            "nivelados, tensión común y redistribución ideal entre vanos. "
+            "El análisis se aplica a una sección de regulación ideal en 3D "
+            "con cotas de amarre conocidas, componente H común para "
+            "el modelo de carga y redistribución ideal entre vanos. "
             "El modelo no representa rozamiento real ni remates intermedios.",
         ]),
         ("3.1. Geometría de regulación", [
@@ -70,9 +71,10 @@ def paginas_metodologia(par, estilos, propiedades, ancho=680):
             "se reportan separadamente de los límites de diseño.",
         ]),
         ("3.6. Flechas, resultados y alcance", [
-            "Cada vano se resuelve con la catenaria correspondiente al "
-            "estado calculado. La flecha vertical y el desplazamiento "
-            "lateral se determinan respecto a la cuerda entre amarres. "
+            "Cada vano se resuelve con su catenaria espacial. La flecha "
+            "vertical se mide como máximo descenso respecto a la cuerda "
+            "inclinada entre amarres; el desplazamiento lateral, como "
+            "separación transversal de esa misma cuerda. "
             "La memoria reproduce los resultados generados por el motor, "
             "sin recalcularlos.",
             "No se verifican postes, retenidas, cimentaciones, despejes, "
