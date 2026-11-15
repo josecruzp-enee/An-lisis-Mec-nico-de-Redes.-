@@ -11,6 +11,11 @@ import pandas as pd
 import streamlit as st
 
 from entradas.importar_red import leer_red_excel
+from entradas.importar_hipotesis_red import (
+    COLUMNAS_MATERIALES, COLUMNAS_ESTADOS,
+    leer_materiales_excel, leer_estados_excel,
+)
+from calculos.hipotesis_red import calcular_hipotesis_red
 
 
 def _plantilla():
@@ -24,15 +29,27 @@ def _plantilla():
     vanos=pd.DataFrame({
         "Vano":["V1","V2"],"Inicio":["P1","P2"],
         "Fin":["P2","P3"],"Circuito":["C1","C1"],
-        "Seccion":["S1","S1"],"Conductor":["2/0 ACSR"]*2,
-        "Conexion_Inicio":["ANCLAJE","SUSPENSION"],
-        "Conexion_Fin":["SUSPENSION","ANCLAJE"],
+        "Seccion":["S1","S2"],"Conductor":["2/0 ACSR"]*2,
+        "Conexion_Inicio":["ANCLAJE","ANCLAJE"],
+        "Conexion_Fin":["ANCLAJE","ANCLAJE"],
         "Altura_Inicio_m":[9.5,9.5],"Altura_Fin_m":[9.5,9.5],
     })
+    materiales=pd.DataFrame([{
+        "Conductor":"2/0 ACSR",
+        "Peso_kN_m":None,"Diametro_m":None,"EA_kN":None,
+        "Alpha_por_C":None,"H_tendido_kN":None,
+        "Temperatura_tendido_C":None,"Fuente":"",
+    }],columns=COLUMNAS_MATERIALES)
+    hipotesis=pd.DataFrame([{
+        "Hipotesis":"Estado_1","Temperatura_C":None,
+        "Viento_ms":None,"Azimut_deg":None,
+    }],columns=COLUMNAS_ESTADOS)
     memoria=BytesIO()
     with pd.ExcelWriter(memoria,engine="openpyxl") as writer:
         puntos.to_excel(writer,index=False,sheet_name="Puntos")
         vanos.to_excel(writer,index=False,sheet_name="Vanos")
+        materiales.to_excel(writer,index=False,sheet_name="Materiales")
+        hipotesis.to_excel(writer,index=False,sheet_name="Hipotesis")
     return memoria.getvalue()
 
 
@@ -49,9 +66,10 @@ def mostrar_modelo_red():
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
     st.caption(
-        "La plantilla contiene datos ficticios. Se necesitan dos hojas: "
-        "Puntos (postes, XYZ y condición FIJO/MOVIL) y Vanos "
-        "(circuito, sección de tendido, alturas y tipo de conexión). "
+        "La plantilla muestra una red FICTICIA con dos vanos anclados "
+        "y contiene Puntos, Vanos, Materiales e Hipotesis. "
+        "Completá las propiedades mecánicas y los estados climáticos "
+        "antes de calcular; la plantilla NO incluye valores de diseño. "
         "No se deducen suspensiones ni remates de manera automática."
     )
     archivo=st.file_uploader(
@@ -95,6 +113,56 @@ def mostrar_modelo_red():
             })
         st.dataframe(pd.DataFrame(filas),use_container_width=True,
                      hide_index=True)
+        st.markdown("#### Calcular hipótesis mecánicas de la red")
+        st.caption(
+            "Usa las hojas Materiales e Hipotesis del mismo Excel. "
+            "Solo admite apoyos FIJO, amarres ANCLAJE/FIJA y guías "
+            "DESLIZANTE ideales. No sustituye grapas de suspensión reales."
+        )
+        if st.button("Calcular tensiones y flechas por vano",key="calcular_red_bvp"):
+            try:
+                archivo.seek(0)
+                libro=pd.ExcelFile(archivo)
+                if "Materiales" not in libro.sheet_names or "Hipotesis" not in libro.sheet_names:
+                    raise ValueError(
+                        "Faltan las hojas Materiales e Hipotesis. "
+                        "Descargá la plantilla actualizada."
+                    )
+                if any(n.fijacion!="FIJO" for n in red.apoyos.values()):
+                    raise ValueError(
+                        "La pantalla de cálculo solo admite apoyos FIJO. "
+                        "Los apoyos MOVIL requieren rigideces documentadas."
+                    )
+                materiales=leer_materiales_excel(
+                    libro.parse("Materiales"),
+                    {v.conductor for v in red.vanos.values()},
+                )
+                climas=leer_estados_excel(libro.parse("Hipotesis"))
+                with st.spinner("Resolviendo los estados mecánicos BVP..."):
+                    calculo=calcular_hipotesis_red(red,materiales,climas)
+                st.caption(calculo["estado"])
+                for nombre,tabla in (
+                    ("Resultados por vano",calculo["vanos"]),
+                    ("Fuerzas por apoyo",calculo["apoyos"]),
+                    ("Casos gobernantes",calculo["tensiones_gobernantes"]),
+                    ("Guías deslizantes",calculo["secciones_deslizantes"]),
+                ):
+                    st.markdown("##### "+nombre)
+                    if tabla.empty:
+                        st.caption("No hay registros de este tipo.")
+                        continue
+                    st.dataframe(tabla,use_container_width=True,hide_index=True)
+                    st.download_button(
+                        "Exportar "+nombre+" CSV",
+                        tabla.to_csv(index=False).encode("utf-8-sig"),
+                        file_name=(
+                            "red_"+nombre.lower().replace(" ","_")+".csv"
+                        ),
+                        mime="text/csv",
+                        key="descarga_"+nombre,
+                    )
+            except (ValueError,TypeError,KeyError,OverflowError) as e:
+                st.error(f"No se emitieron resultados: {e}")
         st.caption(
             f"Componentes conexas: {len(red.componentes_conexas())}. "
             "El ensamblador admite amarres fijos y guías DESLIZANTE "
