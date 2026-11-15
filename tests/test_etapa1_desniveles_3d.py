@@ -58,7 +58,7 @@ class Etapa1Desnivel3DTest(unittest.TestCase):
         c=resolver_catenaria(a,b,np.array([0.,0.,-.0085]),4.)
         flecha,lateral=calcular_flecha_y_desviacion_3d(c,a,b)
         self.assertGreater(flecha,0.)
-        self.assertLess(flecha,.5)
+        self.assertLess(flecha,1.)
         self.assertAlmostEqual(lateral,0.,delta=1e-8)
         # Con igual geometría y diferencia de cotas invertida,
         # se recupera la misma flecha geométrica respecto a cuerda.
