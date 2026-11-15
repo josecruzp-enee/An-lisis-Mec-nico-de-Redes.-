@@ -552,6 +552,10 @@ def main() -> None:
             st.caption(geo["hipotesis_geometrica"])
             if not geo["nivelado_confirmado"]:
                 st.info("El Excel no confirma amarres de igual altura. Se calcula la geometría, pero tensión y flecha convencionales requieren cotas y alturas completas.")
+            from Analisis_mecanico_conductores.interfaz.configurar_barridos_climaticos import (
+                mostrar_configuracion_barrido,mostrar_resultados_barrido,
+            )
+            configuracion_barrido=mostrar_configuracion_barrido()
             from Analisis_mecanico_conductores.entradas.leer_datos_y_calcular_regulacion import ejecutar_regulacion_fase1
             from io import BytesIO
             # Mantener compatibilidad con Excel antiguo de puntos:
@@ -564,6 +568,8 @@ def main() -> None:
                     r=ejecutar_regulacion_fase1(
                         BytesIO(archivo.getvalue()),df,proyecto["calibre"],
                         Cd=proyecto["Cd"],rho=proyecto["rho"],
+                    configuracion_barrido=configuracion_barrido,
+                        configuracion_barrido=configuracion_barrido,
                     )
             else:
                 from Analisis_mecanico_conductores.interfaz.mostrar_analisis_de_conductores import mostrar_calculo_directo
@@ -608,6 +614,7 @@ def main() -> None:
                     file_name=f"regulacion_{nombre}.csv",
                     mime="text/csv",key="descarga_regulacion_"+nombre,
                 )
+            mostrar_resultados_barrido(r.barrido)
             st.warning(
                 "Modelo convencional de sección de regulación: "
                 "las fuerzas precisas en postes, la geometría con grandes "
