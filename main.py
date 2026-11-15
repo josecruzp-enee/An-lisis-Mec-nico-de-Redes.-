@@ -614,7 +614,7 @@ def main() -> None:
                     file_name=f"regulacion_{nombre}.csv",
                     mime="text/csv",key="descarga_regulacion_"+nombre,
                 )
-            mostrar_resultados_barrido(r.barrido)
+            mostrar_resultados_barrido(r.barrido, r.hipotesis)
             st.warning(
                 "Modelo convencional de sección de regulación: "
                 "las fuerzas precisas en postes, la geometría con grandes "
