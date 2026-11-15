@@ -68,7 +68,7 @@ def resumen_geometrico(puntos: pd.DataFrame):
         "n_vanos":len(luces),
         "cotas":elevacion,
         "amarres":amarres,
-        "nivelado_confirmado":(z_completa and nivelado),
+        "nivelado_confirmado":bool(z_completa and np.ptp(z)<1e-5),
         "desniveles_conocidos":z_completa,
         "requiere_3d":bool(z_completa and np.any(np.abs(desniveles)>1e-5)),
         "hipotesis_geometrica":(
