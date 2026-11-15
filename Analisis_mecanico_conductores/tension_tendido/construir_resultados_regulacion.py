@@ -23,7 +23,10 @@ def crear_fila_hipotesis(caso, H_estado, tensiones, residual_m):
         "Hipótesis":str(caso["Hipotesis"]),
         "Temperatura (°C)":float(caso["Temperatura_C"]),
         "Viento (m/s)":float(caso["Viento_ms"]),
-        "H estado (kN)":(float(H_estado) if not isinstance(H_estado,(list,tuple)) else None),
+        "H estado (kN)":(float(H_estado) if not isinstance(H_estado,(list,tuple))
+                          else max(float(h) for h in H_estado)),
+        "H mínima entre vanos (kN)":(float(H_estado) if not isinstance(H_estado,(list,tuple))
+                                     else min(float(h) for h in H_estado)),
         "T máxima sección (kN)":max(tensiones),
         "Límite (kN)":limite,
         "Relación T/límite":max(tensiones)/limite,
