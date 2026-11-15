@@ -51,7 +51,7 @@ class CompatibilidadEtapa1Test(unittest.TestCase):
 
     def test_resultado_de_checa_permanece_inalterado(self):
         self.assertAlmostEqual(vano_regulador([45.53,45.53]),45.53,places=8)
-        self.assertAlmostEqual(vano_regulador([30,60]),(27_000/30)**.5 if False else (243000/90)**.5,delta=1e-9)
+        self.assertAlmostEqual(vano_regulador([30,60]),((30**3+60**3)/90)**.5,delta=1e-9)
 
     def test_el_catalogo_conserva_ficha_de_quail(self):
         ficha=CONDUCTORES_VIAKON_ACSR["2/0 ACSR — QUAIL"]
