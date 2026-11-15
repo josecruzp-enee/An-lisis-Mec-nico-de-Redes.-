@@ -72,12 +72,11 @@ def calcular_tension_desde_libro(libro_excel, puntos, conductor, *, Cd=1.2, rho=
     if nombre_material not in (conductor,nombre_full):
         raise ValueError("La ficha de Materiales no coincide con el conductor seleccionado")
     fila_material=material_tabla.iloc[0]
-    requeridas=("Peso_kN_m","Diametro_m","EA_kN",
-                "Alpha_por_C","Temperatura_tendido_C","Fuente")
+    requeridas=("EA_kN","Alpha_por_C","Temperatura_tendido_C","Fuente")
     if any(c not in material_tabla for c in requeridas):
         raise ValueError(
-            "La hoja Materiales requiere Peso_kN_m, Diametro_m, "
-            "EA_kN, Alpha_por_C, Temperatura_tendido_C y Fuente; "
+            "La hoja Materiales requiere EA_kN, Alpha_por_C, "
+            "Temperatura_tendido_C y Fuente; "
             "NO requiere tensión de tendido"
         )
     if any(pd.isna(fila_material[c]) for c in requeridas):
@@ -85,8 +84,8 @@ def calcular_tension_desde_libro(libro_excel, puntos, conductor, *, Cd=1.2, rho=
     if not str(fila_material["Fuente"]).strip():
         raise ValueError("Es obligatorio documentar la fuente de EA y alpha")
     material={
-        "peso_kN_m":finito(fila_material["Peso_kN_m"],"peso",0,True),
-        "diametro_m":finito(fila_material["Diametro_m"],"diámetro",0,True),
+        "peso_kN_m":float(ficha["peso_kg_m"])*9.80665/1000,
+        "diametro_m":float(ficha["diametro_m"]),
         "EA_kN":finito(fila_material["EA_kN"],"EA",0,True),
         "alpha_por_C":finito(fila_material["Alpha_por_C"],"alpha"),
         "temperatura_tendido_C":finito(
@@ -94,13 +93,8 @@ def calcular_tension_desde_libro(libro_excel, puntos, conductor, *, Cd=1.2, rho=
         ),
         "fuente":str(fila_material["Fuente"]).strip(),
     }
-    # Impedir usar inadvertidamente la masa o diámetro de otro conductor.
-    masa_catalogo=float(ficha["peso_kg_m"])*9.80665/1000
-    diam_catalogo=float(ficha["diametro_m"])
-    if abs(material["peso_kN_m"]-masa_catalogo)>max(1e-7,.01*masa_catalogo):
-        raise ValueError("Peso de Materiales no coincide con la ficha Viakon")
-    if abs(material["diametro_m"]-diam_catalogo)>max(1e-6,.01*diam_catalogo):
-        raise ValueError("Diámetro de Materiales no coincide con la ficha Viakon")
+    # Masa y diámetro se obtienen del catálogo Viakon; no pedirlos
+    # nuevamente para impedir inconsistencias de transcripción.
     hip=leer_hipotesis_tabla(libro.parse("Hipotesis"))
 
     if "Altitud" not in puntos or "Altura_Amarre_m" not in puntos:
@@ -162,7 +156,6 @@ def plantilla_tension_automatica():
     }])
     materiales=pd.DataFrame([{
         "Conductor":"2/0 ACSR",
-        "Peso_kN_m":None,"Diametro_m":None,
         "EA_kN":None,"Alpha_por_C":None,
         "Temperatura_tendido_C":None,"Fuente":"",
     }])
