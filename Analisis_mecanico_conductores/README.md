@@ -20,6 +20,8 @@ proyecto. No incluye dimensionamiento de postes, retenidas ni cimentaciones.
 | `catenaria/` | `resolver_cable_tridimensional_bvp.py` | Cable 3D con viento sobre tangente local |
 | `cambio_estado/` | `resolver_cambio_de_estado.py` | Compatibilidad de longitudes y cambio térmico |
 | `hipotesis_climaticas/` | `evaluar_estados_climaticos_catenaria_3d.py` | Barrido analítico de cargas y temperaturas |
+| `hipotesis_climaticas/` | `generar_barrido_de_temperatura_viento_hielo.py` | Corridas parametrizables T, viento, hielo y extremos de tensión/flecha |
+| `interfaz/` | `configurar_barridos_climaticos.py` | Configuración y exportación de sensibilidad desde Etapa 1 |
 | `hipotesis_climaticas/` | `evaluar_estados_climaticos_bvp_3d.py` | Barrido físico BVP por vano |
 | `tension_tendido/` | `calcular_tension_y_flechas_de_seccion.py` | Regulación convencional multivano |
 | `tension_tendido/` | `evaluar_estados_de_la_seccion.py` | Evaluar cargas y tensiones por estado climático mediante un motor único |
@@ -82,6 +84,38 @@ de código son sintéticos y no equivalen a diseño autorizado.
 fluencia ni permite afirmar que se ha calculado una flecha final
 dependiente del tiempo. K y K' están archivados, pero aún no integrados
 en las ecuaciones.
+
+## Barridos de sensibilidad (implementado)
+
+**Configuración base:**
+- Temperatura **del conductor** de 0 a 50 °C cada 1 °C.
+- Viento de 0 a 130 km/h cada 5 km/h; conversión exacta a m/s
+  para el cálculo de arrastre.
+- Barrido por defecto **independiente**: temperaturas sin viento y
+  velocidades a la temperatura de referencia de tendido.
+- Matriz completa temperatura × viento **opcional**, con mayor tiempo
+  de cálculo. No equivale a afirmar que ambos valores climáticos son
+  simultáneos en campo.
+- Manguito de hielo opcional: de 0 a 20 mm de espesor radial, paso
+  de 5 mm. Densidad inicial editable de **900 kg/m³**, valor de
+  modelado, no criterio climático ENEE automáticamente aplicado.
+  La masa adicional se calcula con la sección anular y el diámetro
+  de arrastre se incrementa en dos veces el espesor radial.
+- Caso conjunto hielo + viento máximo opcional, marcado siempre como
+  **exploratorio**.
+- La tensión horizontal inicial usada en los barridos NO se inventa:
+  se calcula previamente con las hipótesis de tensión y límites
+  documentados del proyecto.
+- Salida: registros por vano/estado, temperatura, viento, espesor,
+  H, tensión máxima del vano, flecha, desplazamiento transversal,
+  residual y dos CSV (detalle y casos extremos).
+- Resumen de máximos de tensión, flecha y desplazamiento lateral,
+  junto a las condiciones límite de temperatura, viento y hielo.
+
+**Restricciones:** sección convencional con amarres nivelados y
+redistribución ideal; viento transversal local por vano, no ráfaga
+geográfica 3D. Sin certificación de simultaneidad, resistencia de
+poste, libramiento topográfico ni creep por cambio de módulo.
 
 ## Dependencias y compatibilidad
 
