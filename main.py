@@ -521,6 +521,19 @@ def main() -> None:
     proyecto = ui_datos_proyecto()
     mostrar_resumen_proyecto(proyecto)
 
+    if proyecto["modo_tension"].startswith("Calcular"):
+        from entradas.tension_automatica_fase1 import plantilla_tension_automatica
+        st.download_button(
+            "Descargar plantilla para cálculo automático de tensión (Excel)",
+            plantilla_tension_automatica(),
+            file_name="plantilla_tension_automatica.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        st.caption(
+            "El modo automático necesita los amarres ANCLAJE/FIJA, "
+            "las propiedades del conductor y las hipótesis climáticas "
+            "con límites y fuentes. No solicita H inicial."
+        )
     archivo = ui_cargar_excel()
     if not archivo:
         st.stop()
@@ -547,6 +560,45 @@ def main() -> None:
                 f"Relación máxima T/límite: {resultado_tendido.razon_maxima:.4f}. "
                 "Cálculo válido únicamente para el vano ANCLAJE–ANCLAJE "
                 "declarado; no certifica el diseño completo."
+            )
+            # Reacciones en el estado de tendido desde el BVP real.
+            from calculos.cable_no_lineal import resolver_cable_no_lineal
+            from entradas.catalogos import CONDUCTORES_ACSR
+            from io import BytesIO as _BytesIO
+            xl=pd.ExcelFile(_BytesIO(archivo.getvalue()))
+            mat=xl.parse("Materiales").iloc[0]
+            conductor=CONDUCTORES_ACSR[proyecto["calibre"]]
+            puntos_amarre=[
+                (
+                    float(p["X"]),float(p["Y"]),
+                    float(p["Altitud"])+float(p["Altura_Amarre_m"]),
+                ) for _,p in df.iterrows()
+            ]
+            temp=float(mat["Temperatura_tendido_C"])
+            cable=resolver_cable_no_lineal(
+                *puntos_amarre,
+                peso_kN_m=float(conductor["peso_kg_m"])*9.80665/1000,
+                diametro_m=float(conductor["diametro_m"]),
+                EA_kN=float(mat["EA_kN"]),
+                alpha_por_C=float(mat["Alpha_por_C"]),
+                H_tendido_kN=resultado_tendido.H_tendido_kN,
+                temperatura_tendido_C=temp,
+                temperatura_estado_C=temp,
+                velocidad_viento_ms=0,azimut_viento_deg=0,
+                Cd=proyecto["Cd"],rho_kg_m3=proyecto["rho"],
+            )
+            st.subheader("Fuerzas del conductor en los amarres (estado de tendido)")
+            st.dataframe(pd.DataFrame([
+                {
+                    "Apoyo":df.iloc[i]["Punto"],"Fx (kN)":float(f[0]),
+                    "Fy (kN)":float(f[1]),"Fz (kN)":float(f[2]),
+                    "Temperatura (°C)":temp,
+                    "Viento (m/s)":0.,
+                } for i,f in enumerate([cable.fuerza_a,cable.fuerza_b])
+            ]),use_container_width=True,hide_index=True)
+            st.caption(
+                "Fuerzas vectoriales por CONDUCTOR del estado de tendido "
+                "sin viento. No son la envolvente de cargas sobre el poste."
             )
             st.subheader("Comprobación de hipótesis de tensión")
             st.dataframe(pd.DataFrame(resultado_tendido.hipotesis),
