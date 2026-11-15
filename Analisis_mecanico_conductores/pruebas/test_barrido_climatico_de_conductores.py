@@ -65,7 +65,7 @@ class BarridoClimaticoTest(unittest.TestCase):
         detalle=resultado["detalle"]
         self.assertEqual(resultado["total_estados"],5)
         self.assertEqual(len(detalle),5)
-        self.assertEqual(len(resultado["gobernantes"]),3)
+        self.assertEqual(len(resultado["gobernantes"]),5)
         self.assertEqual(set(detalle["Viento (km/h)"]),{0.,18.,36.})
         self.assertAlmostEqual(
             detalle.loc[detalle["Viento (km/h)"]==36.,
@@ -117,7 +117,7 @@ class BarridoClimaticoTest(unittest.TestCase):
         self.assertAlmostEqual(normal.H_tendido_kN,nuevo.H_tendido_kN)
         self.assertIsNone(normal.barrido)
         self.assertEqual(nuevo.barrido["total_estados"],1)
-        self.assertEqual(len(nuevo.barrido["gobernantes"]),3)
+        self.assertEqual(len(nuevo.barrido["gobernantes"]),5)
 
     def test_rechaza_intervalos_no_divisibles(self):
         config=ConfiguracionBarrido(
