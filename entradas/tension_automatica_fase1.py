@@ -11,7 +11,7 @@ Criterio_diseno en Hipotesis. La fuente de los límites es obligatoria.
 """
 from __future__ import annotations
 
-import math
+from io import BytesIO
 
 import pandas as pd
 
@@ -120,3 +120,38 @@ def calcular_tension_desde_libro(libro_excel, puntos, conductor, *, Cd=1.2, rho=
         H_min_kN=Hmin,H_max_kN=Hmax,
         Cd=Cd,rho_kg_m3=rho,
     )
+
+
+def plantilla_tension_automatica():
+    """Cuatro hojas; NO rellena criterios normativos ni propiedades EA."""
+    puntos=pd.DataFrame({
+        "Punto":["P1","P2"],"X":[0.,45.],"Y":[0.,0.],
+        "Altitud":[0.,0.],"Altura_Amarre_m":[10.,10.],
+        "Poste":["PC-40","PC-40"],
+        "Espacio Retenida":["SI","SI"],
+    })
+    vanos=pd.DataFrame([{
+        "Inicio":"P1","Fin":"P2",
+        "Conexion_Inicio":"ANCLAJE","Conexion_Fin":"ANCLAJE",
+    }])
+    materiales=pd.DataFrame([{
+        "Conductor":"2/0 ACSR",
+        "Peso_kN_m":None,"Diametro_m":None,
+        "EA_kN":None,"Alpha_por_C":None,
+        "H_tendido_kN":None,
+        "Temperatura_tendido_C":None,"Fuente":"",
+    }])
+    hip=pd.DataFrame([{
+        "Hipotesis":"Estado_1","Temperatura_C":None,
+        "Viento_ms":None,"Azimut_deg":None,
+        "T_limite_kN":None,"Fuente_limite":"",
+        "Criterio_diseno":"",
+    }])
+    memoria=BytesIO()
+    with pd.ExcelWriter(memoria,engine="openpyxl") as escritor:
+        for nombre,df in (
+            ("Puntos",puntos),("Vanos",vanos),
+            ("Materiales",materiales),("Hipotesis",hip),
+        ):
+            df.to_excel(escritor,sheet_name=nombre,index=False)
+    return memoria.getvalue()
