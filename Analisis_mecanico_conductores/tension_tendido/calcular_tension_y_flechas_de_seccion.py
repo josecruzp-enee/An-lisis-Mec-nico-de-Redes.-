@@ -105,18 +105,9 @@ def _cargas(xyz, peso, diametro, velocidad, cd, rho):
     return resultado,wv
 
 
-def _flecha(cable,a,b):
-    from scipy.optimize import minimize_scalar
-    d=b-a
-    horizontal=np.linalg.norm(d[:2])
-    if horizontal<=0:
-        raise ValueError("Flecha sin luz horizontal")
-    # a y b nivelados, la flecha es el mínimo de z del spline exacto.
-    f=lambda x:float(cable.puntos(float(x))[2])
-    extremo=min(f(0.),f(cable.luz),
-                float(minimize_scalar(f,bounds=(0.,cable.luz),method="bounded").fun))
-    return max(0.,float(a[2])-extremo)
-
+from Analisis_mecanico_conductores.flechas.calcular_flecha_vertical_de_catenaria import (
+    calcular_flecha_vertical_de_catenaria as _flecha,
+)
 
 def resolver_seccion_regulacion(
     puntos, *, hipotesis, temperaturas_tabla_C,
