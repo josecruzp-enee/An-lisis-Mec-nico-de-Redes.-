@@ -73,29 +73,24 @@ def _geometria(puntos):
     xy=puntos[["X","Y"]].to_numpy(dtype=float)
     if not np.isfinite(xy).all():
         raise ValueError("Coordenadas no finitas")
-    # El cálculo convencional admite cota uniforme conocida y alturas
-    # iguales. Si se declaran desniveles o faltan algunas cotas,
-    # no los suplanta por geometría horizontal.
+    # Las cotas pueden ser diferentes: el motor de catenaria y la
+    # compatibilidad de longitudes operan en XYZ. Nunca se completa una
+    # columna PARCIAL sin datos; se permite plano de referencia z=0
+    # únicamente cuando todas las altitudes no fueron proporcionadas.
     if "Altitud" in puntos and puntos["Altitud"].notna().any():
         if puntos["Altitud"].isna().any():
             raise ValueError("Altitud parcial; completar cotas")
         alt=puntos["Altitud"].to_numpy(dtype=float)
-        if max(alt)-min(alt)>1e-5:
-            raise ValueError(
-                "Esta regulación convencional requiere cotas de "
-                "terreno iguales. Para desniveles usar cálculo 3D."
-            )
+        if not np.isfinite(alt).all():
+            raise ValueError("Altitudes no finitas")
     else:
         alt=np.zeros(len(puntos))
     if "Altura_Amarre_m" in puntos and puntos["Altura_Amarre_m"].notna().any():
         if puntos["Altura_Amarre_m"].isna().any():
             raise ValueError("Altura de amarre parcial")
         amarre=puntos["Altura_Amarre_m"].to_numpy(dtype=float)
-        if (amarre<=0).any() or max(amarre)-min(amarre)>1e-5:
-            raise ValueError(
-                "La regulación convencional requiere amarres de "
-                "igual altura. Para alturas distintas usar cálculo 3D."
-            )
+        if not np.isfinite(amarre).all() or (amarre<=0).any():
+            raise ValueError("Alturas de amarre inválidas")
     else:
         amarre=np.zeros(len(puntos))
     z=alt+amarre
@@ -197,5 +192,8 @@ def resolver_seccion_regulacion(
         relacion_maxima=float(peor["Relación T/límite"]),
         cota_busqueda_activa=activo,
         barrido=barrido,
-        modelo="Sección convencional de regulación: H común y redistribución ideal; cargas de viento transversales máximas por vano",
+        modelo=("Sección 3D de regulación ideal: equilibrio por catenaria "
+                "con amarres desnivelados, H común perpendicular a la carga "
+                "resultante y redistribución sin fricción; viento transversal "
+                "máximo LOCAL por vano. No representa grapas fijas ni remates internos."),
     )
