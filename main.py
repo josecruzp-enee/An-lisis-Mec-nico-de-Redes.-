@@ -43,9 +43,8 @@ def ui_datos_proyecto() -> Dict[str, Any]:
             f"{k} — {CONDUCTORES_ACSR[k]['nombre_pajarito']}"
         ),
         help=(
-            "Fase 1 preliminar: cada calibre histórico usa la construcción "
-            "Viakon indicada. Para elegir otras aves del mismo calibre, "
-            "utilizá el Módulo 01 / Barrido termomecánico 3D."
+            "La fuente de propiedades y la construcción específica ACSR "
+            "se seleccionan en la Etapa 1 después de cargar los puntos."
         ),
     )
     n_fases = st.sidebar.selectbox("Fases", [1, 2, 3], index=2)
@@ -497,7 +496,7 @@ def main() -> None:
     st.set_page_config(page_title="Análisis Mecánico", layout="wide")
     modo = st.sidebar.radio(
         "Módulo de análisis",
-        ["Etapa 1 — conductores", "Barrido termomecánico 3D",
+        ["Etapa 1 — conductores",
          "Tendido inverso — hipótesis climáticas",
          "Red completa — conectividad"],
     )
@@ -510,11 +509,6 @@ def main() -> None:
         from Analisis_mecanico_conductores.interfaz.mostrar_tendido_inverso_un_vano import mostrar_tendido_inverso
         st.title("Análisis Mecánico — Tensión y tabla de tendido")
         mostrar_tendido_inverso()
-        return
-    if modo == "Barrido termomecánico 3D":
-        from entradas.interfaz_barrido_3d import mostrar_barrido_3d
-        st.title("Análisis Mecánico — Barrido termomecánico 3D")
-        mostrar_barrido_3d()
         return
 
     st.title("Etapa 1 — Análisis mecánico de conductores")
@@ -530,9 +524,9 @@ def main() -> None:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         st.caption(
-            "Método convencional de Checa para una sección de regulación "
-            "con varios vanos. Requiere propiedades mecánicas documentadas "
-            "e hipótesis con límites de tensión. No solicita H inicial."
+            "Sección de regulación ideal con catenaria 3D por vano y "
+            "compatibilidad termoelástica. Acepta amarres desnivelados "
+            "con cotas documentadas. No solicita H inicial."
         )
     archivo = ui_cargar_excel()
     if not archivo:
@@ -540,6 +534,23 @@ def main() -> None:
 
     try:
         df = leer_puntos_excel(archivo)
+        with st.expander(
+            "Análisis avanzado 3D BVP — amarres fijos (opcional)",
+            expanded=False,
+        ):
+            st.caption(
+                "Estudio de amarres fijos, diferente de la sección ideal "
+                "de regulación automática. No se mezclan los resultados."
+            )
+            habilitar_bvp=st.checkbox(
+                "Activar análisis avanzado BVP 3D",
+                key="habilitar_bvp_3d_en_etapa1",
+            )
+            if habilitar_bvp:
+                from entradas.interfaz_barrido_3d import mostrar_barrido_3d
+                mostrar_barrido_3d(
+                    archivo_compartido=archivo,puntos_compartidos=df,
+                )
         if proyecto["modo_tension"].startswith("Calcular"):
             from Analisis_mecanico_conductores.geometria.calcular_vanos_y_vano_regulador import resumen_geometrico
             geo = resumen_geometrico(df)
@@ -551,7 +562,18 @@ def main() -> None:
             st.dataframe(geo["tramos"],use_container_width=True,hide_index=True)
             st.caption(geo["hipotesis_geometrica"])
             if not geo["nivelado_confirmado"]:
-                st.info("El Excel no confirma amarres de igual altura. Se calcula la geometría, pero tensión y flecha convencionales requieren cotas y alturas completas.")
+                if geo.get("requiere_3d"):
+                    st.info(
+                        "Se detectaron amarres desnivelados. El motor 3D "
+                        "resolverá catenarias por vano, con flechas "
+                        "referidas a la cuerda entre amarres."
+                    )
+                elif not geo.get("desniveles_conocidos"):
+                    st.warning(
+                        "Faltan cotas de terreno o alturas de amarre completas. "
+                        "Para estudiar desniveles reales, completá ambos campos "
+                        "en todos los postes. No se infieren elevaciones."
+                    )
             from Analisis_mecanico_conductores.interfaz.configurar_barridos_climaticos import (
                 mostrar_configuracion_barrido,mostrar_resultados_barrido,
             )
@@ -637,11 +659,11 @@ def main() -> None:
                 key="descarga_memoria_pdf_etapa1",
             )
             st.warning(
-                "Modelo convencional de sección de regulación: "
-                "las fuerzas precisas en postes, la geometría con grandes "
-                "desniveles y las grapas que bloquean deslizamiento "
-                "requieren verificaciones específicas. No se ha "
-                "verificado resistencia de estructuras ni libramientos."
+                "Sección ideal de regulación 3D: los resultados de catenaria "
+                "incluyen vanos desnivelados, pero NO modelan fricción de "
+                "grapas, remates internos ni transferencia de cargas reales "
+                "entre postes. Sin verificación de estructuras, terreno "
+                "intermedio ni libramientos."
             )
             return
         res = ejecutar_calculo(df, proyecto)
