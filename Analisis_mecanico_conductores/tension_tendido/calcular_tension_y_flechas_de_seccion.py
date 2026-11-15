@@ -33,6 +33,7 @@ from scipy.optimize import brentq
 from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import resolver_cambio_estado, vano_regulador
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
+from Analisis_mecanico_conductores.hipotesis_climaticas.generar_barrido_de_temperatura_viento_hielo import ejecutar_barrido_climatico
 from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion import (
     EvaluadorEstadosRegulacion,
     calcular_cargas_transversales_por_vano as _cargas,
@@ -58,6 +59,7 @@ class ResultadoRegulacion:
     relacion_maxima: float
     cota_busqueda_activa: bool
     modelo: str
+    barrido: dict|None=None
 
 
 def _geometria(puntos):
@@ -109,6 +111,7 @@ def resolver_seccion_regulacion(
     peso_kN_m, diametro_m, EA_kN, alpha_por_C, fuente_material,
     temperatura_tendido_C, H_min_kN, H_max_kN,
     Cd=1.2, rho_kg_m3=1.225,
+    configuracion_barrido=None,
 ):
     """Encuentra H inicial por compatibilidad y límites en toda la sección.
 
@@ -179,6 +182,10 @@ def resolver_seccion_regulacion(
     if peor["Relación T/límite"]>1+1e-5:
         raise ValueError("Las hipótesis de tensión no se satisfacen")
     tabla_tendido=construir_tabla_de_tendido(puntos,xyz,temps,hopt,estado)
+    barrido=(
+        ejecutar_barrido_climatico(puntos,hopt,evaluador,configuracion_barrido)
+        if configuracion_barrido is not None else None
+    )
     return ResultadoRegulacion(
         H_tendido_kN=hopt,
         vano_regulador_m=vano_regulador(luces),
@@ -189,5 +196,6 @@ def resolver_seccion_regulacion(
         caso_gobernante=peor["Hipótesis"],
         relacion_maxima=float(peor["Relación T/límite"]),
         cota_busqueda_activa=activo,
+        barrido=barrido,
         modelo="Sección convencional de regulación: H común y redistribución ideal; cargas de viento transversales máximas por vano",
     )
