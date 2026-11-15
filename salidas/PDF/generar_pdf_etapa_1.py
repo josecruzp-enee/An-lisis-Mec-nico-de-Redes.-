@@ -17,6 +17,8 @@ from .metodologia_pdf_etapa_1 import paginas_metodologia, grafico_variable
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
+from reportlab.platypus.tableofcontents import TableOfContents
+from .ecuaciones_pdf_etapa_1 import NOMENCLATURA
 from reportlab.platypus import (
     BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table,
     TableStyle, PageBreak, KeepTogether, CondPageBreak,
@@ -120,6 +122,18 @@ def _numero_pagina(canvas, doc):
     canvas.restoreState()
 
 
+class DocumentoConIndice(BaseDocTemplate):
+    """Registra capítulos en un índice con páginas reales (dos pasadas)."""
+
+    def afterFlowable(self, flowable):
+        titulo=getattr(flowable, "_indice_texto",None)
+        if titulo is not None:
+            import re
+            clave="toc_"+re.sub(r"[^a-z0-9]+","_",titulo.lower()).strip("_")
+            self.canv.bookmarkPage(clave)
+            self.notify("TOCEntry",(0,titulo,self.page,clave))
+
+
 def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
                        proyecto: dict, propiedades: dict,
                        geometria: pd.DataFrame | None = None) -> bytes:
@@ -149,7 +163,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     anchop,altop=landscape(A4)
     margen=16*mm
     disponible=anchop-2*margen
-    doc=BaseDocTemplate(buffer,pagesize=landscape(A4),
+    doc=DocumentoConIndice(buffer,pagesize=landscape(A4),
                         leftMargin=margen,rightMargin=margen,
                         topMargin=18*mm,bottomMargin=19*mm)
     marco=Frame(margen,19*mm,disponible,altop-37*mm,
@@ -157,17 +171,25 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     doc.addPageTemplates(PageTemplate(id="Memoria",frames=[marco],onPage=_numero_pagina))
     st=[]
 
+    def par_titulo(t, estilo):
+        p=_par(t,estilo)
+        # Únicamente títulos de capítulo (no apartados numerados 3.1, 3.2).
+        import re
+        if re.match(r"^[1-8][.] ",t) or t.startswith("Anexos técnicos"):
+            p._indice_texto=t
+        return p
+
     def titulo(t):
         st.append(CondPageBreak(94))
         st.append(Spacer(1,7))
-        st.append(_par(t,estilos["Heading2"]))
+        st.append(par_titulo(t,estilos["Heading2"]))
         st.append(Spacer(1,4))
 
     def tabla(t,df):
         # KeepTogether protege título y las primeras filas de tablas extensas.
         filas=_tabla(df,disponible,estilos)
         st.append(CondPageBreak(100))
-        st.append(_par(t,estilos["Heading2"]))
+        st.append(par_titulo(t,estilos["Heading2"]))
         st.append(Spacer(1,4))
         st.extend(filas)
         st.append(Spacer(1,8))
@@ -194,19 +216,13 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
         "normativa ni autorización de construcción.",estilos["NotaPDF"]))
     st.append(PageBreak())
     st.append(_par("ÍNDICE DE CONTENIDO",estilos["Heading1"]))
-    for linea in (
-        "1. Resumen ejecutivo",
-        "2. Alcance, parámetros y datos de entrada",
-        "3. Metodología matemática implementada",
-        "4. Propiedades mecánicas y criterios",
-        "5. Hipótesis y flechas por vano",
-        "6. Gráficos y tabla de tendido",
-        "7. Condiciones gobernantes",
-        "8. Conclusiones y limitaciones",
-        "Anexos A-C. Corridas climáticas y diagnóstico",
-    ):
-        st.append(_par(linea,estilos["Normal"]))
-        st.append(Spacer(1,4))
+    indice=TableOfContents()
+    indice.levelStyles=[ParagraphStyle(
+        name="IndiceNivel0",parent=estilos["Normal"],
+        fontSize=10,leading=16,leftIndent=12,rightIndent=20,
+        firstLineIndent=-12,spaceBefore=3,
+    )]
+    st.append(indice)
     st.append(Spacer(1,11))
     metadatos=pd.DataFrame([
         {"Campo":"Proyecto","Detalle":proyecto.get("nombre","No informado")},
@@ -246,15 +262,31 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
         "criterios normativos de carga ni una aprobación para construcción.",
         estilos["NotaPDF"]))
     st.append(Spacer(1,10))
-    tabla("2. Puntos y geometría de entrada",puntos)
+    tabla("2.1. Puntos y geometría de entrada",puntos)
     if geometria is not None:
-        tabla("2.1. Geometría de vanos",geometria)
-    st.extend(paginas_metodologia(_par,estilos,propiedades))
+        tabla("2.2. Geometría de vanos",geometria)
+    # El capítulo de método también se registra en el índice.
+    def par_metodo(t, estilo):
+        return par_titulo(t,estilo)
+    st.extend(paginas_metodologia(par_metodo,estilos,propiedades,disponible))
+    tabla("3.7. Nomenclatura y unidades",pd.DataFrame(
+        NOMENCLATURA,columns=["Símbolo","Definición","Unidad"]
+    ))
     st.append(PageBreak())
     tabla("4. Propiedades mecánicas documentadas",pd.DataFrame([
         {"Propiedad":str(k),"Valor":_texto(v)} for k,v in propiedades.items()
     ]))
-    tabla("5. Hipótesis de cálculo y límites",resultado.hipotesis)
+    # Fuente extensa repetida en cada fila: referencia única bajo la tabla.
+    hip=resultado.hipotesis.copy()
+    if "Fuente límite" in hip.columns:
+        referencias=sorted(set(str(v) for v in hip["Fuente límite"].dropna()))
+        hip=hip.drop(columns=["Fuente límite"])
+    else:
+        referencias=[]
+    tabla("5. Hipótesis de cálculo y límites",hip)
+    for referencia in referencias:
+        st.append(_par("Fuente del criterio: "+referencia,estilos["NotaPDF"]))
+    st.append(Spacer(1,7))
     tabla("6. Flechas por vano e hipótesis",resultado.flechas)
     # Ambas figuras provienen de las tablas YA calculadas.
     for columna,etiqueta,titulo_fig in (
@@ -296,6 +328,26 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             "modelo convencional declarados. No se emite dictamen de cumplimiento "
             "normativo estructural ni certificación de seguridad.",
             estilos["NotaPDF"]))
+        titulo("8.1. Fuentes técnicas y trazabilidad")
+        st.append(_par(
+            "Propiedades del conductor: "+str(propiedades["fuente"])+
+            ". La fuente indicada identifica los datos mecánicos usados "
+            "en esta corrida y debe acompañar al archivo de cálculo.",
+            estilos["NotaPDF"]))
+        if referencias:
+            st.append(Spacer(1,5))
+            for fuente in referencias:
+                st.append(_par(
+                    "Criterios de tensión: "+fuente+
+                    ". Referencia técnica del método de Checa; no equivale "
+                    "a una declaración de conformidad con normas ENEE.",
+                    estilos["NotaPDF"]))
+        st.append(Spacer(1,6))
+        st.append(_par(
+            "Trazabilidad numérica: los valores proceden de la tabla "
+            "de tendido, hipótesis y barrido generados por el motor. "
+            "No se han aplicado nuevos cálculos al elaborar el PDF.",
+            estilos["NotaPDF"]))
         st.append(PageBreak())
         titulo("Anexos técnicos - Barrido climático")
         st.append(_par(
@@ -333,5 +385,5 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             "no resultado de diseño. Los valores por corrida se conservan "
             "en la exportación CSV sin pérdida de precisión.",
             estilos["NotaPDF"]))
-    doc.build(st)
+    doc.multiBuild(st,maxPasses=5)
     return buffer.getvalue()

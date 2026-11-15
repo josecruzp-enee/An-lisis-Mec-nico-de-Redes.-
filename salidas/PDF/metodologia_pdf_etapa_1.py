@@ -9,9 +9,10 @@ import pandas as pd
 from reportlab.graphics.shapes import Drawing, Line, String
 from reportlab.lib import colors
 from reportlab.platypus import KeepTogether, Spacer
+from .ecuaciones_pdf_etapa_1 import formulas_para_seccion
 
 
-def paginas_metodologia(par, estilos, propiedades):
+def paginas_metodologia(par, estilos, propiedades, ancho=680):
     """Párrafos técnicos con las expresiones del código implementado."""
     bloques=[
         ("3. Metodología y modelo mecánico", [
@@ -82,11 +83,13 @@ def paginas_metodologia(par, estilos, propiedades):
     ]
     salida=[]
     for titulo,parrafos in bloques:
+        # Título y primera explicación se conservan unidos.
         salida.append(KeepTogether([
             par(titulo, estilos["Heading3"]),
             Spacer(1,4),
             par(parrafos[0], estilos["NotaPDF"]),
         ]))
+        salida.extend(formulas_para_seccion(titulo, ancho))
         for texto in parrafos[1:]:
             salida.append(Spacer(1,3))
             salida.append(par(texto,estilos["NotaPDF"]))
