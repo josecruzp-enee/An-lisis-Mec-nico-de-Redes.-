@@ -8,9 +8,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from Analisis_mecanico_conductores.flechas.calcular_flecha_vertical_de_catenaria import (
-    calcular_flecha_vertical_de_catenaria,
-)
+from Analisis_mecanico_conductores.flechas.calcular_desplazamientos_catenaria_3d import calcular_flecha_y_desviacion_3d
 
 
 def crear_fila_hipotesis(caso, H_estado, tensiones, residual_m):
@@ -34,11 +32,13 @@ def crear_filas_flechas(puntos, xyz, luces, caso, H_estado,
     """Devuelve una fila por vano con flecha vertical en metros."""
     filas=[]
     for i,(c,a,b) in enumerate(zip(cables,xyz[:-1],xyz[1:])):
+        flecha,lateral=calcular_flecha_y_desviacion_3d(c,a,b)
         filas.append({
             "Hipótesis":str(caso["Hipotesis"]),
             "Vano":str(puntos.iloc[i]["Punto"])+" → "+str(puntos.iloc[i+1]["Punto"]),
             "Luz (m)":float(luces[i]),
-            "Flecha vertical (m)":calcular_flecha_vertical_de_catenaria(c,a,b),
+            "Flecha vertical (m)":flecha,
+            "Desviación lateral máxima (m)":lateral,
             "T máxima vano (kN)":tensiones[i],
             "H estado (kN)":H_estado,
             "Viento transversal (kN/m)":viento_kN_m,
@@ -71,11 +71,12 @@ def construir_tabla_de_tendido(puntos, xyz, temperaturas_C,
             H_referencia_kN,float(temperatura),0.
         )
         for i,(c,a,b) in enumerate(zip(cables,xyz[:-1],xyz[1:])):
+            flecha,lateral=calcular_flecha_y_desviacion_3d(c,a,b)
             filas.append({
                 "Temperatura (°C)":temperatura,
                 "Vano":str(puntos.iloc[i]["Punto"])+" → "+str(puntos.iloc[i+1]["Punto"]),
                 "H del estado (kN)":H,
-                "Flecha vertical (m)":calcular_flecha_vertical_de_catenaria(c,a,b),
+                "Flecha vertical (m)":flecha,
                 "T extremo A (kN)":float(c.tension(0)),
                 "T extremo B (kN)":float(c.tension(c.luz)),
                 "Residual compatibilidad (m)":residual,

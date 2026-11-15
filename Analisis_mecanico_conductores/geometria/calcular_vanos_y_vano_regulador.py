@@ -33,9 +33,20 @@ def resumen_geometrico(puntos: pd.DataFrame):
             amarres="INCOMPLETOS"
         else:
             amarres="INFORMADOS"
+    # La componente Z se obtiene de la cota del terreno + el amarre.
+    # Si no están informadas ambas columnas completas, no se inventa
+    # desnivel ni se presenta un valor z como medido.
+    z_completa=(elevacion=="INFORMADA" and amarres=="INFORMADOS")
+    if z_completa:
+        z=(puntos["Altitud"].astype(float)+
+           puntos["Altura_Amarre_m"].astype(float)).to_numpy()
+        desniveles=np.diff(z)
+    else:
+        desniveles=np.full(len(luces),np.nan)
     tramo=pd.DataFrame({
         "Vano":[f"{nombres[i]} → {nombres[i+1]}" for i in range(len(luces))],
         "Luz horizontal (m)":luces,
+        "Desnivel entre amarres (m)":desniveles,
         "Azimut matemático (°)":np.mod(np.degrees(np.arctan2(d[:,1],d[:,0])),360),
         "Acumulado (m)":np.cumsum(luces),
     })
@@ -57,9 +68,12 @@ def resumen_geometrico(puntos: pd.DataFrame):
         "n_vanos":len(luces),
         "cotas":elevacion,
         "amarres":amarres,
-        "nivelado_confirmado":(elevacion=="INFORMADA" and amarres=="INFORMADOS" and nivelado),
+        "nivelado_confirmado":bool(z_completa and np.ptp(z)<1e-5),
+        "desniveles_conocidos":z_completa,
+        "requiere_3d":bool(z_completa and np.any(np.abs(desniveles)>1e-5)),
         "hipotesis_geometrica":(
-            "Vano regulador aproximado de Checa; supone una misma "
-            "sección de tendido. No verifica remates intermedios."
+            "Vano regulador convencional solo orientativo; el análisis "
+            "usa catenarias individuales en 3D y suma de longitudes "
+            "naturales. No identifica automáticamente remates intermedios."
         ),
     }

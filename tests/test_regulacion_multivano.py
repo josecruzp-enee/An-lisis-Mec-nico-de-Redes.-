@@ -89,11 +89,13 @@ class RegulacionChecaTest(unittest.TestCase):
             r.H_tendido_kN,solo.H_tendido_kN,delta=.02
         )
 
-    def test_desnivel_rechazado_de_forma_explicita(self):
+    def test_desnivel_resuelto_en_seccion_3d(self):
         p=puntos()
         p.loc[1,"Altitud"]=5.
-        with self.assertRaisesRegex(ValueError,"cotas"):
-            resolver_seccion_regulacion(**kwargs(p))
+        r=resolver_seccion_regulacion(**kwargs(p))
+        self.assertEqual(len(r.tabla_tendido),6)
+        self.assertIn("3D",r.modelo)
+        self.assertTrue((r.flechas["Flecha vertical (m)"]>=0).all())
 
     def test_limites_sin_fuente_no_se_aceptan(self):
         k=kwargs(puntos())

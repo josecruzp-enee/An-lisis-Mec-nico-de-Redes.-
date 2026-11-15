@@ -38,6 +38,8 @@ from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion
     EvaluadorEstadosRegulacion,
     calcular_cargas_transversales_por_vano as _cargas,
 )
+# Alias de compatibilidad con el paquete histórico calculos/.
+# La Etapa 1 integrada usa calcular_flecha_y_desviacion_3d en sus tablas.
 from Analisis_mecanico_conductores.flechas.calcular_flecha_vertical_de_catenaria import (
     calcular_flecha_vertical_de_catenaria as _flecha,
 )
@@ -73,31 +75,39 @@ def _geometria(puntos):
     xy=puntos[["X","Y"]].to_numpy(dtype=float)
     if not np.isfinite(xy).all():
         raise ValueError("Coordenadas no finitas")
-    # El cálculo convencional admite cota uniforme conocida y alturas
-    # iguales. Si se declaran desniveles o faltan algunas cotas,
-    # no los suplanta por geometría horizontal.
-    if "Altitud" in puntos and puntos["Altitud"].notna().any():
+    # Las cotas pueden ser diferentes: el motor de catenaria y la
+    # compatibilidad de longitudes operan en XYZ. Nunca se completa una
+    # columna PARCIAL sin datos; se permite plano de referencia z=0
+    # únicamente cuando todas las altitudes no fueron proporcionadas.
+    cotas_conocidas=("Altitud" in puntos and puntos["Altitud"].notna().any())
+    amarres_conocidos=("Altura_Amarre_m" in puntos and
+                       puntos["Altura_Amarre_m"].notna().any())
+    if cotas_conocidas:
         if puntos["Altitud"].isna().any():
             raise ValueError("Altitud parcial; completar cotas")
         alt=puntos["Altitud"].to_numpy(dtype=float)
-        if max(alt)-min(alt)>1e-5:
-            raise ValueError(
-                "Esta regulación convencional requiere cotas de "
-                "terreno iguales. Para desniveles usar cálculo 3D."
-            )
+        if not np.isfinite(alt).all():
+            raise ValueError("Altitudes no finitas")
     else:
         alt=np.zeros(len(puntos))
-    if "Altura_Amarre_m" in puntos and puntos["Altura_Amarre_m"].notna().any():
+    if amarres_conocidos:
         if puntos["Altura_Amarre_m"].isna().any():
             raise ValueError("Altura de amarre parcial")
         amarre=puntos["Altura_Amarre_m"].to_numpy(dtype=float)
-        if (amarre<=0).any() or max(amarre)-min(amarre)>1e-5:
-            raise ValueError(
-                "La regulación convencional requiere amarres de "
-                "igual altura. Para alturas distintas usar cálculo 3D."
-            )
+        if not np.isfinite(amarre).all() or (amarre<=0).any():
+            raise ValueError("Alturas de amarre inválidas")
     else:
         amarre=np.zeros(len(puntos))
+    if cotas_conocidas and np.ptp(alt)>1e-5 and not amarres_conocidos:
+        raise ValueError(
+            "Los desniveles de terreno requieren Altura_Amarre_m "
+            "para todos los apoyos; no se supone amarre al nivel del suelo."
+        )
+    if amarres_conocidos and np.ptp(amarre)>1e-5 and not cotas_conocidas:
+        raise ValueError(
+            "Alturas de amarre diferentes requieren Altitud completa "
+            "para determinar la geometría 3D real."
+        )
     z=alt+amarre
     xyz=np.column_stack((xy,z))
     luces=np.linalg.norm(np.diff(xy,axis=0),axis=1)
@@ -197,5 +207,8 @@ def resolver_seccion_regulacion(
         relacion_maxima=float(peor["Relación T/límite"]),
         cota_busqueda_activa=activo,
         barrido=barrido,
-        modelo="Sección convencional de regulación: H común y redistribución ideal; cargas de viento transversales máximas por vano",
+        modelo=("Sección 3D de regulación ideal: equilibrio por catenaria "
+                "con amarres desnivelados, H común perpendicular a la carga "
+                "resultante y redistribución sin fricción; viento transversal "
+                "máximo LOCAL por vano. No representa grapas fijas ni remates internos."),
     )

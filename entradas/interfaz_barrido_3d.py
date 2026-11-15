@@ -72,7 +72,7 @@ def _vanos_desde_excel(df):
     return resultado
 
 
-def mostrar_barrido_3d():
+def mostrar_barrido_3d(*, archivo_compartido=None, puntos_compartidos=None):
     """Pantalla sencilla: 4 parámetros de uso y opciones técnicas desplegables."""
     st.subheader("Análisis termomecánico 3D")
     st.caption(
@@ -81,10 +81,13 @@ def mostrar_barrido_3d():
         "térmica. Esta vista presupone amarres fijos: no debe utilizarse "
         "como cálculo de continuidad de suspensiones o de red completa."
     )
-    archivo = st.file_uploader(
-        "Excel de postes y coordenadas", type=["xlsx"],
-        key="archivo_barrido_3d",
-    )
+    # Integrado en Etapa 1: reutilizar el Excel y los puntos ya cargados.
+    archivo = archivo_compartido
+    if archivo is None:
+        archivo = st.file_uploader(
+            "Excel de postes y coordenadas", type=["xlsx"],
+            key="archivo_barrido_3d",
+        )
     calibres = list(CONDUCTORES_VIAKON_ACSR)
     with st.expander("Consultar catálogo de conductores ACSR", expanded=False):
         tabla_acsr = tabla_catalogo_acsr()
@@ -182,7 +185,8 @@ def mostrar_barrido_3d():
                 f"Hay {n_casos} combinaciones. El límite interactivo es 500; "
                 "reducí las direcciones o temperaturas en configuración avanzada."
             )
-        df = leer_puntos_excel(archivo)
+        df = (puntos_compartidos.copy() if puntos_compartidos is not None
+              else leer_puntos_excel(archivo))
         vanos = _vanos_desde_excel(df)
         ficha = CONDUCTORES_VIAKON_ACSR[calibre]
         # Un estado inicial que ya iguala la rotura nominal no debe
