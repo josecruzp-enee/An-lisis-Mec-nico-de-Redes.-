@@ -16,16 +16,16 @@ def paginas_metodologia(par, estilos, propiedades, ancho=680):
     """Párrafos técnicos con las expresiones del código implementado."""
     bloques=[
         ("3. Metodología y modelo mecánico", [
-            "El análisis se aplica a una sección de regulación ideal en 3D "
-            "con cotas de amarre conocidas, componente H común para "
-            "el modelo de carga y redistribución ideal entre vanos. "
-            "El modelo no representa rozamiento real ni remates intermedios.",
+            "El conductor se considera sujeto rígidamente en cada "
+            "aislador de espiga después del tendido. Cada vano tiene "
+            "su propia longitud natural descargada, sin intercambio "
+            "de material con los vanos adyacentes. En instalación se "
+            "propone un H inicial común que debe justificarse.",
         ]),
-        ("3.1. Geometría de regulación", [
-            "Para luces horizontales L_i, el vano regulador convencional "
-            "se presenta como dato auxiliar: L_r = sqrt(sum(L_i^3) / sum(L_i)). "
-            "El motor NO sustituye los vanos individuales por este valor: "
-            "resuelve la geometría de cada vano.",
+        ("3.1. Geometría de vanos fijados", [
+            "Para cada vano se emplean los amarres XYZ, su luz horizontal "
+            "y el desnivel real. Ninguna longitud equivalente sustituye "
+            "la geometría ni participa en los cálculos de servicio.",
         ]),
         ("3.2. Equilibrio y catenaria", [
             "Con carga vectorial uniforme q por longitud REAL de conductor, "
@@ -42,9 +42,11 @@ def paginas_metodologia(par, estilos, propiedades, ancho=680):
             "La longitud natural descargada se determina por integración: "
             "L_n = integral [ds / (1 + T(s)/EA)]. "
             "El motor utiliza cuadratura Gauss-Legendre de 64 puntos por vano. "
-            "Para un cambio de temperatura DeltaT, conserva en la sección "
-            "la suma de longitudes naturales: "
-            "sum(L_n,final) = sum(L_n,inicial) [1 + alpha DeltaT + epsilon_p]. "
+            "Para cada vano i, la longitud natural cambia únicamente "
+            "por expansión térmica: L_n,i,final = "
+            "L_n,i,inicial (1 + alpha DeltaT + epsilon_p). "
+            "No se conserva únicamente una suma global: se impone "
+            "una ecuación de compatibilidad independiente por vano. "
             "En la Etapa 1 la deformación permanente epsilon_p es cero; "
             "el creep no se predice. La raíz de H se encuentra mediante "
             "bisección con tolerancia de compatibilidad especificada.",
@@ -61,11 +63,12 @@ def paginas_metodologia(par, estilos, propiedades, ancho=680):
             "por sí mismos combinaciones meteorológicas normativas.",
         ]),
         ("3.5. Determinación de tensión de tendido", [
-            "Para cada tensión de referencia candidata H_0, se evalúan "
-            "las hipótesis documentadas y se obtiene la máxima relación "
-            "T_max/T_limite. El motor busca la mayor H_0 compatible "
-            "con todas las restricciones suministradas. La hipótesis "
-            "de mayor utilización se informa como gobernante.",
+            "El programa propone una H inicial común de instalación. "
+            "Para cada candidata H_0, evalúa las hipótesis climáticas "
+            "de TODOS los vanos con longitudes fijadas y obtiene "
+            "la máxima relación T_max/T_limite. Busca la mayor H_0 "
+            "compatible con todos los límites documentados; la "
+            "hipótesis y el vano más exigentes gobiernan.",
             "La selección TCD/THF Checa es referencia técnica, "
             "no certificación ENEE. Los máximos del barrido exploratorio "
             "se reportan separadamente de los límites de diseño.",
@@ -77,8 +80,8 @@ def paginas_metodologia(par, estilos, propiedades, ancho=680):
             "separación transversal de esa misma cuerda. "
             "La memoria reproduce los resultados generados por el motor, "
             "sin recalcularlos.",
-            "No se verifican postes, retenidas, cimentaciones, despejes, "
-            "grapas con deslizamiento restringido ni creep. "
+            "No se verifican postes, retenidas, espigas, amarres, "
+            "cimentaciones, despejes ni creep. "
             "La aprobación para construcción requiere verificaciones "
             "normativas y estructurales adicionales.",
         ]),
