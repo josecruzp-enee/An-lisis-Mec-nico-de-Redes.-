@@ -6,7 +6,7 @@ import pandas as pd
 
 from Analisis_mecanico_conductores.hipotesis_climaticas.generar_barrido_de_temperatura_viento_hielo import (
     ConfiguracionBarrido, _casos_climaticos, _peso_hielo_kN_m,
-    ejecutar_barrido_climatico,
+    ejecutar_barrido_climatico, comparar_tensiones_hipotesis_y_barrido,
 )
 from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion import (
     EvaluadorEstadosRegulacion,
@@ -118,6 +118,43 @@ class BarridoClimaticoTest(unittest.TestCase):
         self.assertIsNone(normal.barrido)
         self.assertEqual(nuevo.barrido["total_estados"],1)
         self.assertEqual(len(nuevo.barrido["gobernantes"]),5)
+
+    def test_resumen_gobernante_muestra_la_magnitud_correcta(self):
+        config=ConfiguracionBarrido(
+            temperatura_min_C=19.,temperatura_max_C=21.,
+            viento_max_kmh=36.,viento_paso_kmh=18.,
+        )
+        r=ejecutar_barrido_climatico(self.puntos,5.,self.evaluador,config)
+        tabla=r["gobernantes"]
+        for _,fila in tabla.iterrows():
+            self.assertAlmostEqual(
+                fila["Valor gobernante"],
+                fila[fila["Magnitud gobernante"]],
+            )
+        lateral=tabla[tabla["Condición gobernante"]==
+                      "Máxima desviación lateral"].iloc[0]
+        self.assertEqual(lateral["Magnitud gobernante"],
+                         "Desviación lateral máxima (m)")
+        self.assertGreater(lateral["Valor gobernante"],0.)
+
+    def test_comparacion_distingue_diseno_barrido_y_maximo_global(self):
+        config=ConfiguracionBarrido(
+            temperatura_min_C=20.,temperatura_max_C=20.,
+            viento_max_kmh=0.,viento_paso_kmh=5.,
+        )
+        r=ejecutar_barrido_climatico(self.puntos,5.,self.evaluador,config)
+        hip=pd.DataFrame([{
+            "Hipótesis":"Frío fuera del barrido",
+            "Temperatura (°C)":-5.,"Viento (m/s)":0.,
+            "T máxima sección (kN)":8.,
+        }])
+        tabla=comparar_tensiones_hipotesis_y_barrido(hip,r)
+        self.assertEqual(len(tabla),3)
+        self.assertEqual(tabla.iloc[0]["Ámbito"],"Hipótesis de diseño")
+        self.assertEqual(tabla.iloc[1]["Ámbito"],"Barrido exploratorio")
+        self.assertEqual(tabla.iloc[2]["Ámbito"],"Máximo global evaluado")
+        self.assertEqual(tabla.iloc[2]["T máxima (kN)"],8.)
+        self.assertEqual(tabla.iloc[2]["Temperatura (°C)"],-5.)
 
     def test_rechaza_intervalos_no_divisibles(self):
         config=ConfiguracionBarrido(

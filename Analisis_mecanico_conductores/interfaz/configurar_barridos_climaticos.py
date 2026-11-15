@@ -4,7 +4,7 @@ from __future__ import annotations
 import streamlit as st
 
 from Analisis_mecanico_conductores.hipotesis_climaticas.generar_barrido_de_temperatura_viento_hielo import (
-    ConfiguracionBarrido,
+    ConfiguracionBarrido, comparar_tensiones_hipotesis_y_barrido,
 )
 
 
@@ -89,7 +89,7 @@ def mostrar_configuracion_barrido():
     return config
 
 
-def mostrar_resultados_barrido(barrido):
+def mostrar_resultados_barrido(barrido, hipotesis=None):
     """Presenta gobernantes y permite descargar resultados por estado y vano."""
     if barrido is None:
         return
@@ -99,7 +99,26 @@ def mostrar_resultados_barrido(barrido):
         "Máximos EXPLORATORIOS; no equivalen a límites admisibles ni "
         "certifican simultaneidad meteorológica."
     )
-    st.dataframe(barrido["gobernantes"],use_container_width=True,hide_index=True)
+    if hipotesis is not None:
+        st.markdown("**Máximos de tensión: diseño frente a exploración**")
+        st.dataframe(
+            comparar_tensiones_hipotesis_y_barrido(hipotesis,barrido),
+            use_container_width=True,hide_index=True,
+        )
+    st.caption(
+        "El viento del barrido es perpendicular a CADA vano (envolvente "
+        "local), no un único azimut geográfico para toda la línea. El control "
+        "de dirección del viento del panel general NO se utiliza aquí."
+    )
+    columnas=["Condición gobernante","Magnitud gobernante",
+              "Valor gobernante","Tipo de corrida","Vano",
+              "Temperatura (°C)","Viento (km/h)","Hielo radial (mm)",
+              "T máxima vano (kN)","Flecha vertical (m)",
+              "Desviación lateral máxima (m)"]
+    st.dataframe(
+        barrido["gobernantes"][columnas],
+        use_container_width=True,hide_index=True,
+    )
     st.download_button(
         "Exportar gobernantes CSV",
         barrido["gobernantes"].to_csv(index=False).encode("utf-8-sig"),
