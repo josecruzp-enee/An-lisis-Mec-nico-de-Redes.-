@@ -522,17 +522,17 @@ def main() -> None:
     mostrar_resumen_proyecto(proyecto)
 
     if proyecto["modo_tension"].startswith("Calcular"):
-        from entradas.tension_automatica_fase1 import plantilla_tension_automatica
+        from entradas.regulacion_fase1 import plantilla_regulacion
         st.download_button(
-            "Descargar plantilla para cálculo automático de tensión (Excel)",
-            plantilla_tension_automatica(),
-            file_name="plantilla_tension_automatica.xlsx",
+            "Descargar plantilla para tensión y flechas automáticas (Excel)",
+            plantilla_regulacion(),
+            file_name="plantilla_regulacion_multivano.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         st.caption(
-            "El modo automático necesita los amarres ANCLAJE/FIJA, "
-            "las propiedades del conductor y las hipótesis climáticas "
-            "con límites y fuentes. No solicita H inicial."
+            "Método convencional de Checa para una sección de regulación "
+            "con varios vanos. Requiere propiedades mecánicas documentadas "
+            "e hipótesis con límites de tensión. No solicita H inicial."
         )
     archivo = ui_cargar_excel()
     if not archivo:
@@ -541,77 +541,47 @@ def main() -> None:
     try:
         df = leer_puntos_excel(archivo)
         if proyecto["modo_tension"].startswith("Calcular"):
-            from entradas.tension_automatica_fase1 import (
-                calcular_tension_desde_libro,
-            )
+            from entradas.regulacion_fase1 import ejecutar_regulacion_fase1
             from io import BytesIO
-
-            with st.spinner("Calculando tensión de tendido con hipótesis mecánicas..."):
-                resultado_tendido = calcular_tension_desde_libro(
-                    BytesIO(archivo.getvalue()), df, proyecto["calibre"],
-                    Cd=proyecto["Cd"], rho=proyecto["rho"],
+            with st.spinner(
+                "Resolviendo la sección reguladora y los estados climáticos..."
+            ):
+                r=ejecutar_regulacion_fase1(
+                    BytesIO(archivo.getvalue()),df,proyecto["calibre"],
+                    Cd=proyecto["Cd"],rho=proyecto["rho"],
                 )
             st.success(
-                f"Tensión de tendido calculada: "
-                f"{resultado_tendido.H_tendido_kN:.4f} kN por conductor"
+                f"Tensión de tendido calculada: {r.H_tendido_kN:.4f} kN "
+                "por conductor"
             )
+            c1,c2,c3=st.columns(3)
+            c1.metric("Vano regulador",f"{r.vano_regulador_m:.2f} m")
+            c2.metric("Longitud total sección",f"{r.longitud_tramo_m:.2f} m")
+            c3.metric("Relación crítica T/límite",f"{r.relacion_maxima:.4f}")
             st.caption(
-                f"Hipótesis gobernante: {resultado_tendido.caso_gobernante}. "
-                f"Relación máxima T/límite: {resultado_tendido.razon_maxima:.4f}. "
-                "Cálculo válido únicamente para el vano ANCLAJE–ANCLAJE "
-                "declarado; no certifica el diseño completo."
+                f"Hipótesis gobernante: {r.caso_gobernante}. {r.modelo}. "
+                "La cota de búsqueda activa no equivale a límite "
+                "de tensión admisible."
             )
-            # Reacciones en el estado de tendido desde el BVP real.
-            from calculos.cable_no_lineal import resolver_cable_no_lineal
-            from entradas.catalogos import CONDUCTORES_ACSR
-            from io import BytesIO as _BytesIO
-            xl=pd.ExcelFile(_BytesIO(archivo.getvalue()))
-            mat=xl.parse("Materiales").iloc[0]
-            conductor=CONDUCTORES_ACSR[proyecto["calibre"]]
-            puntos_amarre=[
-                (
-                    float(p["X"]),float(p["Y"]),
-                    float(p["Altitud"])+float(p["Altura_Amarre_m"]),
-                ) for _,p in df.iterrows()
-            ]
-            temp=float(mat["Temperatura_tendido_C"])
-            cable=resolver_cable_no_lineal(
-                *puntos_amarre,
-                peso_kN_m=float(conductor["peso_kg_m"])*9.80665/1000,
-                diametro_m=float(conductor["diametro_m"]),
-                EA_kN=float(mat["EA_kN"]),
-                alpha_por_C=float(mat["Alpha_por_C"]),
-                H_tendido_kN=resultado_tendido.H_tendido_kN,
-                temperatura_tendido_C=temp,
-                temperatura_estado_C=temp,
-                velocidad_viento_ms=0,azimut_viento_deg=0,
-                Cd=proyecto["Cd"],rho_kg_m3=proyecto["rho"],
-            )
-            st.subheader("Fuerzas del conductor en los amarres (estado de tendido)")
-            st.dataframe(pd.DataFrame([
-                {
-                    "Apoyo":df.iloc[i]["Punto"],"Fx (kN)":float(f[0]),
-                    "Fy (kN)":float(f[1]),"Fz (kN)":float(f[2]),
-                    "Temperatura (°C)":temp,
-                    "Viento (m/s)":0.,
-                } for i,f in enumerate([cable.fuerza_a,cable.fuerza_b])
-            ]),use_container_width=True,hide_index=True)
-            st.caption(
-                "Fuerzas vectoriales por CONDUCTOR del estado de tendido "
-                "sin viento. No son la envolvente de cargas sobre el poste."
-            )
-            st.subheader("Comprobación de hipótesis de tensión")
-            st.dataframe(pd.DataFrame(resultado_tendido.hipotesis),
-                         use_container_width=True,hide_index=True)
-            st.subheader("Tabla de tendido y flechas")
-            st.dataframe(pd.DataFrame(resultado_tendido.tabla_tendido),
-                         use_container_width=True,hide_index=True)
-            st.info(
-                "Para obtener las fuerzas de una red de varios vanos, "
-                "usá Red completa — conectividad, indicando expresamente "
-                "ANCLAJE, FIJA, DESLIZANTE o SUSPENSION por extremo. "
-                "No se asigna una tensión común a un apoyo intermedio "
-                "sin conocer su conexión mecánica."
+            for titulo,tabla,nombre in (
+                ("Hipótesis de cálculo",r.hipotesis,"hipotesis"),
+                ("Flechas por vano e hipótesis",r.flechas,"flechas"),
+                ("Tabla de tendido",r.tabla_tendido,"tabla_tendido"),
+            ):
+                st.subheader(titulo)
+                st.dataframe(tabla,use_container_width=True,hide_index=True)
+                st.download_button(
+                    "Exportar "+titulo+" CSV",
+                    tabla.to_csv(index=False).encode("utf-8-sig"),
+                    file_name=f"regulacion_{nombre}.csv",
+                    mime="text/csv",key="descarga_regulacion_"+nombre,
+                )
+            st.warning(
+                "Modelo convencional de sección de regulación: "
+                "las fuerzas precisas en postes, la geometría con grandes "
+                "desniveles y las grapas que bloquean deslizamiento "
+                "requieren verificaciones específicas. No se ha "
+                "verificado resistencia de estructuras ni libramientos."
             )
             return
         res = ejecutar_calculo(df, proyecto)
