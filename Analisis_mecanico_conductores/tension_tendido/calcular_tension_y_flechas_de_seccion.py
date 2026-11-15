@@ -38,6 +38,11 @@ from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion
     EvaluadorEstadosRegulacion,
     calcular_cargas_transversales_por_vano as _cargas,
 )
+# Alias de compatibilidad con el paquete histórico calculos/.
+# La Etapa 1 integrada usa calcular_flecha_y_desviacion_3d en sus tablas.
+from Analisis_mecanico_conductores.flechas.calcular_flecha_vertical_de_catenaria import (
+    calcular_flecha_vertical_de_catenaria as _flecha,
+)
 from Analisis_mecanico_conductores.tension_tendido.construir_resultados_regulacion import (
     construir_tablas_de_hipotesis,
     construir_tabla_de_tendido,
