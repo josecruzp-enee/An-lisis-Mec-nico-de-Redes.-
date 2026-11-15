@@ -71,7 +71,7 @@ def _H_50_desde_flecha(luz, flecha, peso):
     def residuo(H):
         a=H/w
         return 2*a*np.sinh(L/(4*a))**2 - f
-    bajo=max(w*L/10000.,1e-7)
+    bajo=max(w*L/200.,1e-7)
     alto=max(w*L**2/(8*f)*10,1.)
     if residuo(bajo)<0 or residuo(alto)>0:
         raise ValueError("No se pudo acotar catenaria para flecha de referencia")
@@ -89,7 +89,7 @@ def _H_inicial_por_compatibilidad(luz, H_final_50, prop, deformacion_permanente)
         return longitud_natural(
             resolver_catenaria(xyz[0],xyz[1],q,H),prop.EA_inicial_kN
         )-objetivo
-    bajo=max(prop.peso_kN_m*luz/10000.,1e-7)
+    bajo=max(prop.peso_kN_m*luz/200.,1e-7)
     alto=max(H_final_50*4.,prop.ruptura_kN*2.)
     if error(bajo)<0:
         raise ValueError("Estado inicial sin raíz física por tensión mínima")
