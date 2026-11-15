@@ -31,6 +31,7 @@ import math
 from scipy.optimize import brentq
 
 from .cable_no_lineal import resolver_cable_no_lineal
+from .barrido_no_lineal_3d import _extremo_minimo
 from .validacion_mecanica import finito, vector3
 
 
@@ -180,8 +181,21 @@ def dimensionar_tension_tendido(
     tabla=[]
     for temp in temps:
         cable=evaluar(Hopt,temp,0.,0.)
+        # Flecha vertical de la curva BVP respecto a la cuerda,
+        # no aproximación parabólica f=qL²/(8H).
+        delta=b-a
+        dx2=float(delta[:2]@delta[:2])
+        if dx2<=0:
+            raise ValueError("La tabla requiere luz horizontal no nula")
+        def elevacion_relativa(u):
+            p=cable.puntos(u)
+            fraccion=float((p[:2]-a[:2])@delta[:2]/dx2)
+            return float(p[2]-(a[2]+fraccion*delta[2]))
+        min_altitud,_=_extremo_minimo(cable,elevacion_relativa)
+        flecha=max(0.,-float(min_altitud))
         tabla.append({
             "Temperatura (°C)":temp,
+            "Flecha vertical sobre cuerda (m)":flecha,
             "H de referencia (kN)":Hopt,
             "T extremo A (kN)":float(np.linalg.norm(cable.fuerza_a)),
             "T extremo B (kN)":float(np.linalg.norm(cable.fuerza_b)),
