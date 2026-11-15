@@ -15,6 +15,7 @@ from entradas.catalogos import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.referencias_mecanicas_acsr_nexans import referencia_mecanica_nexans
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
+from Analisis_mecanico_conductores.verificaciones.perfil_limites_tension_checa import construir_hipotesis_checa_acsr
 
 
 COLUMNAS=(
@@ -75,25 +76,36 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
         fuente=st.text_input(
             "Fuente documental de las propiedades",value=""
         )
-        st.markdown("**Hipótesis climáticas y límites de diseño**")
+        st.markdown("**Criterio de tensión mecánica**")
+        perfil_tension=st.radio(
+            "Perfil de límites",
+            [
+                "Checa — TCD/THF ACSR (referencia técnica)",
+                "Introducir límites documentados manualmente",
+            ],
+            help="Checa: 20 % RTS a 15 °C y 22.5 % RTS a -5 °C sin viento/hielo. No equivale a norma ENEE ni verifica límite estático.",
+        )
         st.caption(
-            "Añadí las filas necesarias. No hay valores de tensión "
-            "admisible precargados. Un límite requiere su fuente técnica."
+            "Checa controla TCD y horas frías; máximo viento/hielo sigue siendo "
+            "barrido exploratorio hasta definir un límite estático documentado."
         )
         datos=pd.DataFrame([
             {"Hipotesis":"Estado_1","Temperatura_C":None,
              "Viento_ms":None,"T_limite_kN":None,
              "Fuente_limite":"","Criterio_diseno":""},
         ],columns=COLUMNAS)
-        tabla=st.data_editor(
-            datos,num_rows="dynamic",hide_index=True,
-            use_container_width=True,
-            key="tabla_climas_regulacion",
+        tabla=(
+            st.data_editor(
+                datos,num_rows="dynamic",hide_index=True,
+                use_container_width=True,
+                key="tabla_climas_regulacion",
+            )
+            if perfil_tension.startswith("Introducir") else None
         )
         enviar=st.form_submit_button("Calcular tensión y flechas")
     if not enviar:
         return None
-    hip=_leer_hipotesis_usuario(tabla)
+    hip=(_leer_hipotesis_usuario(tabla) if tabla is not None else None)
     if fuente_tipo.startswith("ENEE"):
         propiedades=seleccionar_desde_clave_viakon(nombre,estado_enee)
         ea=propiedades["EA_kN"]
@@ -133,6 +145,13 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
         rotura=float(ficha["carga_rotura_kN"])
         peso_kN_m=float(ficha["peso_kg_m"])*9.80665/1000
         diametro_m=float(ficha["diametro_m"])
+    if hip is None:
+        hip=construir_hipotesis_checa_acsr(rotura)
+        st.dataframe(hip,use_container_width=True,hide_index=True)
+        st.warning(
+            "Checa: solo límites dinámicos de tensión de cada día y horas frías. "
+            "No sustituye la comprobación normativa de tensión máxima con viento/hielo."
+        )
     limites=pd.to_numeric(hip["T_limite_kN"],errors="raise")
     if (limites>=rotura).any():
         raise ValueError(
