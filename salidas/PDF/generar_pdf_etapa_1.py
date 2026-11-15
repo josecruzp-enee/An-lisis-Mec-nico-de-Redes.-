@@ -199,7 +199,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     st.append(_par("MEMORIA DE CÁLCULO MECÁNICO DE CONDUCTORES",
                    estilos["TituloPDF"]))
     st.append(Spacer(1,15))
-    st.append(_par("ETAPA 1 - SECCIÓN CONVENCIONAL DE REGULACIÓN",
+    st.append(_par("ETAPA 1 - DISTRIBUCIÓN CON AMARRES FIJOS",
                    estilos["Title"]))
     st.append(Spacer(1,40))
     st.append(_par("Proyecto: "+str(proyecto.get("nombre") or "No informado"),
@@ -236,8 +236,8 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     st.extend(_tabla(metadatos,disponible,estilos))
     titulo("1. Resumen ejecutivo")
     resumen=pd.DataFrame([
-        {"Indicador":"Tensión de tendido H","Resultado":f"{resultado.H_tendido_kN:.4f} kN/conductor"},
-        {"Indicador":"Vano regulador","Resultado":f"{resultado.vano_regulador_m:.3f} m"},
+        {"Indicador":"H inicial de tendido común propuesta","Resultado":f"{resultado.H_tendido_kN:.4f} kN/conductor"},
+        {"Indicador":"Vanos calculados independientemente","Resultado":str(len(resultado.flechas["Vano"].unique()))},
         {"Indicador":"Longitud total","Resultado":f"{resultado.longitud_tramo_m:.3f} m"},
         {"Indicador":"Hipótesis gobernante","Resultado":resultado.caso_gobernante},
         {"Indicador":"Relación crítica T/límite","Resultado":f"{resultado.relacion_maxima:.4f}"},
@@ -248,17 +248,17 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     titulo("2. Alcance y parámetros")
     st.append(_par(resultado.modelo,estilos["NotaPDF"]))
     st.append(_par(
-        "Se evalúan compatibilidad termoelástica y catenarias bajo una tensión "
-        "horizontal común para la sección ideal de regulación entre remates. "
-        "El vano equivalente se presenta como referencia geométrica; el motor "
-        "resuelve cada vano y conserva la suma de longitudes naturales. "
-        "El viento exploratorio es perpendicular a cada vano; no constituye "
-        "un único vector geográfico de viento.",estilos["NotaPDF"]))
+        "En el tendido se propone un mismo valor H inicial, verificado "
+        "frente a todas las hipótesis y todos los vanos. Tras sujetar el "
+        "conductor en cada aislador de espiga se conserva la longitud "
+        "natural INDIVIDUAL de cada vano: no existe redistribución. "
+        "La tensión de servicio varía de un vano a otro. El viento "
+        "exploratorio es perpendicular a cada vano y no constituye "
+        "un único vector geográfico.",estilos["NotaPDF"]))
     st.append(Spacer(1,7))
     st.append(_par(
         "ATENCIÓN: este informe no verifica resistencia de postes, retenidas, "
-        "cimentaciones, libramientos, deslizamiento/fricción en suspensión ni "
-        "creep. El barrido de viento y hielo es exploratorio y no sustituye "
+        "espigas, amarres, cimentaciones, libramientos ni creep. El barrido de viento y hielo es exploratorio y no sustituye "
         "criterios normativos de carga ni una aprobación para construcción.",
         estilos["NotaPDF"]))
     st.append(Spacer(1,10))
@@ -287,10 +287,10 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     for referencia in referencias:
         st.append(_par("Fuente del criterio: "+referencia,estilos["NotaPDF"]))
     st.append(Spacer(1,7))
-    tabla("6. Flechas por vano e hipótesis",resultado.flechas)
+    tabla("6. Flechas y tensiones por vano e hipótesis",resultado.flechas)
     # Ambas figuras provienen de las tablas YA calculadas.
     for columna,etiqueta,titulo_fig in (
-        ("H del estado (kN)","H (kN)","6.1. Tensión horizontal frente a temperatura"),
+        ("H del estado (kN)","H máxima entre vanos (kN)","6.1. Envolvente de H por temperatura"),
         ("Flecha vertical (m)","Flecha (m)","6.2. Flecha vertical máxima frente a temperatura"),
     ):
         graf=grafico_variable(resultado.tabla_tendido,columna,etiqueta,disponible)
@@ -321,9 +321,10 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             estilos["NotaPDF"]))
         titulo("8. Conclusiones y limitaciones")
         st.append(_par(
-            f"En esta sección, la tensión de referencia calculada es "
+            f"Para el tendido se propone una H inicial común de "
             f"{resultado.H_tendido_kN:.4f} kN por conductor y la hipótesis "
             f"gobernante es {resultado.caso_gobernante}. "
+            "Tras el amarre las tensiones se resuelven por vano. "
             "Los resultados son válidos solamente dentro de los supuestos del "
             "modelo convencional declarados. No se emite dictamen de cumplimiento "
             "normativo estructural ni certificación de seguridad.",

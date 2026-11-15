@@ -13,7 +13,7 @@ from reportlab.platypus import Image, KeepTogether, Spacer
 # catenaria, cambio_estado y evaluador de estados. No son calculadoras.
 ECUACIONES = {
     "3.1.": [
-        r"$L_r=\sqrt{\frac{\sum_i L_i^3}{\sum_i L_i}}$",
+        r"$Z_{A,i}=Z_{\mathrm{terreno},i}+h_{\mathrm{amarre},i}$",
     ],
     "3.2.": [
         r"$a=\frac{H}{\Vert\mathbf{q}\Vert}$",
@@ -22,7 +22,7 @@ ECUACIONES = {
     ],
     "3.3.": [
         r"$L_n=\int_0^{L}\frac{ds}{1+T(s)/(EA)}$",
-        r"$\sum_i L_{n,i,2}=\left(1+\alpha\Delta\theta+\varepsilon_p\right)\sum_i L_{n,i,1}$",
+        r"$L_{n,i,2}=\left(1+\alpha\Delta\theta+\varepsilon_p\right)L_{n,i,1}\quad\forall i$",
     ],
     "3.4.": [
         r"$w_v=\frac{\rho C_d D V^2}{2\,(1000)}\quad[\mathrm{kN/m}]$",
@@ -66,11 +66,11 @@ def formulas_para_seccion(titulo: str, ancho: float):
 
 
 NOMENCLATURA = [
-    ("L_i, L_r", "Luz del vano i y vano regulador", "m"),
-    ("H, H_0", "Componente de tensión perpendicular a la carga resultante y valor de referencia", "kN"),
+    ("L_i", "Luz horizontal del vano i", "m"),
+    ("H_i, H_0", "Componente de tensión del vano i y valor inicial común de tendido", "kN"),
     ("T(x)", "Tracción en la abscisa x del conductor", "kN"),
     ("EA", "Rigidez axial documentada del conductor", "kN"),
-    ("L_n", "Longitud natural descargada", "m"),
+    ("L_n,i", "Longitud natural descargada de cada vano amarrado", "m"),
     ("q, w_v", "Carga distribuida vectorial y componente aerodinámica", "kN/m"),
     ("alpha", "Coeficiente lineal de dilatación térmica", "1/°C"),
     ("Delta theta", "Diferencia de temperatura del conductor", "°C"),

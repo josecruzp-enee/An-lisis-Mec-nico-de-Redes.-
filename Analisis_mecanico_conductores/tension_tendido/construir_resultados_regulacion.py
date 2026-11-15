@@ -11,6 +11,11 @@ import pandas as pd
 from Analisis_mecanico_conductores.flechas.calcular_desplazamientos_catenaria_3d import calcular_flecha_y_desviacion_3d
 
 
+def _por_vano(valor, i):
+    """Acepta valor escalar histórico o vector del modelo de espigas."""
+    return float(valor[i] if isinstance(valor,(list,tuple)) else valor)
+
+
 def crear_fila_hipotesis(caso, H_estado, tensiones, residual_m):
     """Resume una hipótesis: tensiones y límite en kN, residual en m."""
     limite=float(caso["T_limite_kN"])
@@ -18,17 +23,22 @@ def crear_fila_hipotesis(caso, H_estado, tensiones, residual_m):
         "Hipótesis":str(caso["Hipotesis"]),
         "Temperatura (°C)":float(caso["Temperatura_C"]),
         "Viento (m/s)":float(caso["Viento_ms"]),
-        "H estado (kN)":H_estado,
+        "H estado (kN)":(float(H_estado) if not isinstance(H_estado,(list,tuple))
+                          else max(float(h) for h in H_estado)),
+        "H mínima entre vanos (kN)":(float(H_estado) if not isinstance(H_estado,(list,tuple))
+                                     else min(float(h) for h in H_estado)),
         "T máxima sección (kN)":max(tensiones),
         "Límite (kN)":limite,
         "Relación T/límite":max(tensiones)/limite,
         "Fuente límite":str(caso["Fuente_limite"]),
-        "Residual compatibilidad (m)":residual_m,
+        "Residual compatibilidad (m)":(float(residual_m)
+            if not isinstance(residual_m,(list,tuple))
+            else max(abs(float(x)) for x in residual_m)),
     }
 
 
 def crear_filas_flechas(puntos, xyz, luces, caso, H_estado,
-                       tensiones, cables, viento_kN_m):
+                       tensiones, cables, viento_kN_m, residual_m=0.):
     """Devuelve una fila por vano con flecha vertical en metros."""
     filas=[]
     for i,(c,a,b) in enumerate(zip(cables,xyz[:-1],xyz[1:])):
@@ -40,7 +50,8 @@ def crear_filas_flechas(puntos, xyz, luces, caso, H_estado,
             "Flecha vertical (m)":flecha,
             "Desviación lateral máxima (m)":lateral,
             "T máxima vano (kN)":tensiones[i],
-            "H estado (kN)":H_estado,
+            "H estado (kN)":_por_vano(H_estado,i),
+            "Residual compatibilidad (m)":_por_vano(residual_m,i),
             "Viento transversal (kN/m)":viento_kN_m,
         })
     return filas
@@ -57,7 +68,7 @@ def construir_tablas_de_hipotesis(puntos, xyz, luces, hipotesis,
         )
         filas_hipotesis.append(crear_fila_hipotesis(caso,H,tensiones,residual))
         filas_flechas.extend(
-            crear_filas_flechas(puntos,xyz,luces,caso,H,tensiones,cables,viento)
+            crear_filas_flechas(puntos,xyz,luces,caso,H,tensiones,cables,viento,residual)
         )
     return pd.DataFrame(filas_hipotesis),pd.DataFrame(filas_flechas)
 
@@ -75,10 +86,10 @@ def construir_tabla_de_tendido(puntos, xyz, temperaturas_C,
             filas.append({
                 "Temperatura (°C)":temperatura,
                 "Vano":str(puntos.iloc[i]["Punto"])+" → "+str(puntos.iloc[i+1]["Punto"]),
-                "H del estado (kN)":H,
+                "H del estado (kN)":_por_vano(H,i),
                 "Flecha vertical (m)":flecha,
                 "T extremo A (kN)":float(c.tension(0)),
                 "T extremo B (kN)":float(c.tension(c.luz)),
-                "Residual compatibilidad (m)":residual,
+                "Residual compatibilidad (m)":_por_vano(residual,i),
             })
     return pd.DataFrame(filas)

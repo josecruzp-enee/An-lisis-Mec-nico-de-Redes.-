@@ -1,25 +1,16 @@
-"""Cálculo convencional de una sección de regulación multivano.
+"""Etapa 1 — distribución con vanos amarrados individualmente.
 
-Referencia: L. M. Checa, Líneas de Transporte de Energía, 3ª ed.,
-cap. 4, apartado 4.2, pp. impresas 245-247 (vano ideal de regulación).
+La H de referencia es una CONDICIÓN INICIAL DE TENDIDO común propuesta.
+El límite documentado de tensión se controla en cada vano, en cada
+hipótesis. Tras el amarre a espiga, no existe redistribución de
+longitud natural entre vanos; cada estado climático se resuelve por vano.
 
-El vano equivalente Checa sqrt(sum(a^3)/sum(a)) se informa SOLO como
-referencia de la aproximación para vanos aproximadamente nivelados.
+Se conserva el campo histórico vano_regulador_m solo como dato auxiliar
+de compatibilidad; NO interviene en ninguna ecuación ni en el control
+de límite. El viento exploratorio es transversal LOCAL a cada vano.
 
-El cálculo de tensiones NO emplea ese vano para reemplazar la geometría:
-aplica compatibilidad exacta de la suma de longitudes naturales mediante
-catenarias de cada vano, conservando una H común convencional. La
-hipótesis mecánica explícita es una sección regulada con redistribución
-de cable ideal y tensiones horizontales uniformes, entre remates.
-
-Viento: carga aerodinámica transversal máxima, perpendicular al eje
-de cada vano (envolvente convencional). No representa un vector de viento
-geográfico único si la traza gira. El Cd, rho, diámetro y velocidad
-se usan para obtener w_v = 0.5*rho*Cd*d*V²/1000 kN/m.
-No calcula cargas de viento reales sobre los postes.
-
-No permite dictaminar seguridad estructural, libramientos, creep,
-ni una sección con conductor fijado indeformablemente en cada suspensión.
+No verifica capacidad de poste/espiga, remates, despejes ni creep.
+La condición común de instalación debe justificarse para una obra real.
 """
 from __future__ import annotations
 
@@ -34,6 +25,7 @@ from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado impor
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
 from Analisis_mecanico_conductores.hipotesis_climaticas.generar_barrido_de_temperatura_viento_hielo import ejecutar_barrido_climatico
+from Analisis_mecanico_conductores.tension_tendido.evaluar_vanos_amarrados_independientes import EvaluadorVanosAmarrados
 from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion import (
     EvaluadorEstadosRegulacion,
     calcular_cargas_transversales_por_vano as _cargas,
@@ -123,12 +115,13 @@ def resolver_seccion_regulacion(
     Cd=1.2, rho_kg_m3=1.225,
     configuracion_barrido=None,
 ):
-    """Encuentra H inicial por compatibilidad y límites en toda la sección.
+    """Dimensiona H inicial usando límites de TODOS los vanos amarrados.
 
     Hipótesis: columnas Hipotesis, Temperatura_C, Viento_ms,
     T_limite_kN, Fuente_limite, Criterio_diseno.
-    No se requiere conocer un herraje intermedio para el método
-    CONVENCIONAL de regulación; NO es cálculo de fuerzas de ese herraje.
+    Se supone un único H de tendido para el procedimiento de instalación.
+    Una vez amarrado, cada vano conserva su longitud descargada y tiene
+    su propio H para cada estado. No determina fuerzas de herrajes.
     """
     xyz,luces=_geometria(puntos)
     if not fuente_material or not str(fuente_material).strip():
@@ -157,13 +150,13 @@ def resolver_seccion_regulacion(
         if not str(h["Fuente_limite"]).strip() or not str(h["Criterio_diseno"]).strip():
             raise ValueError("Falta fuente o criterio de un límite")
         finito(h["T_limite_kN"],"límite de tensión",0,True)
-    evaluador=EvaluadorEstadosRegulacion(
+    evaluador=EvaluadorVanosAmarrados(
         xyz,peso,d,ea,alpha,t0,Cd,rho_kg_m3
     )
     estado=evaluador.evaluar_estado
 
     def max_relacion(H_referencia_kN):
-        """Mayor cociente tensión real/límite de todas las hipótesis."""
+        """Mayor utilización entre TODOS los vanos y las hipótesis."""
         return max(
             max(estado(
                 float(H_referencia_kN),
@@ -198,6 +191,8 @@ def resolver_seccion_regulacion(
     )
     return ResultadoRegulacion(
         H_tendido_kN=hopt,
+        # Compatibilidad con clientes históricos: valor auxiliar SIN uso
+        # en ecuaciones mecánicas; oculto en la interfaz principal.
         vano_regulador_m=vano_regulador(luces),
         longitud_tramo_m=float(sum(luces)),
         hipotesis=tabla_hipotesis,
@@ -207,8 +202,9 @@ def resolver_seccion_regulacion(
         relacion_maxima=float(peor["Relación T/límite"]),
         cota_busqueda_activa=activo,
         barrido=barrido,
-        modelo=("Sección 3D de regulación ideal: equilibrio por catenaria "
-                "con amarres desnivelados, H común perpendicular a la carga "
-                "resultante y redistribución sin fricción; viento transversal "
-                "máximo LOCAL por vano. No representa grapas fijas ni remates internos."),
+        modelo=("Distribución con amarres fijos en espiga: H de tendido "
+                "común como condición inicial propuesta, longitud natural "
+                "congelada por vano tras el amarre. Cambios de estado, "
+                "catenarias 3D y tensiones de servicio independientes. "
+                "Viento perpendicular LOCAL por vano, exploratorio."),
     )
