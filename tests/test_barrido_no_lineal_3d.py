@@ -77,7 +77,7 @@ class BarridoNoLinealTest(unittest.TestCase):
         args.update(direcciones_viento_deg=[0,90,180,270],
                     viento_min_ms=0,viento_max_ms=0)
         with patch(
-            "calculos.barrido_no_lineal_3d.resolver_cable_no_lineal",
+            "Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_bvp_3d.resolver_cable_no_lineal",
             wraps=resolver_cable_no_lineal
         ) as resolver:
             resultados=ejecutar_barrido_no_lineal_3d(vanos,**args)
