@@ -550,10 +550,19 @@ def main() -> None:
                     BytesIO(archivo.getvalue()),df,proyecto["calibre"],
                     Cd=proyecto["Cd"],rho=proyecto["rho"],
                 )
-            st.success(
-                f"Tensión de tendido calculada: {r.H_tendido_kN:.4f} kN "
-                "por conductor"
-            )
+            if r.cota_busqueda_activa:
+                st.warning(
+                    f"Se verificaron las hipótesis hasta H = "
+                    f"{r.H_tendido_kN:.4f} kN por conductor, "
+                    "pero se alcanzó el extremo superior de la búsqueda. "
+                    "NO se ha encontrado una tensión gobernada por las "
+                    "hipótesis; esta H no debe considerarse tensión óptima."
+                )
+            else:
+                st.success(
+                    f"Tensión de tendido calculada: "
+                    f"{r.H_tendido_kN:.4f} kN por conductor"
+                )
             c1,c2,c3=st.columns(3)
             c1.metric("Vano regulador",f"{r.vano_regulador_m:.2f} m")
             c2.metric("Longitud total sección",f"{r.longitud_tramo_m:.2f} m")
