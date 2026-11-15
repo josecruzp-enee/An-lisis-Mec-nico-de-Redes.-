@@ -67,6 +67,22 @@ class MemoriaPDFTest(unittest.TestCase):
                         "ENEE Tabla 16","No se emite dictamen"):
             self.assertIn(palabra,contenido)
 
+    def test_indice_y_fuentes_tecnicas_en_memoria(self):
+        pdf=generar_memoria_pdf(etapas=[1],datos_por_etapa={1:self.datos})
+        lector=PdfReader(BytesIO(pdf))
+        texto_indice=lector.pages[1].extract_text() or ""
+        self.assertIn("ÍNDICE DE CONTENIDO",texto_indice)
+        self.assertIn("1. Resumen ejecutivo",texto_indice)
+        self.assertIn("3. Metodología y modelo mecánico",texto_indice)
+        texto=" ".join(p.extract_text() or "" for p in lector.pages)
+        self.assertIn("Nomenclatura y unidades",texto)
+        self.assertIn("Fuentes técnicas y trazabilidad",texto)
+        self.assertIn("Fuente del criterio: Dato sintético",texto)
+        self.assertIn("Referencia técnica",texto)
+        # El índice debe incluir al menos un número de página.
+        import re
+        self.assertRegex(texto_indice, r"Resumen ejecutivo.{0,100}[2-9]")
+
     def test_faltan_etapas_y_datos_no_se_omiten(self):
         with self.assertRaisesRegex(ValueError,"etapa 2"):
             generar_memoria_pdf(etapas=[1,2],datos_por_etapa={1:self.datos})
