@@ -93,6 +93,38 @@ y los coeficientes aplicables.
 real**, porque sigue faltando validación experimental/independiente de los
 parámetros materiales y de los casos de diseño aplicables.
 
+## Redes multivano con conexión explícita — entrega integrada
+
+El motor `calculos/hipotesis_red.py` utiliza
+`resolver_equilibrio_global` y calcula en cada hipótesis simultánea
+de temperatura, viento y azimut:
+
+- Tensión máxima, tensiones en ambos extremos y flecha sobre cuerda,
+  con coordenadas XYZ del punto de flecha de **cada vano**.
+- Fuerzas tridimensionales transmitidas por el cable a **cada apoyo**.
+- Identificación de la hipótesis de tensión gobernante por vano.
+- Auditoría de equilibrio BVP, fuente de material por conductor.
+- Longitud natural total y residual de continuidad de cada sección
+  provista de dispositivos **DESLIZANTE ideales**.
+
+La interfaz `Red completa — conectividad` ahora puede ejecutar esas
+hipótesis desde las cuatro hojas `Puntos`, `Vanos`, `Materiales`
+e `Hipotesis`, y exporta tablas CSV. La plantilla original con
+`SUSPENSION` se conserva para inspección de topología; se entrega una
+SEGUNDA plantilla para dos vanos anclados calculables.
+
+**Frontera física obligatoria:** `SUSPENSION` de grapa/cadena real
+continúa sin solucionador; no se suplanta con unión deslizante.
+Los apoyos móviles necesitan rigidez documentada y se rechazan en la
+pantalla simplificada. Las secciones fijadas por anclajes no redistribuyen
+su longitud natural entre vanos. Las guías `DESLIZANTE` solo representan
+un dispositivo ideal sin fricción, no el comportamiento de una grapa
+real. Tampoco se verifican postes, retenidas, cimentaciones ni perfiles
+de terreno reales en esta pantalla.
+
+Esta es una **integración funcional de escenarios de red**, no la
+conclusión de las verificaciones mecánicas del Módulo 01.
+
 ## Pendiente para cerrar el Módulo 01 en redes reales
 
 - Materiales ACSR: fichas verificadas, rigidez efectiva, expansión,
