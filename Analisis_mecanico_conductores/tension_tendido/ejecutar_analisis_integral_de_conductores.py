@@ -51,7 +51,7 @@ def ejecutar_analisis_integral(
         limite=finito(caso["T_limite_kN"],"límite de tensión",0,True)
         if limite>=rotura:
             raise ValueError("El límite declarado alcanza la ruptura nominal")
-    return resolver_seccion_regulacion(
+    resultado = resolver_seccion_regulacion(
         puntos,hipotesis=hip,
         temperaturas_tabla_C=[0,10,20,30,40],
         peso_kN_m=finito(propiedades["peso_kN_m"],"peso",0,True),
@@ -64,3 +64,9 @@ def ejecutar_analisis_integral(
         Cd=Cd,rho_kg_m3=rho,
         configuracion_barrido=configuracion_barrido,
     )
+    # Metadatos de entrada para memoria PDF: exactamente la misma ficha
+    # utilizada por el cálculo, sin volver a seleccionarla desde catálogos.
+    resultado.propiedades_pdf = dict(propiedades)
+    resultado.temperatura_tendido_C = float(temperatura_tendido_C)
+    resultado.perfil_tension_pdf = perfil
+    return resultado
