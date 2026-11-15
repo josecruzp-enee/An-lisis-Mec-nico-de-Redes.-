@@ -7,7 +7,7 @@ import unittest
 from io import BytesIO
 import pandas as pd
 
-from entradas.interfaz_red_global import _plantilla
+from entradas.interfaz_red_global import _plantilla_calculo
 from entradas.importar_red import leer_red_excel
 from entradas.importar_hipotesis_red import leer_materiales_excel, leer_estados_excel
 from calculos.hipotesis_red import calcular_hipotesis_red
@@ -15,7 +15,7 @@ from calculos.hipotesis_red import calcular_hipotesis_red
 
 class PlantillaRedCalculableTest(unittest.TestCase):
     def _libro(self):
-        xl=pd.ExcelFile(BytesIO(_plantilla()))
+        xl=pd.ExcelFile(BytesIO(_plantilla_calculo()))
         return {hoja:xl.parse(hoja) for hoja in xl.sheet_names}
 
     def test_plantilla_no_inventa_materiales_ni_clima(self):
