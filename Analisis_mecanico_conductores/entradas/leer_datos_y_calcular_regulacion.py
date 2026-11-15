@@ -16,6 +16,7 @@ from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
 from entradas.catalogos import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
+from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
 
 
 def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225):
@@ -65,18 +66,40 @@ def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225):
     fila=mat.iloc[0]
     if "Conductor" not in mat or str(fila["Conductor"]).strip() not in (calibre,nombre):
         raise ValueError("La ficha de Materiales no coincide con el conductor")
-    requeridos=("EA_kN","Alpha_por_C","Temperatura_tendido_C","Fuente")
-    if any(c not in mat for c in requeridos) or any(pd.isna(fila[c]) for c in requeridos):
-        raise ValueError(
-            "Materiales requiere EA_kN, Alpha_por_C, Temperatura_tendido_C "
-            "y Fuente. No se ingresa H ni se repite peso o diámetro."
-        )
-    if not str(fila["Fuente"]).strip():
-        raise ValueError("Falta fuente técnica de propiedades mecánicas")
+    usar_enee=(
+        "Fuente_Propiedades" in mat
+        and str(fila["Fuente_Propiedades"]).strip().upper()=="ENEE"
+    )
+    if usar_enee:
+        estado=str(fila.get("Estado_Elasticidad","Final")).strip()
+        propiedades=seleccionar_desde_clave_viakon(nombre,estado)
+        ea=propiedades["EA_kN"]
+        alpha=propiedades["alpha_por_C"]
+        peso=propiedades["peso_kN_m"]
+        diametro=propiedades["diametro_m"]
+        rotura=propiedades["ruptura_kN"]
+        fuente=propiedades["fuente"]
+        if "Temperatura_tendido_C" not in mat or pd.isna(fila["Temperatura_tendido_C"]):
+            raise ValueError("Materiales requiere Temperatura_tendido_C")
+    else:
+        requeridos=("EA_kN","Alpha_por_C","Temperatura_tendido_C","Fuente")
+        if any(c not in mat for c in requeridos) or any(pd.isna(fila[c]) for c in requeridos):
+            raise ValueError(
+                "Materiales requiere EA_kN, Alpha_por_C, Temperatura_tendido_C "
+                "y Fuente; para cargar ENEE automáticamente, "
+                "indicar Fuente_Propiedades=ENEE."
+            )
+        if not str(fila["Fuente"]).strip():
+            raise ValueError("Falta fuente técnica de propiedades mecánicas")
+        ea=finito(fila["EA_kN"],"EA",0,True)
+        alpha=finito(fila["Alpha_por_C"],"alpha")
+        peso=float(ficha["peso_kg_m"])*9.80665/1000
+        diametro=float(ficha["diametro_m"])
+        rotura=float(ficha["carga_rotura_kN"])
+        fuente=str(fila["Fuente"]).strip()
     hip=libro.parse("Hipotesis")
     if "T_limite_kN" not in hip:
         raise ValueError("Hipotesis requiere T_limite_kN documentada")
-    rotura=float(ficha["carga_rotura_kN"])
     for _,h in hip.iterrows():
         limite=finito(h["T_limite_kN"],"límite de tensión",0,True)
         if limite>=rotura:
@@ -87,11 +110,11 @@ def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225):
     return resolver_seccion_regulacion(
         puntos,
         hipotesis=hip,temperaturas_tabla_C=[0,10,20,30,40],
-        peso_kN_m=float(ficha["peso_kg_m"])*9.80665/1000,
-        diametro_m=float(ficha["diametro_m"]),
-        EA_kN=finito(fila["EA_kN"],"EA",0,True),
-        alpha_por_C=finito(fila["Alpha_por_C"],"alpha"),
-        fuente_material=str(fila["Fuente"]).strip(),
+        peso_kN_m=peso,
+        diametro_m=diametro,
+        EA_kN=ea,
+        alpha_por_C=alpha,
+        fuente_material=fuente,
         temperatura_tendido_C=finito(
             fila["Temperatura_tendido_C"],"temperatura tendido"
         ),
@@ -111,8 +134,10 @@ def plantilla_regulacion():
         "Poste":["PC-40"]*3,"Espacio Retenida":["SI","NO","SI"],
     })
     materiales=pd.DataFrame([{
-        "Conductor":"2/0 ACSR","EA_kN":None,
-        "Alpha_por_C":None,"Temperatura_tendido_C":None,"Fuente":"",
+        "Conductor":"2/0 ACSR","Fuente_Propiedades":"ENEE",
+        "Estado_Elasticidad":"Final",
+        "EA_kN":None,"Alpha_por_C":None,
+        "Temperatura_tendido_C":None,"Fuente":"",
     }])
     hip=pd.DataFrame([{
         "Hipotesis":"Estado_1","Temperatura_C":None,"Viento_ms":None,
