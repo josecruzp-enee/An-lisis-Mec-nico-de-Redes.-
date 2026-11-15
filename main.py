@@ -615,6 +615,27 @@ def main() -> None:
                     mime="text/csv",key="descarga_regulacion_"+nombre,
                 )
             mostrar_resultados_barrido(r.barrido, r.hipotesis)
+            # El PDF consume el resultado ya calculado (sin ejecutar
+            # ecuaciones adicionales). El coordinador también servirá
+            # para incorporar y combinar las próximas etapas.
+            from salidas.PDF import generar_memoria_pdf
+            memoria = generar_memoria_pdf(
+                etapas=[1],
+                datos_por_etapa={1: {
+                    "resultado": r,
+                    "puntos": df,
+                    "geometria": geo["tramos"],
+                    "proyecto": proyecto,
+                    "propiedades": r.propiedades_pdf,
+                }},
+            )
+            st.download_button(
+                "Descargar memoria de cálculo - Etapa 1 (PDF)",
+                data=memoria,
+                file_name="memoria_calculo_mecanico_etapa_1.pdf",
+                mime="application/pdf",
+                key="descarga_memoria_pdf_etapa1",
+            )
             st.warning(
                 "Modelo convencional de sección de regulación: "
                 "las fuerzas precisas en postes, la geometría con grandes "
