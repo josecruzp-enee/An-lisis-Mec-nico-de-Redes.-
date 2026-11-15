@@ -35,6 +35,12 @@ class TendidoInversoTest(unittest.TestCase):
         self.assertLessEqual(r.razon_maxima,1.0001)
         self.assertGreater(r.evaluaciones_bvp,0)
         self.assertEqual([x["Temperatura (°C)"] for x in r.tabla_tendido],[0,20,40])
+        self.assertTrue(all(x["Flecha vertical sobre cuerda (m)"]>0
+                            for x in r.tabla_tendido))
+        self.assertGreater(
+            r.tabla_tendido[-1]["Flecha vertical sobre cuerda (m)"],
+            r.tabla_tendido[0]["Flecha vertical sobre cuerda (m)"],
+        )
         self.assertTrue(all(x["Residual equilibrio (kN)"]<1e-4 for x in r.tabla_tendido))
 
     def test_limite_superior_activo_no_inventa_optimo(self):
