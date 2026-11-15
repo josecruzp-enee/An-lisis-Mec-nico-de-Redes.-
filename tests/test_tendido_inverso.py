@@ -93,7 +93,7 @@ class TendidoInversoTest(unittest.TestCase):
         def respuesta(*a,**kw):
             H=kw["H_tendido_kN"]
             return Falso(4-H)
-        with patch("calculos.tendido_inverso.resolver_cable_no_lineal",
+        with patch("Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano.resolver_cable_no_lineal",
                    side_effect=respuesta):
             with self.assertRaisesRegex(ValueError,"no monótona"):
                 dimensionar_tension_tendido(**x)
