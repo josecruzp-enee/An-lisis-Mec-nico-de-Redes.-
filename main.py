@@ -541,6 +541,17 @@ def main() -> None:
     try:
         df = leer_puntos_excel(archivo)
         if proyecto["modo_tension"].startswith("Calcular"):
+            from calculos.resumen_geometrico_regulacion import resumen_geometrico
+            geo = resumen_geometrico(df)
+            st.subheader("Geometría y vano regulador")
+            c1,c2,c3=st.columns(3)
+            c1.metric("Vanos",str(geo["n_vanos"]))
+            c2.metric("Longitud total",f"{geo['longitud_total_m']:.2f} m")
+            c3.metric("Vano regulador (Checa)",f"{geo['vano_regulador_m']:.2f} m")
+            st.dataframe(geo["tramos"],use_container_width=True,hide_index=True)
+            st.caption(geo["hipotesis_geometrica"])
+            if not geo["nivelado_confirmado"]:
+                st.info("El Excel no confirma amarres de igual altura. Se calcula la geometría, pero tensión y flecha convencionales requieren cotas y alturas completas.")
             from entradas.regulacion_fase1 import ejecutar_regulacion_fase1
             from io import BytesIO
             with st.spinner(
@@ -603,7 +614,8 @@ def main() -> None:
         mostrar_kpis(res)
 
     except (ValueError,TypeError,KeyError) as e:
-        st.error(f"No se emitieron resultados: {e}")
+        st.warning(f"Cálculo mecánico pendiente: {e}")
+        st.caption("El resumen geométrico no equivale a tensión o flecha calculada.")
 
 
 if __name__ == "__main__":
