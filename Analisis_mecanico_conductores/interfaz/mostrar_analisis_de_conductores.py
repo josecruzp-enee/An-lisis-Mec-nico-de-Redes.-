@@ -38,7 +38,7 @@ def _leer_hipotesis_usuario(tabla):
     return t
 
 
-def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225):
+def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion_barrido=None):
     """Presenta formulario compacto. None hasta que sea enviado con datos."""
     nombre=(CONDUCTORES_ACSR[calibre]["nombre_mostrado"]
             if calibre in CONDUCTORES_ACSR else calibre)
@@ -149,4 +149,5 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225):
         temperatura_tendido_C=temperatura,
         H_min_kN=.05*rotura,H_max_kN=.95*rotura,
         Cd=Cd,rho_kg_m3=rho,
+        configuracion_barrido=configuracion_barrido,
     )
