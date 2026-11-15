@@ -18,7 +18,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import (
     BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table,
-    TableStyle, PageBreak, KeepTogether,
+    TableStyle, PageBreak, KeepTogether, CondPageBreak,
 )
 
 
@@ -26,7 +26,15 @@ def _texto(valor):
     if pd.isna(valor) if not isinstance(valor, (list, tuple, dict)) else False:
         return "—"
     if isinstance(valor, float):
-        return f"{valor:.5g}"
+        if abs(valor) >= 10000:
+            return f"{valor:.3f}"
+        if abs(valor) >= 1:
+            return f"{valor:.5f}".rstrip("0").rstrip(".")
+        if valor == 0:
+            return "0"
+        if abs(valor) < 1e-4:
+            return f"{valor:.3e}"
+        return f"{valor:.5f}".rstrip("0").rstrip(".")
     return str(valor)
 
 
@@ -43,13 +51,13 @@ def _tabla(datos: pd.DataFrame, ancho: float, estilos, *, filas_maximas=None):
     cols = list(datos.columns)
     # El ancho se reparte conforme a longitudes de encabezados, no a
     # dimensiones sin límite del contenido; ReportLab envuelve cada celda.
-    pesos = [max(9, min(24, len(str(c)))) for c in cols]
+    pesos = [max(8, min(23, len(str(c)))) for c in cols]
     anchos = [ancho * w / sum(pesos) for w in pesos]
     est = estilos["CeldaPDF"]
     encabezado = estilos["CabeceraPDF"]
     matriz = [[_par(c, encabezado) for c in cols]]
     matriz.extend([[_par(v, est) for v in fila] for fila in datos.itertuples(index=False, name=None)])
-    tabla = Table(matriz, colWidths=anchos, repeatRows=1, hAlign="LEFT")
+    tabla = Table(matriz, colWidths=anchos, repeatRows=1, hAlign="LEFT", splitByRow=1)
     tabla.setStyle(TableStyle([
         ("BACKGROUND", (0,0),(-1,0),colors.HexColor("#E8EDF2")),
         ("VALIGN", (0,0),(-1,-1),"TOP"),
@@ -125,7 +133,7 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     estilos=getSampleStyleSheet()
     estilos.add(ParagraphStyle(
         name="CeldaPDF",parent=estilos["Normal"],fontName="Helvetica",
-        fontSize=6.7,leading=8.3,spaceAfter=0
+        fontSize=7.1,leading=9.5,spaceAfter=0
     ))
     estilos.add(ParagraphStyle(
         name="CabeceraPDF",parent=estilos["CeldaPDF"],fontName="Helvetica-Bold",
@@ -149,14 +157,15 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     st=[]
 
     def titulo(t):
-        st.append(Spacer(1,7))
+        st.append(CondPageBreak(65))
+        st.append(Spacer(1,8))
         st.append(_par(t,estilos["Heading2"]))
-        st.append(Spacer(1,4))
+        st.append(Spacer(1,5))
 
     def tabla(t,df):
         titulo(t)
         st.extend(_tabla(df,disponible,estilos))
-        st.append(Spacer(1,7))
+        st.append(Spacer(1,8))
 
     st.append(_par("MEMORIA DE CÁLCULO MECÁNICO DE CONDUCTORES",
                    estilos["TituloPDF"]))
@@ -210,24 +219,78 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
     ]))
     tabla("5. Hipótesis de cálculo y límites",resultado.hipotesis)
     tabla("6. Flechas por vano e hipótesis",resultado.flechas)
-    titulo("7. Tensión de tendido frente a temperatura")
     graf=_grafico_tension(resultado.tabla_tendido,disponible)
-    if graf:
-        st.append(graf)
+    if graf is not None:
+        st.append(KeepTogether([
+            Spacer(1,8), _par("7. Tensión horizontal frente a temperatura", estilos["Heading2"]),
+            Spacer(1,5),graf,
+        ]))
     tabla("8. Tabla de tendido completa",resultado.tabla_tendido)
     if resultado.barrido:
-        tabla("9. Barrido climático - condiciones gobernantes",
-              resultado.barrido["gobernantes"])
-        tabla("10. Barrido climático - todos los estados por vano",
-              resultado.barrido["detalle"])
-    titulo("11. Conclusiones y limitaciones")
-    st.append(_par(
-        f"En esta sección, la tensión de referencia calculada es "
-        f"{resultado.H_tendido_kN:.4f} kN por conductor y la hipótesis "
-        f"gobernante es {resultado.caso_gobernante}. "
-        "Los resultados son válidos solamente dentro de los supuestos del "
-        "modelo convencional declarados. No se emite dictamen de cumplimiento "
-        "normativo estructural ni certificación de seguridad.",
-        estilos["NotaPDF"]))
+        # Tabla principal de condiciones extremas: solo el valor que gobierna
+        # y la condición física que lo causa; los demás valores están en anexo.
+        gobernantes=resultado.barrido["gobernantes"].copy()
+        principales={
+            "Condición gobernante":"Condición",
+            "Valor gobernante":"Valor",
+            "Magnitud gobernante":"Magnitud y unidad",
+            "Vano":"Vano",
+            "Temperatura (°C)":"T (°C)",
+            "Viento (km/h)":"V (km/h)",
+            "Hielo radial (mm)":"Hielo (mm)",
+        }
+        cols=[c for c in principales if c in gobernantes.columns]
+        tabla("9. Condiciones gobernantes del barrido",
+              gobernantes[cols].rename(columns=principales))
+        st.append(_par(
+            "El barrido climático es EXPLORATORIO: no equivale a un límite "
+            "de diseño ni certifica simultaneidad meteorológica.",
+            estilos["NotaPDF"]))
+        titulo("10. Conclusiones y limitaciones")
+        st.append(_par(
+            f"En esta sección, la tensión de referencia calculada es "
+            f"{resultado.H_tendido_kN:.4f} kN por conductor y la hipótesis "
+            f"gobernante es {resultado.caso_gobernante}. "
+            "Los resultados son válidos solamente dentro de los supuestos del "
+            "modelo convencional declarados. No se emite dictamen de cumplimiento "
+            "normativo estructural ni certificación de seguridad.",
+            estilos["NotaPDF"]))
+        st.append(PageBreak())
+        titulo("Anexos técnicos - Barrido climático")
+        st.append(_par(
+            "Se conservan los estados por vano. Para facilitar la lectura se "
+            "separan las corridas por temperatura y viento, con sus unidades. "
+            "Los datos auxiliares de convergencia y la etiqueta constante "
+            "EXPLORATORIO permanecen disponibles en el CSV íntegro.",
+            estilos["NotaPDF"]))
+        detalles=resultado.barrido["detalle"].copy()
+        nombres={
+            "Vano":"Vano",
+            "Temperatura (°C)":"T (°C)",
+            "Viento (km/h)":"V (km/h)",
+            "Hielo radial (mm)":"Hielo (mm)",
+            "H estado (kN)":"H (kN)",
+            "T máxima vano (kN)":"T máx. (kN)",
+            "Flecha vertical (m)":"Flecha (m)",
+            "Desviación lateral máxima (m)":"Lateral (m)",
+        }
+        # Se evita repetir una columna de texto larga en cada fila.
+        campos=list(nombres)
+        disponibles=[c for c in campos if c in detalles.columns]
+        vista=detalles[disponibles].rename(columns=nombres)
+        if "Viento (km/h)" in detalles.columns:
+            temperatura=vista[detalles["Viento (km/h)"].eq(0)]
+            viento=vista[detalles["Viento (km/h)"].ne(0)]
+            tabla("Anexo A - Estados sin viento (por temperatura)",temperatura)
+            if not viento.empty:
+                tabla("Anexo B - Estados con viento y combinaciones",viento)
+        else:
+            tabla("Anexo A - Todos los estados",vista)
+        titulo("Anexo C - Diagnóstico de compatibilidad")
+        st.append(_par(
+            "Residual de compatibilidad (m): control numérico del motor, "
+            "no resultado de diseño. Los valores por corrida se conservan "
+            "en la exportación CSV sin pérdida de precisión.",
+            estilos["NotaPDF"]))
     doc.build(st)
     return buffer.getvalue()
