@@ -478,12 +478,18 @@ def main() -> None:
     modo = st.sidebar.radio(
         "Módulo de análisis",
         ["Fase 1 — fuerzas en planta", "Barrido termomecánico 3D",
+         "Tendido inverso — hipótesis climáticas",
          "Red completa — conectividad"],
     )
     if modo == "Red completa — conectividad":
         from entradas.interfaz_red_global import mostrar_modelo_red
         st.title("Modelo mecánico de una red completa")
         mostrar_modelo_red()
+        return
+    if modo == "Tendido inverso — hipótesis climáticas":
+        from entradas.interfaz_tendido_inverso import mostrar_tendido_inverso
+        st.title("Análisis Mecánico — Tensión y tabla de tendido")
+        mostrar_tendido_inverso()
         return
     if modo == "Barrido termomecánico 3D":
         from entradas.interfaz_barrido_3d import mostrar_barrido_3d
