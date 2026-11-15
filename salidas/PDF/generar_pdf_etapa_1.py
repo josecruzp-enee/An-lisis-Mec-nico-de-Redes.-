@@ -246,8 +246,17 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             "El barrido climático es EXPLORATORIO: no equivale a un límite "
             "de diseño ni certifica simultaneidad meteorológica.",
             estilos["NotaPDF"]))
+        titulo("10. Conclusiones y limitaciones")
+        st.append(_par(
+            f"En esta sección, la tensión de referencia calculada es "
+            f"{resultado.H_tendido_kN:.4f} kN por conductor y la hipótesis "
+            f"gobernante es {resultado.caso_gobernante}. "
+            "Los resultados son válidos solamente dentro de los supuestos del "
+            "modelo convencional declarados. No se emite dictamen de cumplimiento "
+            "normativo estructural ni certificación de seguridad.",
+            estilos["NotaPDF"]))
         st.append(PageBreak())
-        titulo("ANEXOS TÉCNICOS - BARRIDO CLIMÁTICO")
+        titulo("Anexos técnicos - Barrido climático")
         st.append(_par(
             "Se conservan los estados por vano. Para facilitar la lectura se "
             "separan las corridas por temperatura y viento, con sus unidades. "
@@ -256,7 +265,6 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             estilos["NotaPDF"]))
         detalles=resultado.barrido["detalle"].copy()
         nombres={
-            "Tipo de corrida":"Corrida",
             "Vano":"Vano",
             "Temperatura (°C)":"T (°C)",
             "Viento (km/h)":"V (km/h)",
@@ -284,14 +292,5 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
             "no resultado de diseño. Los valores por corrida se conservan "
             "en la exportación CSV sin pérdida de precisión.",
             estilos["NotaPDF"]))
-    titulo("10. Conclusiones y limitaciones")
-    st.append(_par(
-        f"En esta sección, la tensión de referencia calculada es "
-        f"{resultado.H_tendido_kN:.4f} kN por conductor y la hipótesis "
-        f"gobernante es {resultado.caso_gobernante}. "
-        "Los resultados son válidos solamente dentro de los supuestos del "
-        "modelo convencional declarados. No se emite dictamen de cumplimiento "
-        "normativo estructural ni certificación de seguridad.",
-        estilos["NotaPDF"]))
     doc.build(st)
     return buffer.getvalue()
