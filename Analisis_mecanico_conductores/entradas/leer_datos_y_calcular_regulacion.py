@@ -18,6 +18,7 @@ from entradas.catalogos import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
 from Analisis_mecanico_conductores.verificaciones.perfil_limites_tension_checa import construir_hipotesis_checa_acsr
+from Analisis_mecanico_conductores.tension_tendido.ejecutar_analisis_integral_de_conductores import ejecutar_analisis_integral
 
 
 def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225, configuracion_barrido=None):
@@ -98,37 +99,23 @@ def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225, co
         diametro=float(ficha["diametro_m"])
         rotura=float(ficha["carga_rotura_kN"])
         fuente=str(fila["Fuente"]).strip()
-    perfil_tension=str(fila.get("Perfil_Tension","")).strip().upper()
-    if perfil_tension in ("CHECA","CHECA TCD/THF","CHECA_TCD_THF"):
-        hip=construir_hipotesis_checa_acsr(rotura)
-    elif perfil_tension in ("","MANUAL"):
-        hip=libro.parse("Hipotesis")
-    else:
-        raise ValueError("Perfil_Tension debe ser Checa o Manual")
-    if "T_limite_kN" not in hip:
-        raise ValueError("Hipotesis requiere T_limite_kN documentada")
-    for _,h in hip.iterrows():
-        limite=finito(h["T_limite_kN"],"límite de tensión",0,True)
-        if limite>=rotura:
-            raise ValueError(
-                "El límite declarado alcanza la ruptura nominal: "
-                "revisá el criterio de diseño"
-            )
-    return resolver_seccion_regulacion(
+    perfil_tension=str(fila.get("Perfil_Tension","Manual")).strip()
+    hip_manual=(libro.parse("Hipotesis")
+                if perfil_tension.upper() in ("","MANUAL") else None)
+    return ejecutar_analisis_integral(
         puntos,
-        hipotesis=hip,temperaturas_tabla_C=[0,10,20,30,40],
-        peso_kN_m=peso,
-        diametro_m=diametro,
-        EA_kN=ea,
-        alpha_por_C=alpha,
-        fuente_material=fuente,
+        propiedades={
+            "peso_kN_m":peso,"diametro_m":diametro,
+            "EA_kN":ea,"alpha_por_C":alpha,
+            "ruptura_kN":rotura,"fuente":fuente,
+        },
         temperatura_tendido_C=finito(
             fila["Temperatura_tendido_C"],"temperatura tendido"
         ),
-        # Intervalo NUMÉRICO, no porcentajes de admisibilidad.
-        H_min_kN=.05*rotura,H_max_kN=.95*rotura,
-        Cd=Cd,rho_kg_m3=rho,
+        perfil_tension=perfil_tension or "Manual",
+        hipotesis_manuales=hip_manual,
         configuracion_barrido=configuracion_barrido,
+        Cd=Cd,rho=rho,
     )
 
 
@@ -145,8 +132,8 @@ def plantilla_regulacion():
         "Conductor":"2/0 ACSR","Fuente_Propiedades":"ENEE",
         "Estado_Elasticidad":"Final",
         "EA_kN":None,"Alpha_por_C":None,
-        "Temperatura_tendido_C":None,"Fuente":"",
-        "Perfil_Tension":"Manual",
+        "Temperatura_tendido_C":20.,"Fuente":"",
+        "Perfil_Tension":"Checa",
     }])
     hip=pd.DataFrame([{
         "Hipotesis":"Estado_1","Temperatura_C":None,"Viento_ms":None,
