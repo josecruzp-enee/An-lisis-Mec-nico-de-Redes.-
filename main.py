@@ -568,7 +568,6 @@ def main() -> None:
                     r=ejecutar_regulacion_fase1(
                         BytesIO(archivo.getvalue()),df,proyecto["calibre"],
                         Cd=proyecto["Cd"],rho=proyecto["rho"],
-                    configuracion_barrido=configuracion_barrido,
                         configuracion_barrido=configuracion_barrido,
                     )
             else:
@@ -576,6 +575,7 @@ def main() -> None:
                 r=mostrar_calculo_directo(
                     df,proyecto["calibre"],
                     Cd=proyecto["Cd"],rho=proyecto["rho"],
+                    configuracion_barrido=configuracion_barrido,
                 )
                 if r is None:
                     return
