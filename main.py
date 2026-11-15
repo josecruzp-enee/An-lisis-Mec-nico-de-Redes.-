@@ -49,11 +49,30 @@ def ui_datos_proyecto() -> Dict[str, Any]:
         ),
     )
     n_fases = st.sidebar.selectbox("Fases", [1, 2, 3], index=2)
-    H_tendido_kN = st.sidebar.number_input(
-        "Tensión horizontal de tendido (kN/conductor)",
-        min_value=0.0, value=0.0, step=0.5,
-        help="Dato explícito: 0 indica pendiente, no equivale a tensión nula."
+    modo_tension = st.sidebar.radio(
+        "Determinación de tensión",
+        [
+            "Calcular automáticamente (hipótesis documentadas)",
+            "Verificar tensión conocida (opción avanzada)",
+        ],
+        help=(
+            "Por defecto el programa determina H usando el cambio de "
+            "estado y los límites de diseño; no solicita una H arbitraria."
+        ),
     )
+    if modo_tension.startswith("Verificar"):
+        H_tendido_kN = st.sidebar.number_input(
+            "Tensión conocida H (kN/conductor)",
+            min_value=0.01, value=5.0, step=0.5,
+            help="Solo verifica una tensión de referencia ya determinada; "
+                 "no representa tensión admisible calculada.",
+        )
+    else:
+        H_tendido_kN = None
+        st.sidebar.caption(
+            "La tensión será calculada a partir de una ficha mecánica "
+            "y las hipótesis climáticas con límites documentados."
+        )
 
 
     v_viento_ms = st.sidebar.number_input("Velocidad viento (m/s)", min_value=0.0, value=0.0, step=0.5)
@@ -77,7 +96,8 @@ def ui_datos_proyecto() -> Dict[str, Any]:
         "fecha": str(fecha),
         "calibre": str(calibre),
         "n_fases": int(n_fases),
-        "H_tendido_kN": float(H_tendido_kN),
+        "modo_tension": modo_tension,
+        "H_tendido_kN": H_tendido_kN,
         "v_viento_ms": float(v_viento_ms),
         "az_viento_deg": float(az_viento_deg),
         "diametro_m": float(diametro_m),
@@ -505,21 +525,54 @@ def main() -> None:
     if not archivo:
         st.stop()
 
-    if proyecto["H_tendido_kN"] <= 0:
-        st.warning("Introducí primero la tensión de tendido por conductor (kN).")
-        st.stop()
-
     try:
         df = leer_puntos_excel(archivo)
-        res = ejecutar_calculo(df, proyecto)
+        if proyecto["modo_tension"].startswith("Calcular"):
+            from entradas.tension_automatica_fase1 import (
+                calcular_tension_desde_libro,
+            )
+            from io import BytesIO
 
-        st.warning("Fuerzas preliminares: NO son verificación de postes, retenidas ni cimentaciones.")
+            with st.spinner("Calculando tensión de tendido con hipótesis mecánicas..."):
+                resultado_tendido = calcular_tension_desde_libro(
+                    BytesIO(archivo.getvalue()), df, proyecto["calibre"],
+                    Cd=proyecto["Cd"], rho=proyecto["rho"],
+                )
+            st.success(
+                f"Tensión de tendido calculada: "
+                f"{resultado_tendido.H_tendido_kN:.4f} kN por conductor"
+            )
+            st.caption(
+                f"Hipótesis gobernante: {resultado_tendido.caso_gobernante}. "
+                f"Relación máxima T/límite: {resultado_tendido.razon_maxima:.4f}. "
+                "Cálculo válido únicamente para el vano ANCLAJE–ANCLAJE "
+                "declarado; no certifica el diseño completo."
+            )
+            st.subheader("Comprobación de hipótesis de tensión")
+            st.dataframe(pd.DataFrame(resultado_tendido.hipotesis),
+                         use_container_width=True,hide_index=True)
+            st.subheader("Tabla de tendido y flechas")
+            st.dataframe(pd.DataFrame(resultado_tendido.tabla_tendido),
+                         use_container_width=True,hide_index=True)
+            st.info(
+                "Para obtener las fuerzas de una red de varios vanos, "
+                "usá Red completa — conectividad, indicando expresamente "
+                "ANCLAJE, FIJA, DESLIZANTE o SUSPENSION por extremo. "
+                "No se asigna una tensión común a un apoyo intermedio "
+                "sin conocer su conexión mecánica."
+            )
+            return
+        res = ejecutar_calculo(df, proyecto)
+        st.warning(
+            "Verificación con tensión CONOCIDA, no calculada: "
+            "fuerzas preliminares; no verifica postes, retenidas "
+            "ni cimentaciones."
+        )
         mostrar_tabs_resultados(df, res)
         mostrar_kpis(res)
 
-    except Exception as e:
-        st.error("❌ Error procesando el archivo.")
-        st.exception(e)
+    except (ValueError,TypeError,KeyError) as e:
+        st.error(f"No se emitieron resultados: {e}")
 
 
 if __name__ == "__main__":
