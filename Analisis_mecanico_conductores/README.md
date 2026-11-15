@@ -23,11 +23,17 @@ proyecto. No incluye dimensionamiento de postes, retenidas ni cimentaciones.
 | `hipotesis_climaticas/` | `evaluar_estados_climaticos_bvp_3d.py` | Barrido físico BVP por vano |
 | `tension_tendido/` | `calcular_tension_y_flechas_de_seccion.py` | Regulación convencional multivano |
 | `tension_tendido/` | `calcular_tension_inversa_de_un_vano.py` | Optimización inversa 3D de un vano fijo |
+| `tension_tendido/` | `resolver_seccion_deslizante_ideal.py` | Sección con guías ideales sin fricción, distinta de una grapa real |
+| `flechas/` | `calcular_flecha_vertical_de_catenaria.py` | Flecha vertical de catenaria con amarres nivelados |
+| `verificaciones/` | `resumir_calidad_numerica_bvp.py` | Indicadores de convergencia y calidad del BVP |
+| `conductores/` | `mostrar_tabla_catalogo_acsr.py` | Tabla consultable de conductores |
+| `interfaz/` | `mostrar_tendido_inverso_un_vano.py` | Interfaz heredada de análisis inverso univano |
+| `entradas/` | `leer_tension_inversa_desde_excel_historico.py` | Compatibilidad de formato Excel univano anterior |
 | `verificaciones/` | `comparar_tension_con_rotura_acsr.py` | Diagnóstico respecto de ruptura nominal |
 | `verificaciones/` | `verificar_limites_documentados_de_tension.py` | Comparación contra hipótesis admisibles |
 | `entradas/` | `leer_datos_y_calcular_regulacion.py` | Adaptar Excel a cálculo convencional |
 | `interfaz/` | `mostrar_analisis_de_conductores.py` | Capturar parámetros en Streamlit sin modificar Excel |
-| `pruebas/` | pruebas de migración y nuevas regresiones | Identidad entre importaciones nuevas y heredadas |
+| `pruebas/` | `test_identidad_de_importaciones.py` | Verifica que ambas rutas importan la misma función |
 
 ## Dependencias y compatibilidad
 
