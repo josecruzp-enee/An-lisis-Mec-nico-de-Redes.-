@@ -237,8 +237,58 @@ def ejecutar_barrido_climatico(puntos, H_tendido_kN, evaluador, configuracion):
             **candidatos.loc[candidatos[col_evaluacion].idxmax()].to_dict()
         })
     gobernantes=pd.DataFrame(resumen)
+    # Anteponer la magnitud que realmente gobierna cada fila: no confundir
+    # una tension asociada con el valor de flecha/desplazamiento buscado.
+    magnitudes={
+        "Máxima tensión":"T máxima vano (kN)",
+        "Máxima flecha vertical":"Flecha vertical (m)",
+        "Máxima desviación lateral":"Desviación lateral máxima (m)",
+        "Temperatura máxima sin viento":"Flecha vertical (m)",
+        "Viento máximo sin hielo":"Desviación lateral máxima (m)",
+        "Manguito de hielo máximo":"T máxima vano (kN)",
+    }
+    gobernantes.insert(
+        1,"Magnitud gobernante",
+        gobernantes["Condición gobernante"].map(magnitudes),
+    )
+    gobernantes.insert(
+        2,"Valor gobernante",
+        [float(fila[fila["Magnitud gobernante"]])
+         for _,fila in gobernantes.iterrows()],
+    )
     return {
         "detalle":detalle,"gobernantes":gobernantes,
         "total_estados":len(casos),
         "configuracion":configuracion,
     }
+
+
+def comparar_tensiones_hipotesis_y_barrido(hipotesis, barrido):
+    """Compara máximos sin mezclar verificación documental y exploración.
+
+    Los estados de hipótesis pueden quedar fuera del rango del barrido;
+    por tanto, el máximo exploratorio NO es el máximo del proyecto.
+    """
+    if hipotesis is None or hipotesis.empty:
+        raise ValueError("Se requieren hipótesis calculadas")
+    if barrido is None or barrido["detalle"].empty:
+        raise ValueError("Se requiere barrido calculado")
+    origenes=(
+        ("Hipótesis de diseño",hipotesis,"T máxima sección (kN)"),
+        ("Barrido exploratorio",barrido["detalle"],"T máxima vano (kN)"),
+    )
+    filas=[]
+    for origen,tabla,columna in origenes:
+        fila=tabla.loc[tabla[columna].idxmax()]
+        filas.append({
+            "Ámbito":origen,
+            "Estado":str(fila["Hipótesis"] if origen=="Hipótesis de diseño"
+                         else fila["Tipo de corrida"]),
+            "Vano":("Sección" if origen=="Hipótesis de diseño" else str(fila["Vano"])),
+            "Temperatura (°C)":float(fila["Temperatura (°C)"]),
+            "Viento (m/s)":float(fila["Viento (m/s)"]),
+            "T máxima (kN)":float(fila[columna]),
+        })
+    maximo=max(filas,key=lambda f:f["T máxima (kN)"])
+    filas.append({**maximo,"Ámbito":"Máximo global evaluado"})
+    return pd.DataFrame(filas)
