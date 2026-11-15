@@ -245,13 +245,12 @@ def generar_pdf_etapa_1(*, resultado, puntos: pd.DataFrame,
         "creep. El barrido de viento y hielo es exploratorio y no sustituye "
         "criterios normativos de carga ni una aprobación para construcción.",
         estilos["NotaPDF"]))
-    st.append(Spacer(1,11))
-    st.extend(paginas_metodologia(_par,estilos,propiedades))
-    st.append(PageBreak())
-
+    st.append(Spacer(1,10))
     tabla("2. Puntos y geometría de entrada",puntos)
     if geometria is not None:
         tabla("2.1. Geometría de vanos",geometria)
+    st.extend(paginas_metodologia(_par,estilos,propiedades))
+    st.append(PageBreak())
     tabla("4. Propiedades mecánicas documentadas",pd.DataFrame([
         {"Propiedad":str(k),"Valor":_texto(v)} for k,v in propiedades.items()
     ]))
