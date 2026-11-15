@@ -38,9 +38,6 @@ from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion
     EvaluadorEstadosRegulacion,
     calcular_cargas_transversales_por_vano as _cargas,
 )
-from Analisis_mecanico_conductores.flechas.calcular_flecha_vertical_de_catenaria import (
-    calcular_flecha_vertical_de_catenaria as _flecha,
-)
 from Analisis_mecanico_conductores.tension_tendido.construir_resultados_regulacion import (
     construir_tablas_de_hipotesis,
     construir_tabla_de_tendido,
@@ -77,7 +74,10 @@ def _geometria(puntos):
     # compatibilidad de longitudes operan en XYZ. Nunca se completa una
     # columna PARCIAL sin datos; se permite plano de referencia z=0
     # únicamente cuando todas las altitudes no fueron proporcionadas.
-    if "Altitud" in puntos and puntos["Altitud"].notna().any():
+    cotas_conocidas=("Altitud" in puntos and puntos["Altitud"].notna().any())
+    amarres_conocidos=("Altura_Amarre_m" in puntos and
+                       puntos["Altura_Amarre_m"].notna().any())
+    if cotas_conocidas:
         if puntos["Altitud"].isna().any():
             raise ValueError("Altitud parcial; completar cotas")
         alt=puntos["Altitud"].to_numpy(dtype=float)
@@ -85,7 +85,7 @@ def _geometria(puntos):
             raise ValueError("Altitudes no finitas")
     else:
         alt=np.zeros(len(puntos))
-    if "Altura_Amarre_m" in puntos and puntos["Altura_Amarre_m"].notna().any():
+    if amarres_conocidos:
         if puntos["Altura_Amarre_m"].isna().any():
             raise ValueError("Altura de amarre parcial")
         amarre=puntos["Altura_Amarre_m"].to_numpy(dtype=float)
@@ -93,6 +93,16 @@ def _geometria(puntos):
             raise ValueError("Alturas de amarre inválidas")
     else:
         amarre=np.zeros(len(puntos))
+    if cotas_conocidas and np.ptp(alt)>1e-5 and not amarres_conocidos:
+        raise ValueError(
+            "Los desniveles de terreno requieren Altura_Amarre_m "
+            "para todos los apoyos; no se supone amarre al nivel del suelo."
+        )
+    if amarres_conocidos and np.ptp(amarre)>1e-5 and not cotas_conocidas:
+        raise ValueError(
+            "Alturas de amarre diferentes requieren Altitud completa "
+            "para determinar la geometría 3D real."
+        )
     z=alt+amarre
     xyz=np.column_stack((xy,z))
     luces=np.linalg.norm(np.diff(xy,axis=0),axis=1)
