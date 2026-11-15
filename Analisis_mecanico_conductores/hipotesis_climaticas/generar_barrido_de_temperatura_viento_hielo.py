@@ -107,24 +107,11 @@ def _peso_hielo_kN_m(diametro_m, espesor_mm, densidad_kg_m3):
 
 
 def _flecha_y_desplazamiento(cable,inicio,fin):
-    """Flecha vertical y desviación lateral máximas respecto a la cuerda.
-
-    Sólo para amarres al mismo nivel; el vano puede girar en planta.
-    """
-    vector=fin[:2]-inicio[:2]
-    longitud=float(np.linalg.norm(vector))
-    if longitud<=0 or abs(float(fin[2]-inicio[2]))>1e-5:
-        raise ValueError("Barrido convencional requiere amarres nivelados")
-    p=cable.puntos(cable.minimo_lineal([0,0,1]))
-    flecha=max(0.,float(inicio[2]-p[2]))
-    normal=np.array([-vector[1],vector[0],0.])/longitud
-    xneg=cable.minimo_lineal(normal)
-    xpos=cable.minimo_lineal(-normal)
-    lateral=max(
-        abs(float(np.dot(cable.puntos(xneg)-inicio,normal))),
-        abs(float(np.dot(cable.puntos(xpos)-inicio,normal))),
+    """Retorna flecha respecto a cuerda y desviación local, en 3D."""
+    from Analisis_mecanico_conductores.flechas.calcular_desplazamientos_catenaria_3d import (
+        calcular_flecha_y_desviacion_3d,
     )
-    return flecha,lateral
+    return calcular_flecha_y_desviacion_3d(cable,inicio,fin)
 
 
 def _resolver_estado(evaluador, H0, temperatura_C, viento_kmh, hielo_mm,
@@ -161,7 +148,7 @@ def _resolver_estado(evaluador, H0, temperatura_C, viento_kmh, hielo_mm,
 def ejecutar_barrido_climatico(puntos, H_tendido_kN, evaluador, configuracion):
     """Devuelve filas por estado/vano y casos gobernantes exploratorios.
 
-    Entradas: puntos ordenados de una sección nivelada; evaluador ya
+    Entradas: puntos ordenados con geometría 3D; evaluador ya
     configurado con EA, alpha, peso y diámetro de UNA ficha de conductor;
     H de referencia resuelta previamente con hipótesis documentadas.
 
