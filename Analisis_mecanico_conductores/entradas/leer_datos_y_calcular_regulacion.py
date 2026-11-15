@@ -19,7 +19,7 @@ from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDU
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
 
 
-def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225):
+def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225, configuracion_barrido=None):
     if len(puntos)<2:
         raise ValueError("Necesitamos al menos dos postes para una sección")
     libro=pd.ExcelFile(archivo)
@@ -121,6 +121,7 @@ def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225):
         # Intervalo NUMÉRICO, no porcentajes de admisibilidad.
         H_min_kN=.05*rotura,H_max_kN=.95*rotura,
         Cd=Cd,rho_kg_m3=rho,
+        configuracion_barrido=configuracion_barrido,
     )
 
 
