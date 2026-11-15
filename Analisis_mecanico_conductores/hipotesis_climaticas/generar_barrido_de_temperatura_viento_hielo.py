@@ -11,7 +11,7 @@ ni cálculo de eventos climáticos coincidentes a efectos normativos.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isfinite, pi
+from math import pi
 
 import numpy as np
 import pandas as pd
@@ -142,7 +142,7 @@ def _resolver_estado(evaluador, H0, temperatura_C, viento_kmh, hielo_mm,
         evaluador.xyz,peso_total,diametro_total,viento_ms,evaluador.cd,evaluador.rho
     )
     pares=[]
-    for (a,b),(q_inicial_incorrecto,q_final) in zip(
+    for (a,b),(_q_ref_hielo,q_final) in zip(
         zip(evaluador.xyz[:-1],evaluador.xyz[1:]),cargas
     ):
         # La longitud natural de referencia se calcula SIN hielo.
@@ -209,10 +209,34 @@ def ejecutar_barrido_climatico(puntos, H_tendido_kN, evaluador, configuracion):
         "Máxima flecha vertical":"Flecha vertical (m)",
         "Máxima desviación lateral":"Desviación lateral máxima (m)",
     }
-    gobernantes=pd.DataFrame([
+    resumen=[
         {"Condición gobernante":nombre,**detalle.loc[detalle[col].idxmax()].to_dict()}
         for nombre,col in mapa.items()
-    ])
+    ]
+    # Las siguientes son condiciones de frontera solicitadas: no implican
+    # que sean gobernantes de tensión o flecha.
+    condiciones=(
+        ("Temperatura máxima sin viento",
+         detalle[(detalle["Viento (km/h)"]==0)&
+                 (detalle["Hielo radial (mm)"]==0)],
+         "Temperatura (°C)","Flecha vertical (m)"),
+        ("Viento máximo sin hielo",
+         detalle[detalle["Hielo radial (mm)"]==0],
+         "Viento (km/h)","Desviación lateral máxima (m)"),
+        ("Manguito de hielo máximo",
+         detalle[detalle["Hielo radial (mm)"]>0],
+         "Hielo radial (mm)","T máxima vano (kN)"),
+    )
+    for titulo,grupo,col_extremo,col_evaluacion in condiciones:
+        if grupo.empty:
+            continue
+        extremo=grupo[col_extremo].max()
+        candidatos=grupo[grupo[col_extremo]==extremo]
+        resumen.append({
+            "Condición gobernante":titulo,
+            **candidatos.loc[candidatos[col_evaluacion].idxmax()].to_dict()
+        })
+    gobernantes=pd.DataFrame(resumen)
     return {
         "detalle":detalle,"gobernantes":gobernantes,
         "total_estados":len(casos),
