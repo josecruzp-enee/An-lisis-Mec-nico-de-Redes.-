@@ -13,7 +13,9 @@ from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de
 from entradas.catalogos import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.referencias_mecanicas_acsr_nexans import referencia_mecanica_nexans
-from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
+from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import (
+    leer_catalogo_enee,seleccionar_conductor_enee,
+)
 from Analisis_mecanico_conductores.verificaciones.perfil_limites_tension_checa import construir_hipotesis_checa_acsr
 
 
@@ -58,21 +60,44 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
                 "Referencia Nexans por construcción (comparativa)",
             ],
         )
-        estado_enee=st.selectbox(
-            "Estado elástico ENEE",["Final","Inicial"],
-            help="Selecciona E final o inicial; no calcula creep."
-        )
+        estado_enee="Final"
+        if fuente_tipo.startswith("ENEE"):
+            # La selección es por construcción, no sólo por calibre:
+            # 266.8 MCM OWL (Viakon) no figura en Tabla 16, pero sí PARTRIDGE.
+            clave_calibre=str(ficha["calibre"]).replace(" MCM","")
+            aves=[
+                f for f in leer_catalogo_enee()
+                if f["calibre"].replace(" MCM","")==clave_calibre
+            ]
+            if aves:
+                opciones=[f["nombre"] for f in aves]
+                nombre_enee=st.selectbox(
+                    "Construcción ACSR ENEE",
+                    opciones,
+                    index=opciones.index(ficha["codigo"])
+                    if ficha["codigo"] in opciones else 0,
+                )
+                estado_enee=st.selectbox(
+                    "Módulo de elasticidad",["Final","Inicial"],
+                    help="E final o inicial; no predice creep.",
+                )
+            else:
+                nombre_enee=None
         temperatura=st.number_input(
             "Temperatura de tendido / referencia (°C)",value=20.0,
         )
         EA=alpha=fuente=""
         if fuente_tipo.startswith("ENEE"):
             try:
-                vista=seleccionar_desde_clave_viakon(nombre,estado_enee)
+                if nombre_enee is None:
+                    raise ValueError("No hay ficha ENEE para este calibre")
+                vista=seleccionar_conductor_enee(
+                    ficha["calibre"],nombre_enee,estado_enee
+                )
             except (KeyError,ValueError) as exc:
                 st.error(
                     "El conductor seleccionado no está en la Tabla 16 ENEE. "
-                    "Seleccioná uno del catálogo ENEE o utilizá ficha manual. "
+                    "Elegí otra construcción o utilizá ficha manual. "
                     +str(exc)
                 )
                 vista=None
