@@ -93,6 +93,40 @@ y los coeficientes aplicables.
 real**, porque sigue faltando validación experimental/independiente de los
 parámetros materiales y de los casos de diseño aplicables.
 
+## Corrección del flujo principal de Fase 1
+
+El modo normal de Fase 1 ahora es **Calcular automáticamente**.
+El usuario no ingresa H: el programa obtiene la tensión horizontal
+de referencia mediante `dimensionar_tension_tendido` con hipótesis
+climáticas y límites con fuente. Solo se habilita para UN vano
+declarado ANCLAJE–ANCLAJE o FIJA–FIJA, con coordenadas y alturas de
+amarre; en otros tipos de conexión rechaza el cálculo sin inventar
+una tensión común.
+
+La plantilla ofrece hojas `Puntos`, `Vanos`, `Materiales` e
+`Hipotesis`. El calibre y nombre de ave provienen del catálogo Viakon;
+peso y diámetro nominal se obtienen allí automáticamente. En
+`Materiales` se requieren únicamente EA, dilatación, temperatura
+de tendido y fuente documental. La hoja `Hipotesis` define cada
+combinación temperatura/viento/azimut, tensión límite y su fuente.
+
+El intervalo de H de la rutina automática (5–95 % de ruptura) es
+un **intervalo numérico de exploración** sujeto al modelo BVP,
+NO es un porcentaje normativo, admisible ni resultado de diseño.
+El cálculo puede rechazar la entrada si el problema exige salir
+de ese intervalo. La hipótesis, no el intervalo, limita la tensión.
+El sistema muestra la H calculada, la hipótesis gobernante, tabla
+por temperatura y las fuerzas BVP en cada amarre durante el tendido.
+
+La opción **Verificar tensión conocida** conserva el antiguo análisis
+preliminar, ahora identificado como verificación de una H dada y
+NO cálculo automático de tensión.
+
+Para redes multivano el análisis debe usar la topología explícita
+y aún falta la integración del cálculo INVERSO para suspensiones reales.
+No se interpreta un Excel de tres postes como dos anclajes
+independientes por defecto.
+
 ## Redes multivano con conexión explícita — entrega integrada
 
 El motor `calculos/hipotesis_red.py` utiliza
