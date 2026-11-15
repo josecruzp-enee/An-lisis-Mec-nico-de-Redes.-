@@ -522,7 +522,7 @@ def main() -> None:
     mostrar_resumen_proyecto(proyecto)
 
     if proyecto["modo_tension"].startswith("Calcular"):
-        from entradas.regulacion_fase1 import plantilla_regulacion
+        from Analisis_mecanico_conductores.entradas.leer_datos_y_calcular_regulacion import plantilla_regulacion
         st.download_button(
             "Descargar plantilla para tensión y flechas automáticas (Excel)",
             plantilla_regulacion(),
@@ -541,7 +541,7 @@ def main() -> None:
     try:
         df = leer_puntos_excel(archivo)
         if proyecto["modo_tension"].startswith("Calcular"):
-            from calculos.resumen_geometrico_regulacion import resumen_geometrico
+            from Analisis_mecanico_conductores.geometria.calcular_vanos_y_vano_regulador import resumen_geometrico
             geo = resumen_geometrico(df)
             st.subheader("Geometría y vano regulador")
             c1,c2,c3=st.columns(3)
@@ -552,7 +552,7 @@ def main() -> None:
             st.caption(geo["hipotesis_geometrica"])
             if not geo["nivelado_confirmado"]:
                 st.info("El Excel no confirma amarres de igual altura. Se calcula la geometría, pero tensión y flecha convencionales requieren cotas y alturas completas.")
-            from entradas.regulacion_fase1 import ejecutar_regulacion_fase1
+            from Analisis_mecanico_conductores.entradas.leer_datos_y_calcular_regulacion import ejecutar_regulacion_fase1
             from io import BytesIO
             # Mantener compatibilidad con Excel antiguo de puntos:
             # si faltan Materiales/Hipotesis, completar directamente en UI.
@@ -566,7 +566,7 @@ def main() -> None:
                         Cd=proyecto["Cd"],rho=proyecto["rho"],
                     )
             else:
-                from entradas.interfaz_regulacion_directa import mostrar_calculo_directo
+                from Analisis_mecanico_conductores.interfaz.mostrar_analisis_de_conductores import mostrar_calculo_directo
                 r=mostrar_calculo_directo(
                     df,proyecto["calibre"],
                     Cd=proyecto["Cd"],rho=proyecto["rho"],
