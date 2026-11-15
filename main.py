@@ -50,13 +50,11 @@ def ui_datos_proyecto() -> Dict[str, Any]:
     n_fases = st.sidebar.selectbox("Fases", [1, 2, 3], index=2)
     modo_tension = st.sidebar.radio(
         "Determinación de tensión",
-        [
-            "Calcular automáticamente (hipótesis documentadas)",
-            "Verificar tensión conocida (opción avanzada)",
-        ],
+        ["Verificar tensión conocida (opción avanzada)"],
         help=(
-            "Por defecto el programa determina H usando el cambio de "
-            "estado y los límites de diseño; no solicita una H arbitraria."
+            "La determinación automática de tensión por criterios Checa "
+            "se retiró del flujo activo. Solo se permite analizar "
+            "una tensión previamente justificada y conocida."
         ),
     )
     if modo_tension.startswith("Verificar"):
@@ -497,21 +495,9 @@ def main() -> None:
     modo = st.sidebar.radio(
         "Módulo de análisis",
         ["Etapa 1 — conductores",
-         "Corridas por vano — Checa",
          "Tendido inverso — hipótesis climáticas",
          "Red completa — conectividad"],
     )
-    if modo == "Corridas por vano — Checa":
-        st.title("Corridas mecánicas de conductores por vano")
-        archivo = ui_cargar_excel()
-        if not archivo:
-            st.stop()
-        puntos = leer_puntos_excel(archivo)
-        from Analisis_mecanico_conductores.interfaz.mostrar_corridas_por_vano_checa import (
-            mostrar_corridas_por_vano_checa,
-        )
-        mostrar_corridas_por_vano_checa(puntos)
-        return
     if modo == "Red completa — conectividad":
         from entradas.interfaz_red_global import mostrar_modelo_red
         st.title("Modelo mecánico de una red completa")
@@ -524,6 +510,12 @@ def main() -> None:
         return
 
     st.title("Etapa 1 — Análisis mecánico de conductores")
+    st.warning(
+        "Cálculo automático de tensiones suspendido: los límites Checa "
+        "no son el método CFE solicitado. Se conserva el motor físico "
+        "para verificar una tensión de referencia documentada; no "
+        "se emitirá una tensión de diseño automática sin criterio validado."
+    )
     proyecto = ui_datos_proyecto()
     mostrar_resumen_proyecto(proyecto)
 
