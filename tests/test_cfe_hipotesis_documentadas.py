@@ -35,6 +35,31 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
                 20.,viento_max_kmh=120.,viento_reducido_kmh=0.,hielo_mm=2.,
             )
 
+    def test_corrida_integral_un_vano_sin_p_importado(self):
+        import pandas as pd
+        from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import (
+            seleccionar_conductor_enee,
+        )
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
+            ejecutar_corridas_cfe_por_vano,
+        )
+        puntos=pd.DataFrame({
+            "Punto":["P1","P2"],"X":[0.,50.],"Y":[0.,0.],
+            "Altitud":[100.,100.],"Altura_Amarre_m":[9.5,9.5],
+        })
+        ini=seleccionar_conductor_enee("1/0","RAVEN","Inicial")
+        fin=seleccionar_conductor_enee("1/0","RAVEN","Final")
+        resumen,tabla=ejecutar_corridas_cfe_por_vano(
+            puntos,ini,fin,viento_max_kmh=120.,
+            viento_reducido_kmh=90.,hielo_mm=2.,
+            temperaturas_C=[20.,50.],
+        )
+        self.assertEqual(set(tabla["Condición"]),{"Inicial","Final"})
+        self.assertEqual(len(tabla),8)
+        self.assertTrue((tabla["Flecha (m)"]>0).all())
+        self.assertTrue((tabla["T máx. (kN)"]>0).all())
+        self.assertEqual(len(resumen),2)
+
     def test_rechaza_viento_reducido_mayor(self):
         with self.assertRaises(ValueError):
             construir_hipotesis_cfe(
