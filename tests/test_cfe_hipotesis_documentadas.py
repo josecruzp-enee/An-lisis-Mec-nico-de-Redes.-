@@ -25,14 +25,24 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
         for caso in inicial+final:
             caso.validar()
 
-    def test_no_inventar_hielo_ni_viento(self):
+    def test_cero_hielo_y_viento_es_valido(self):
+        inicial, final = construir_hipotesis_cfe(
+            20., viento_max_kmh=120., viento_reducido_kmh=0., hielo_mm=0.,
+        )
+        self.assertEqual(final[2].hielo_mm, 0.)
+        self.assertEqual(final[2].viento_kmh, 0.)
+        self.assertIn("SIN hielo", final[2].nombre)
+        for caso in inicial + final:
+            caso.validar()
+
+    def test_no_admitir_clima_negativo(self):
         with self.assertRaises(ValueError):
             construir_hipotesis_cfe(
-                20.,viento_max_kmh=120.,viento_reducido_kmh=90.,hielo_mm=0.,
+                20., viento_max_kmh=120., viento_reducido_kmh=90., hielo_mm=-1.,
             )
         with self.assertRaises(ValueError):
             construir_hipotesis_cfe(
-                20.,viento_max_kmh=120.,viento_reducido_kmh=0.,hielo_mm=2.,
+                20., viento_max_kmh=120., viento_reducido_kmh=-1., hielo_mm=0.,
             )
 
     def test_corrida_integral_un_vano_sin_p_importado(self):
@@ -59,6 +69,24 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
         self.assertTrue((tabla["Flecha (m)"]>0).all())
         self.assertTrue((tabla["T máx. (kN)"]>0).all())
         self.assertEqual(len(resumen),2)
+
+    def test_corrida_integral_sin_hielo(self):
+        import pandas as pd
+        from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_conductor_enee
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import ejecutar_corridas_cfe_por_vano
+        puntos = pd.DataFrame({
+            "Punto": ["P1", "P2"], "X": [0., 50.], "Y": [0., 0.],
+            "Altitud": [100., 100.], "Altura_Amarre_m": [9.5, 9.5],
+        })
+        inicial = seleccionar_conductor_enee("1/0", "RAVEN", "Inicial")
+        final = seleccionar_conductor_enee("1/0", "RAVEN", "Final")
+        resumen, tabla = ejecutar_corridas_cfe_por_vano(
+            puntos, inicial, final, viento_max_kmh=120.,
+            viento_reducido_kmh=0., hielo_mm=0., temperaturas_C=[20., 50.],
+        )
+        self.assertEqual(len(resumen), 2)
+        self.assertTrue((tabla["Hielo (mm)"] == 0).all())
+        self.assertTrue((tabla["Flecha (m)"] > 0).all())
 
     def test_rechaza_viento_reducido_mayor(self):
         with self.assertRaises(ValueError):
