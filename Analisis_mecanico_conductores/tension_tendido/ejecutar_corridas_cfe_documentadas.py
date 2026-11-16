@@ -19,6 +19,7 @@ from Analisis_mecanico_conductores.tension_tendido.calcular_tablas_cfe_inicial_f
     calcular_parametro_cfe_desde_limites, calcular_tablas_inicial_final,
 )
 from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
+from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import vano_regulador
 
 
 CFE_FUENTE = (
@@ -101,7 +102,13 @@ def ejecutar_corridas_cfe_por_vano(
         propiedades.ruptura_kN,viento_max_kmh=viento_max_kmh,
         viento_reducido_kmh=viento_reducido_kmh,hielo_mm=hielo_mm,
     )
-    xyz,_=_geometria(puntos)
+    xyz,luces=_geometria(puntos)
+    # Claro regla informativo: equivalente convencional de una sección
+    # con suspensión deslizante ideal y vanos aproximadamente nivelados.
+    # El motor actual mantiene amarres fijos; NO emplear este claro como
+    # condición de contorno ni confundirlo con el claro de diseño ENEE.
+    claro_regla_m=vano_regulador(luces)
+    desnivel_max_m=max(abs(float(xyz[i+1,2]-xyz[i,2])) for i in range(len(luces)))
     referencia_inicial=calcular_parametro_cfe_desde_limites(
         xyz,propiedades,ini,condicion="Inicial",Cd=Cd,rho_kg_m3=rho_kg_m3,
     )
@@ -126,7 +133,17 @@ def ejecutar_corridas_cfe_por_vano(
         Cd=Cd,rho_kg_m3=rho_kg_m3,
     )
     resumen=pd.DataFrame([
-        {"Condición":"Inicial","Hipótesis aplicadas":"; ".join(h.nombre for h in ini),**referencia_inicial},
-        {"Condición":"Final","Hipótesis aplicadas":"; ".join(h.nombre for h in fin),**referencia_final},
+        {"Condición":"Inicial — referencia independiente",
+         "Hipótesis aplicadas":"; ".join(h.nombre for h in ini),**referencia_inicial},
+        {"Condición":"Final — referencia independiente (NO creep)",
+         "Hipótesis aplicadas":"; ".join(h.nombre for h in fin),**referencia_final},
     ])
+    resumen["Claro regla convencional orientativo (m)"]=claro_regla_m
+    resumen["Número de vanos"]=len(luces)
+    resumen["Desnivel máximo entre apoyos (m)"]=desnivel_max_m
+    resumen["Advertencia"]=(
+        "Claros reales: motor de amarres fijos por vano. "
+        "Claro regla: solo informativo, no usado en el cálculo. "
+        "Referencias inicial/final independientes, sin creep validado."
+    )
     return resumen,tabla
