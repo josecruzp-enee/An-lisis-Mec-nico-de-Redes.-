@@ -494,10 +494,25 @@ def main() -> None:
     st.set_page_config(page_title="Análisis Mecánico", layout="wide")
     modo = st.sidebar.radio(
         "Módulo de análisis",
-        ["Etapa 1 — conductores",
+        ["CFE — cálculo por vano",
+         "Etapa 1 — conductores",
          "Tendido inverso — hipótesis climáticas",
          "Red completa — conectividad"],
     )
+    if modo == "CFE — cálculo por vano":
+        st.title("Análisis mecánico CFE — validación por vano")
+        archivo = ui_cargar_excel()
+        if not archivo:
+            st.stop()
+        try:
+            puntos = leer_puntos_excel(archivo)
+            from Analisis_mecanico_conductores.interfaz.mostrar_corridas_cfe_documentadas import (
+                mostrar_corridas_cfe,
+            )
+            mostrar_corridas_cfe(puntos)
+        except (ValueError, KeyError, TypeError) as exc:
+            st.error(f"Datos de geometría inválidos: {exc}")
+        return
     if modo == "Red completa — conectividad":
         from entradas.interfaz_red_global import mostrar_modelo_red
         st.title("Modelo mecánico de una red completa")
