@@ -141,11 +141,34 @@ def calcular_parametro_cfe_desde_limites(
     H = maximo if muestra[-1] <= 1 else float(brentq(
         lambda x: relacion(x)-1., minimo, maximo, xtol=1e-8,
     ))
+    # Trazabilidad: identificar qué hipótesis restringió realmente H50.
+    # Estos resultados son diagnósticos del optimizador, no una prueba de
+    # que dicho criterio reproduzca el procedimiento histórico ENEE/SAGSEC.
+    detalles = []
+    for hip in hipotesis:
+        _, tensiones, _, residuales, _ = evaluador.evaluar_estado_con_hielo(
+            H, hip.temperatura_C, hip.viento_kmh / 3.6,
+            hip.hielo_mm, densidad_hielo_kg_m3,
+        )
+        tension_maxima = max(float(t) for t in tensiones)
+        detalles.append((
+            tension_maxima / hip.limite_tension_kN,
+            hip, tension_maxima, max(abs(float(r)) for r in residuales),
+        ))
+    indice_critico = max(range(len(detalles)), key=lambda i: detalles[i][0])
+    ratio, gobernante, tension_real, residuo_max = detalles[indice_critico]
     return {
         "condicion": condicion,
         "H_50_kN": H,
         "parametro_P_m": H / propiedades.peso_kN_m,
-        "relacion_critica": relacion(H),
+        "relacion_critica": ratio,
+        "hipotesis_gobernante": gobernante.nombre,
+        "temperatura_gobernante_C": gobernante.temperatura_C,
+        "viento_gobernante_kmh": gobernante.viento_kmh,
+        "hielo_gobernante_mm": gobernante.hielo_mm,
+        "tension_maxima_gobernante_kN": tension_real,
+        "limite_gobernante_kN": gobernante.limite_tension_kN,
+        "residuo_maximo_gobernante_m": residuo_max,
         "cota_busqueda_activa": muestra[-1] <= 1,
         "metodo": "Optimización de límites documentados, NO SAGSEC",
     }
