@@ -19,6 +19,12 @@ def mostrar_corridas_cfe(puntos):
         "Conserva las ecuaciones de catenaria 3D y compatibilidad del motor. "
         "No introduce P, claro de diseño ni flecha ENEE como entradas."
     )
+    st.info(
+        "CLAROS: vano real = distancia entre apoyos; claro regla = equivalente "
+        "convencional de una sección de tendido; claro de diseño = referencia "
+        "del procedimiento normativo. El claro regla se mostrará solo como "
+        "dato orientativo: este motor calcula amarres fijos por vano."
+    )
     opciones=[(f["calibre"],f["nombre"]) for f in leer_catalogo_enee()]
     if not opciones:
         st.error("No hay catálogo físico ENEE disponible")
@@ -83,8 +89,13 @@ def mostrar_corridas_cfe(puntos):
             temperaturas_C=temperaturas,
             Cd=1.,rho_kg_m3=float(rho),
         )
-        st.subheader("Tensiones de referencia calculadas")
+        st.subheader("Referencias independientes bajo restricciones CFE (experimental)")
         st.dataframe(resumen,hide_index=True,use_container_width=True)
+        st.caption(
+            "El claro regla de la tabla resumen NO interviene en las ecuaciones "
+            "de estas corridas. Para vanos desnivelados su interpretación "
+            "convencional requiere un modelo de regulación apropiado."
+        )
         st.subheader("Resultados por vano, temperatura y condición")
         st.dataframe(tabla,hide_index=True,use_container_width=True)
         st.download_button(
