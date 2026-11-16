@@ -35,11 +35,11 @@ def mostrar_corridas_cfe(puntos):
             help="Verificar la zona de viento prevista en CFE para el proyecto.",
         )
         viento_reducido=st.text_input(
-            "Viento reducido (km/h) — valor documentado",value="",
+            "Viento reducido (km/h) — condición del caso",value="0",
             help="No se inventa ni se deduce automáticamente del viento máximo.",
         )
         hielo=st.text_input(
-            "Espesor de hielo radial (mm) — valor documentado",value="",
+            "Espesor de hielo radial (mm) — condición del caso",value="0",
             help="No se sustituye una hipótesis con hielo por hielo cero.",
         )
         rho=st.number_input(
@@ -64,7 +64,7 @@ def mostrar_corridas_cfe(puntos):
         if not viento_reducido.strip() or not hielo.strip():
             raise ValueError(
                 "Faltan viento reducido y/o espesor de hielo documentados. "
-                "No se sustituirán por valores inventados."
+                "Introducí valores numéricos, incluido 0 cuando corresponda."
             )
         ini=seleccionar_conductor_enee(*conductor,"Inicial")
         fin=seleccionar_conductor_enee(*conductor,"Final")

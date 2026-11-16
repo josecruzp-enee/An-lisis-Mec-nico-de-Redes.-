@@ -39,14 +39,19 @@ def construir_hipotesis_cfe(
     v_max=float(viento_max_kmh)
     v_red=float(viento_reducido_kmh)
     hielo=float(hielo_mm)
-    if rotura<=0 or v_max<=0 or v_red<=0 or hielo<=0:
+    if rotura<=0 or v_max<=0 or v_red<0 or hielo<0:
         raise ValueError(
-            "Se requieren ruptura positiva, viento máximo, "
-            "viento reducido y espesor de hielo documentado (todos > 0). "
-            "No se completan datos climáticos faltantes con cero."
+            "La ruptura y el viento máximo deben ser positivos. "
+            "El viento reducido y el hielo admiten cero si así "
+            "lo establece el caso de estudio; no admiten negativos."
         )
     if v_red>v_max:
         raise ValueError("Viento reducido no puede exceder viento máximo")
+    condicion_frio = (
+        "CFE final -10°C viento reducido + hielo (45% RTS)"
+        if hielo > 0 else
+        "CFE final -10°C viento reducido SIN hielo (45% RTS)"
+    )
     inicial=[
         HipotesisDisenoCFE("CFE inicial 0°C sin viento (33% RTS)",
                            0.,0.,0.,rotura*.33,CFE_FUENTE),
@@ -56,7 +61,7 @@ def construir_hipotesis_cfe(
                            16.,0.,0.,rotura*.20,CFE_FUENTE),
         HipotesisDisenoCFE("CFE final 0°C sin viento (25% RTS)",
                            0.,0.,0.,rotura*.25,CFE_FUENTE),
-        HipotesisDisenoCFE("CFE final -10°C viento reducido + hielo (45% RTS)",
+        HipotesisDisenoCFE(condicion_frio,
                            -10.,v_red,hielo,rotura*.45,CFE_FUENTE),
         HipotesisDisenoCFE("CFE final 0°C viento máximo (45% RTS)",
                            0.,v_max,0.,rotura*.45,CFE_FUENTE),
@@ -109,7 +114,8 @@ def ejecutar_corridas_cfe_por_vano(
             "No se asignará un parámetro P arbitrario."
         )
     estados_extra=[
-        ("CFE viento reducido + hielo",-10.,float(viento_reducido_kmh),float(hielo_mm)),
+        ("CFE viento reducido + hielo" if hielo_mm > 0 else
+         "CFE viento reducido SIN hielo",-10.,float(viento_reducido_kmh),float(hielo_mm)),
         ("CFE viento máximo",0.,float(viento_max_kmh),0.),
     ]
     tabla=calcular_tablas_inicial_final(
