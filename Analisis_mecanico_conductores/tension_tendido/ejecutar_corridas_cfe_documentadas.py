@@ -41,6 +41,45 @@ CFE_FUENTE = (
 )
 
 
+# Propiedades originales de CFE 07 FT 01, hoja 6/6.
+# Peso: daN/m; E: miles de N/mm²; ruptura: daN;
+# alfa en tabla: valores equivalentes a 1e-6/°C.
+CFE_FT01_CONDUCTORES = {
+    "RAVEN": (10.11, .2120, 62.4378, 71.2209, 78.0468,
+              18.57, 18.95, 1947.74),
+    "PIGEON": (12.75, .3377, 99.3038, 71.2209, 78.0468,
+               18.57, 18.95, 2938.28),
+    "PARTRIDGE": (16.30, .5349, 156.8655, 57.4318, 75.0125,
+                  17.53, 18.82, 5022.34),
+    "LINNET": (18.29, .6766, 198.3854, 57.4318, 75.0125,
+               17.53, 18.82, 6299.26),
+    "HAWK": (21.77, .9570, 280.8395, 57.4318, 75.0125,
+             17.53, 18.82, 8654.98),
+}
+
+
+def seleccionar_propiedades_cfe_07_ft_01(nombre):
+    """Ficha SI de CFE 07 FT 01. No intercambiar con ENEE Tabla 16."""
+    clave = str(nombre).strip().upper()
+    if clave not in CFE_FT01_CONDUCTORES:
+        raise ValueError(f"No existe ficha CFE 07 FT 01 para {nombre}")
+    diam_mm, peso_dan_m, area_mm2, ei, ef, ai, af, rotura_dan = (
+        CFE_FT01_CONDUCTORES[clave]
+    )
+    fuente = f"CFE 07 FT 01 hoja 6/6; ACSR {clave}"
+    base = {
+        "nombre": clave,
+        "peso_kN_m": peso_dan_m * 10. / 1000.,
+        "diametro_m": diam_mm / 1000.,
+        "ruptura_kN": rotura_dan * 10. / 1000.,
+    }
+    inicial = dict(base, EA_kN=ei * area_mm2,
+                   alpha_por_C=ai * 1e-6, fuente=fuente+" inicial")
+    final = dict(base, EA_kN=ef * area_mm2,
+                 alpha_por_C=af * 1e-6, fuente=fuente+" final")
+    return inicial, final
+
+
 def construir_hipotesis_cfe(
     ruptura_kN, *, viento_max_kmh, viento_reducido_kmh, hielo_mm,
     nombre_conductor=None,
