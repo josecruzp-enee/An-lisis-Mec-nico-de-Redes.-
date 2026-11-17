@@ -244,9 +244,6 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
          "Flecha máxima (m)", "Máximo residual (m)"],
         [str(len(tabla)), _fmt(tension, 4), _fmt(flecha, 4), _fmt(residuo)],
     ], [1, 1, 1, 1])
-    linea("El residual corresponde a la compatibilidad de longitud del modelo; "
-          "no constituye una validación independiente del criterio normativo.", nota)
-
     historia.append(PageBreak())
 
     # Página 2: supuestos, ecuaciones y curvas sin estimaciones inventadas.
@@ -354,7 +351,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         if libramientos.empty or perfil_terreno.empty:
             raise ValueError("La topografía no contiene resultados")
         historia.append(PageBreak())
-        titulo("Perfil topográfico y libramientos (evaluación preliminar)")
+        titulo("Perfil topográfico y libramientos — PRELIMINAR")
         linea(
             "Las cotas del terreno proceden del DEM seleccionado, no de "
             "un levantamiento de precisión. Las distancias son verticales, "
