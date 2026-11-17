@@ -9,7 +9,9 @@ import numpy as np
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
 
-# Cuadratura de Gauss-Legendre de alto orden (NO aproximación parabólica).\n# Se verifica el orden 64 contra 128, y se refina a 256 de ser necesario.\n_CUADRATURAS = {n: np.polynomial.legendre.leggauss(n) for n in (64, 128, 256)}
+# Cuadratura de Gauss-Legendre de alto orden (NO aproximación parabólica).
+# Se verifica el orden 64 contra 128, y se refina a 256 de ser necesario.
+_CUADRATURAS = {n: np.polynomial.legendre.leggauss(n) for n in (64, 128, 256)}
 
 
 def longitud_natural(cable, EA_kN: float) -> float:
