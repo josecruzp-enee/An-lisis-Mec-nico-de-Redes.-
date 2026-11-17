@@ -385,18 +385,18 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         datos_tabla(filas_topo,[1,1,2,1,1.3,1.5],compacto=True)
         for vano,grupo in minimo_total.groupby("Vano",sort=False):
             critico=grupo.iloc[0]
-            sub=perfil_terreno[
+            subperfil=perfil_terreno[
                 (perfil_terreno["Vano"]==vano)
                 & (perfil_terreno["Condición"]==critico["Condición"])
                 & (perfil_terreno["Hipótesis"]==critico["Hipótesis"])
                 & (perfil_terreno["Temperatura (°C)"]==critico["Temperatura (°C)"])
             ].sort_values("Distancia desde apoyo (m)")
-            if sub.empty:
+            if subperfil.empty:
                 raise ValueError("No existe perfil para la hipótesis crítica")
             figura,eje=plt.subplots(figsize=(9.3,3.1))
-            x=sub["Distancia desde apoyo (m)"].to_numpy(float)
-            terreno=sub["Elevación terreno (m)"].to_numpy(float)
-            cable=sub["Elevación conductor (m)"].to_numpy(float)
+            x=subperfil["Distancia desde apoyo (m)"].to_numpy(float)
+            terreno=subperfil["Elevación terreno (m)"].to_numpy(float)
+            cable=subperfil["Elevación conductor (m)"].to_numpy(float)
             eje.plot(x,terreno,color="#7a654a",lw=2,label="Superficie DEM")
             eje.plot(x,cable,color="#2355a4",lw=1.6,label="Conductor calculado")
             eje.fill_between(x,terreno,cable,alpha=.12,color="#64748b")
