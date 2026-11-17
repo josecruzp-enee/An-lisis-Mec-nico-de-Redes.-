@@ -1,151 +1,345 @@
-"""Memoria independiente del módulo 1 para la corrida CFE por vano.
+"""Memoria profesional independiente del módulo 1: sin recalcular ingeniería.
 
-El informe recibe DataFrames RESULTADO del motor: no recalcula ni altera
-tensiones, flechas ni parámetros de referencia. Puede combinarse con las
-memorias de otras etapas mediante pypdf (coordinar_pdf.py).
+Las tablas y gráficas se alimentan EXCLUSIVAMENTE de los resultados del motor.
+Apto para combinar posteriormente con las memorias de los otros módulos.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date
 from html import escape
 from io import BytesIO
+import math
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, LongTable, TableStyle, KeepTogether
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, LongTable, TableStyle, PageBreak,
+    Image, KeepTogether,
+)
 
-
-_COLUMNAS = (
+COLUMNAS = (
     "Condición", "Hipótesis", "Temperatura (°C)", "Viento (km/h)",
     "Hielo (mm)", "Vano", "Luz (m)", "P a 50 °C (m)", "H (kN)",
     "T máx. (kN)", "Flecha (m)", "Lateral (m)", "Residual (m)",
 )
 
 
-def _numero(x):
-    if pd.isna(x):
-        return "—"
-    if isinstance(x, (float, np.floating)):
-        return f"{x:.8g}"
-    return str(x)
+def _fmt(v, dec=3):
+    if v is None or (not isinstance(v, (dict, list, tuple)) and pd.isna(v)):
+        return "No informado"
+    if isinstance(v, (float, np.floating)):
+        if not np.isfinite(v):
+            raise ValueError("El PDF no admite valores no finitos")
+        if v != 0 and abs(v) < 0.0001:
+            return f"{v:.2e}"
+        return f"{v:,.{dec}f}"
+    return str(v)
 
 
-def _tabla(tabla, columnas, ancho, normal, cabecera):
-    col = [c for c in columnas if c in tabla.columns]
-    if not col:
-        return []
-    # Columnas resumidas en papel: todas las filas siguen disponibles.
-    datos = [[Paragraph(escape(str(c)), cabecera) for c in col]]
-    for fila in tabla[col].itertuples(index=False, name=None):
-        datos.append([Paragraph(escape(_numero(v)), normal) for v in fila])
-    pesos = [min(20, max(7, len(str(c)))) for c in col]
-    anchos = [ancho*p/sum(pesos) for p in pesos]
-    t = LongTable(datos, colWidths=anchos, repeatRows=1, hAlign="LEFT")
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8E8E8")),
-        ("GRID", (0, 0), (-1, -1), .25, colors.HexColor("#BBBBBB")),
+def _estilos():
+    e = getSampleStyleSheet()
+    e.add(ParagraphStyle(
+        name="TituloM1", parent=e["Title"], fontName="Helvetica-Bold",
+        fontSize=18, leading=22, textColor=colors.black, spaceAfter=5*mm,
+    ))
+    e.add(ParagraphStyle(
+        name="SubM1", parent=e["Heading2"], fontName="Helvetica-Bold",
+        fontSize=12, leading=15, textColor=colors.black,
+        spaceBefore=4*mm, spaceAfter=2*mm,
+    ))
+    e.add(ParagraphStyle(
+        name="NormalM1", parent=e["Normal"], fontSize=8.5, leading=12,
+        textColor=colors.black, spaceAfter=2*mm,
+    ))
+    e.add(ParagraphStyle(
+        name="NotaM1", parent=e["Normal"], fontSize=7.5, leading=10,
+        textColor=colors.black, spaceAfter=2*mm,
+    ))
+    e.add(ParagraphStyle(
+        name="CeldaM1", parent=e["Normal"], fontSize=7, leading=9,
+        textColor=colors.black,
+    ))
+    e.add(ParagraphStyle(
+        name="CabM1", parent=e["CeldaM1"], fontName="Helvetica-Bold",
+    ))
+    return e
+
+
+def _p(texto, estilo):
+    return Paragraph(escape(str(texto)).replace("\n", "<br/>"), estilo)
+
+
+def _tabla(filas, anchos, estilos, *, encabezado=True, compacta=False):
+    if not filas:
+        return Spacer(1, 1)
+    c, h = estilos["CeldaM1"], estilos["CabM1"]
+    matriz = [[_p(v, h if i == 0 and encabezado else c) for v in row]
+              for i, row in enumerate(filas)]
+    tabla = LongTable(matriz, colWidths=anchos,
+                      repeatRows=1 if encabezado else 0,
+                      hAlign="LEFT", splitByRow=1)
+    tabla.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0),
+         colors.HexColor("#E5E5E5") if encabezado else colors.white),
+        ("GRID", (0, 0), (-1, -1), .28, colors.HexColor("#AAAAAA")),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("LEFTPADDING", (0, 0), (-1, -1), 3),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+        ("TOPPADDING", (0, 0), (-1, -1), 2.5 if compacta else 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5 if compacta else 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
     ]))
-    return [t]
+    return tabla
+
+
+def _grafico(tabla, campo, titulo, ylabel):
+    datos = tabla[
+        (tabla["Hipótesis"] == "Tabla térmica") &
+        (tabla["Viento (km/h)"] == 0) &
+        (tabla["Hielo (mm)"] == 0)
+    ]
+    if datos.empty:
+        return None, None
+    primer_vano = str(datos["Vano"].iloc[0])
+    datos = datos[datos["Vano"].astype(str) == primer_vano]
+    fig, ax = plt.subplots(figsize=(9.1, 2.55))
+    for estado, estilo in (("Inicial", "-"), ("Final", "--")):
+        serie = datos[datos["Condición"] == estado].sort_values("Temperatura (°C)")
+        if len(serie) >= 2:
+            ax.plot(serie["Temperatura (°C)"], serie[campo],
+                    linestyle=estilo, linewidth=1.5, marker="o",
+                    markersize=2.5, label=estado)
+    ax.set_title(titulo + " — " + primer_vano, fontsize=10)
+    ax.set_xlabel("Temperatura del conductor (°C)", fontsize=8)
+    ax.set_ylabel(ylabel, fontsize=8)
+    ax.grid(True, alpha=.25)
+    ax.legend(fontsize=8)
+    ax.tick_params(labelsize=7)
+    fig.tight_layout(pad=1.2)
+    buffer = BytesIO()
+    fig.savefig(buffer, format="png", dpi=155, facecolor="white")
+    plt.close(fig)
+    buffer.seek(0)
+    return buffer, primer_vano
+
+
+def _cabecera_pie(canvas, doc):
+    canvas.saveState()
+    page_w, page_h = landscape(A4)
+    canvas.setStrokeColor(colors.HexColor("#888888"))
+    canvas.line(14*mm, page_h - 12*mm, page_w - 14*mm, page_h - 12*mm)
+    canvas.setFont("Helvetica", 8)
+    canvas.drawString(14*mm, page_h - 10*mm, "MEMORIA DE CÁLCULO | MÓDULO 01")
+    canvas.line(14*mm, 12*mm, page_w - 14*mm, 12*mm)
+    canvas.drawString(14*mm, 8*mm, "Análisis mecánico de conductores")
+    canvas.drawRightString(page_w - 14*mm, 8*mm, f"Página {doc.page}")
+    canvas.restoreState()
 
 
 def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                             conductor: str, fuente_material: str,
                             clima: dict | None = None,
-                            proyecto: dict | None = None) -> bytes:
-    """Genera memoria PDF en bytes, validando datos sin volver a calcular."""
+                            proyecto: dict | None = None,
+                            propiedades_inicial: dict | None = None,
+                            propiedades_final: dict | None = None) -> bytes:
+    """Genera la memoria PDF desde DataFrames ya calculados, sin modificar valores."""
     if not isinstance(resumen, pd.DataFrame) or len(resumen) != 2:
-        raise ValueError("Se requieren referencias inicial y final")
+        raise ValueError("Se necesitan las dos referencias inicial y final")
     if not isinstance(tabla, pd.DataFrame) or tabla.empty:
-        raise ValueError("No hay resultados por vano para el PDF")
-    faltan = [c for c in _COLUMNAS if c not in tabla.columns]
-    if faltan:
-        raise ValueError("Faltan columnas del cálculo: " + ", ".join(faltan))
-    for c in ("H (kN)", "T máx. (kN)", "Flecha (m)", "Residual (m)"):
-        valores = pd.to_numeric(tabla[c], errors="coerce").to_numpy(float)
-        if not np.isfinite(valores).all():
-            raise ValueError("Resultados no finitos en " + c)
+        raise ValueError("No hay resultados que documentar")
+    falta = set(COLUMNAS) - set(tabla.columns)
+    if falta:
+        raise ValueError("Columnas requeridas ausentes: " + ", ".join(sorted(falta)))
+    for c in ("H (kN)", "T máx. (kN)", "Flecha (m)",
+              "Lateral (m)", "Residual (m)"):
+        v = pd.to_numeric(tabla[c], errors="coerce").to_numpy(dtype=float)
+        if not np.isfinite(v).all():
+            raise ValueError(f"Valores inválidos en {c}")
     if (tabla["H (kN)"] <= 0).any() or (tabla["T máx. (kN)"] <= 0).any():
-        raise ValueError("Tensiones no positivas en resultados")
-    clima = clima or {}
-    proyecto = proyecto or {}
-    salida = BytesIO()
+        raise ValueError("Las tensiones físicas deben ser positivas")
+
+    proyecto, clima = proyecto or {}, clima or {}
+    fuente = str(fuente_material)
+    estilos = _estilos()
     pagina = landscape(A4)
     margen = 15*mm
+    ancho = pagina[0] - 2*margen
+    memoria = BytesIO()
     doc = SimpleDocTemplate(
-        salida, pagesize=pagina,
-        leftMargin=margen, rightMargin=margen,
-        topMargin=15*mm, bottomMargin=15*mm,
-        title="Módulo 1 — Análisis mecánico de conductores",
-        author=str(proyecto.get("responsable", "Memoria técnica")),
+        memoria, pagesize=pagina, leftMargin=margen, rightMargin=margen,
+        topMargin=16*mm, bottomMargin=16*mm,
+        title=f"Memoria de cálculo - Módulo 1 - {conductor}",
+        author=str(proyecto.get("responsable") or "Proyecto eléctrico"),
     )
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="CeldaM1", parent=styles["Normal"],
-                              fontSize=6.5, leading=8))
-    styles.add(ParagraphStyle(name="CabeceraM1", parent=styles["CeldaM1"],
-                              fontName="Helvetica-Bold", alignment=TA_CENTER))
-    styles.add(ParagraphStyle(name="NotaM1", parent=styles["Normal"],
-                              fontSize=8, leading=11))
-    story = []
-    ancho = pagina[0]-2*margen
-    def p(texto, estilo="Normal"):
-        story.append(Paragraph(escape(str(texto)), styles[estilo]))
-        story.append(Spacer(1, 3*mm))
-    p("MÓDULO 1 — ANÁLISIS MECÁNICO DE CONDUCTORES", "Heading1")
-    p(f"Proyecto: {proyecto.get('nombre', 'Sin identificar')}  |  "
-      f"Fecha: {proyecto.get('fecha', datetime.today().date().isoformat())}")
-    p(f"Conductor: {conductor}  |  Fuente material: {fuente_material}")
-    p(f"Viento máximo: {clima.get('viento_max_kmh', '—')} km/h; "
-      f"viento reducido: {clima.get('viento_reducido_kmh', '—')} km/h; "
-      f"hielo: {clima.get('hielo_mm', '—')} mm; "
-      f"densidad de aire: {clima.get('rho_kg_m3', '—')} kg/m³.")
-    p("Alcance: catenaria exacta, compatibilidad termoelástica, "
-      "condiciones de referencia, tensiones, flechas, desviación lateral "
-      "y residuales numéricos por vano.", "NotaM1")
-    p("Límites: la reproducción de parámetros normativos no demuestra "
-      "por sí sola un tendido aprobado; el modelo de amarres fijos no "
-      "representa automáticamente el claro regla ni predice creep. "
-      "No incluye verificación de postes, crucetas, retenidas o cimentación.",
-      "NotaM1")
-    p("Referencias mecánicas por condición", "Heading2")
-    cols_res = ["Condición", "H_50_kN", "parametro_P_m",
-                "hipotesis_gobernante", "relacion_critica",
-                "tension_maxima_gobernante_kN", "residuo_maximo_gobernante_m"]
-    story.extend(_tabla(resumen, cols_res, ancho, styles["CeldaM1"], styles["CabeceraM1"]))
-    story.append(Spacer(1, 6*mm))
-    p("Resultados completos por vano y estado", "Heading2")
-    p("Las tablas siguientes son transcripción de resultados ya calculados; "
-      "no se ajustan parámetros para coincidir con CFE.", "NotaM1")
-    # No comprimir todos los 13 campos en una sola tabla ilegible.
-    geometria = ["Condición", "Hipótesis", "Temperatura (°C)", "Vano",
-                 "Luz (m)", "Flecha (m)", "Lateral (m)"]
-    mecanica = ["Condición", "Hipótesis", "Temperatura (°C)", "Vano",
-                "H (kN)", "T máx. (kN)", "P a 50 °C (m)",
-                "Viento (km/h)", "Hielo (mm)", "Residual (m)"]
-    p("Anexo A — Flechas y desplazamientos", "Heading3")
-    story.extend(_tabla(tabla, geometria, ancho, styles["CeldaM1"], styles["CabeceraM1"]))
-    story.append(Spacer(1, 6*mm))
-    p("Anexo B — Tensiones y control numérico", "Heading3")
-    story.extend(_tabla(tabla, mecanica, ancho, styles["CeldaM1"], styles["CabeceraM1"]))
+    historia = []
+    normal, nota, sub = estilos["NormalM1"], estilos["NotaM1"], estilos["SubM1"]
 
-    def paginar(canvas, d):
-        canvas.saveState()
-        canvas.setFont("Helvetica", 8)
-        canvas.drawRightString(pagina[0]-margen, 9*mm,
-                               f"Módulo 1 | Página {d.page}")
-        canvas.restoreState()
+    def linea(t, tipo=normal):
+        historia.append(_p(t, tipo))
+    def titulo(t):
+        historia.append(_p(t, sub))
+    def datos_tabla(filas, proporciones, compacto=False):
+        colwidths = [ancho*x/sum(proporciones) for x in proporciones]
+        historia.append(_tabla(filas, colwidths, estilos, compacta=compacto))
+        historia.append(Spacer(1, 3*mm))
 
-    doc.build(story, onFirstPage=paginar, onLaterPages=paginar)
-    pdf = salida.getvalue()
-    if not pdf.startswith(b"%PDF"):
-        raise ValueError("La generación de la memoria PDF falló")
-    return pdf
+    # Página 1: informe ejecutivo, contexto, trazabilidad y diagnóstico.
+    historia.append(Spacer(1, 8*mm))
+    historia.append(_p("MÓDULO 01 - ANÁLISIS MECÁNICO DE CONDUCTORES",
+                      estilos["TituloM1"]))
+    linea("MEMORIA DE CÁLCULO INDEPENDIENTE")
+    titulo("Identificación de la corrida")
+    datos_tabla([
+        ["Dato", "Información"],
+        ["Proyecto", proyecto.get("nombre") or "No informado"],
+        ["Ubicación", proyecto.get("lugar") or "No informado"],
+        ["Responsable", proyecto.get("responsable") or "No informado"],
+        ["Fecha", proyecto.get("fecha") or date.today().isoformat()],
+        ["Conductor", conductor],
+        ["Fuente de propiedades", fuente],
+        ["Geometría", f"{tabla['Vano'].nunique()} vano(s); " +
+         ", ".join(_fmt(x, 2) + " m" for x in sorted(tabla["Luz (m)"].unique()))],
+    ], [1.2, 4.2])
+
+    titulo("Condiciones climáticas de la corrida")
+    datos_tabla([
+        ["Viento máximo (km/h)", "Viento reducido (km/h)",
+         "Hielo radial (mm)", "Densidad de aire (kg/m³)"],
+        [_fmt(clima.get("viento_max_kmh"), 1),
+         _fmt(clima.get("viento_reducido_kmh"), 1),
+         _fmt(clima.get("hielo_mm"), 1),
+         _fmt(clima.get("rho_kg_m3"), 3)],
+    ], [1, 1, 1, 1])
+
+    titulo("Estado de referencia y criterio gobernante")
+    rfilas = [[
+        "Condición", "H a 50 °C (kN)", "P a 50 °C (m)",
+        "Hipótesis gobernante", "Utilización",
+    ]]
+    for _, r in resumen.iterrows():
+        rfilas.append([
+            "Inicial" if "Inicial" in str(r.get("Condición", "")) else "Final",
+            _fmt(r.get("H_50_kN"), 4),
+            _fmt(r.get("parametro_P_m"), 3),
+            r.get("hipotesis_gobernante", "No informado"),
+            _fmt(r.get("relacion_critica"), 4),
+        ])
+    datos_tabla(rfilas, [1, 1.2, 1.2, 3.5, 1.2])
+
+    residuo = float(tabla["Residual (m)"].abs().max())
+    tension = float(tabla["T máx. (kN)"].max())
+    flecha = float(tabla["Flecha (m)"].max())
+    titulo("Resumen de resultados")
+    datos_tabla([
+        ["Estados calculados", "Tensión máxima (kN)",
+         "Flecha máxima (m)", "Máximo residual (m)"],
+        [str(len(tabla)), _fmt(tension, 4), _fmt(flecha, 4), _fmt(residuo)],
+    ], [1, 1, 1, 1])
+    linea("El residual corresponde a la compatibilidad de longitud del modelo; "
+          "no constituye una validación independiente del criterio normativo.", nota)
+
+    historia.append(PageBreak())
+
+    # Página 2: supuestos, ecuaciones y curvas sin estimaciones inventadas.
+    titulo("Datos mecánicos y metodología")
+    if propiedades_inicial and propiedades_final:
+        mecanica = [["Propiedad", "Condición inicial", "Condición final", "Unidad"]]
+        for etiqueta, key, unidad, escala in [
+            ("Peso propio", "peso_kN_m", "N/m", 1000),
+            ("Diámetro", "diametro_m", "mm", 1000),
+            ("Rigidez axial EA", "EA_kN", "kN", 1),
+            ("Dilatación térmica", "alpha_por_C", "1/°C", 1),
+            ("Carga de ruptura", "ruptura_kN", "kN", 1),
+        ]:
+            def v(prop):
+                dato = prop.get(key)
+                return _fmt(float(dato)*escala, 6) if dato is not None else "No informado"
+            mecanica.append([etiqueta, v(propiedades_inicial), v(propiedades_final), unidad])
+        datos_tabla(mecanica, [2, 1.5, 1.5, 1])
+    else:
+        linea("No se suministraron al generador las propiedades mecánicas "
+              "empleadas; la fuente seleccionada figura en la identificación.", nota)
+
+    linea("Modelo adoptado: conductor flexible, catenaria hiperbólica bajo carga "
+          "constante por unidad de longitud real; elasticidad axial lineal y "
+          "temperatura uniforme. Cambios de estado resueltos por compatibilidad "
+          "integral y búsqueda no lineal.", nota)
+    linea("Relaciones básicas (vano nivelado sin viento):", nota)
+    linea("P = H / q     |     f = P [cosh(L / 2P) - 1]     |     "
+          "S = 2P sinh(L / 2P)", nota)
+    linea("Compatibilidad: S0 = integral [ds / (1 + T(s)/EA)]. "
+          "La longitud térmica de referencia varía según alfa y temperatura. "
+          "Para geometría desnivelada se utiliza la solución de catenaria "
+          "en el plano de la carga resultante.", nota)
+    linea("Los resultados de referencia inicial/final se obtienen mediante "
+          "las hipótesis del motor. No se atribuye una ley de creep no modelada "
+          "ni se presentan límites de postes o retenidas como verificados.", nota)
+
+    titulo("Curvas de comportamiento térmico")
+    graficos = []
+    for campo, titulo_g, unidad in [
+        ("H (kN)", "Tensión horizontal vs. temperatura", "H (kN)"),
+        ("Flecha (m)", "Flecha vs. temperatura", "Flecha (m)"),
+    ]:
+        png, vano = _grafico(tabla, campo, titulo_g, unidad)
+        if png is not None:
+            graficos.append(png)
+            historia.append(Image(png, width=182*mm, height=51*mm))
+    if graficos:
+        linea("Las curvas representan el primer vano de la corrida y "
+              "solamente las hipótesis térmicas sin viento ni hielo. "
+              "Todos los vanos y escenarios se incluyen en los anexos.", nota)
+    else:
+        linea("No hay suficientes puntos de temperatura para dibujar curvas.", nota)
+
+    historia.append(PageBreak())
+
+    # Anexos separados por estado, para evitar una página final de una sola fila.
+    for indice, estado in enumerate(("Inicial", "Final")):
+        if indice:
+            historia.append(PageBreak())
+        titulo("Anexo " + ("A" if indice == 0 else "B") +
+               " - Resultados completos, condición " + estado.lower())
+        subtabla = tabla[tabla["Condición"] == estado]
+        if subtabla.empty:
+            linea("Sin resultados para este estado.")
+            continue
+        linea(f"{len(subtabla)} registros. T = tensión máxima del conductor; "
+              "H = componente de tracción perpendicular a la carga; "
+              "f = flecha vertical. Residual de compatibilidad en metros.", nota)
+        encabezado = ["Vano", "Escenario", "Temp. °C", "Viento km/h", "Hielo mm",
+                      "H kN", "T máx. kN", "Flecha m", "Lateral m", "Residual m"]
+        filas = [encabezado]
+        for _, r in subtabla.iterrows():
+            escenario = ("Térmico" if str(r["Hipótesis"]) == "Tabla térmica"
+                         else str(r["Hipótesis"]).replace("CFE ", ""))
+            filas.append([
+                r["Vano"], escenario, _fmt(r["Temperatura (°C)"], 0),
+                _fmt(r["Viento (km/h)"], 0), _fmt(r["Hielo (mm)"], 1),
+                _fmt(r["H (kN)"], 4), _fmt(r["T máx. (kN)"], 4),
+                _fmt(r["Flecha (m)"], 4), _fmt(r["Lateral (m)"], 4),
+                _fmt(r["Residual (m)"]),
+            ])
+        datos_tabla(filas, [1.1, 1.7, .8, .8, .7, .95, 1.05, 1, 1, 1.3], compacto=True)
+
+    historia.append(Spacer(1, 5*mm))
+    titulo("Observaciones y alcance")
+    linea("Los valores corresponden a la geometría, propiedades y condiciones "
+          "seleccionadas. Las ecuaciones de catenaria no incorporan "
+          "rigidez flexional, plasticidad o creep predictivo. "
+          "El tratamiento actual por vano amarrado no equivale "
+          "automáticamente a una sección de suspensión móvil.", nota)
+    linea("Los esfuerzos y verificaciones de postes, crucetas, herrajes, "
+          "retenidas y cimentaciones corresponden a módulos posteriores.", nota)
+    doc.build(historia, onFirstPage=_cabecera_pie, onLaterPages=_cabecera_pie)
+    salida = memoria.getvalue()
+    if not salida.startswith(b"%PDF"):
+        raise ValueError("No se pudo construir la memoria")
+    return salida
