@@ -59,7 +59,7 @@ class ModuloUnoPdfYCatenaria(unittest.TestCase):
                               (tabla["Temperatura (°C)"]==t)].iloc[0]
                     calculada=float(row["H (kN)"])*1000/9.80665
                     self.assertLess(abs(calculada-objetivo)/objetivo, 0.015)
-                    self.assertLess(abs(float(row["Residual (m)"]),1e-7)
+                    self.assertLess(abs(float(row["Residual (m)"])),1e-7)
                     self.assertGreater(float(row["Flecha (m)"]),0.)
 
     def test_pdf_independiente_sin_recalcular(self):
