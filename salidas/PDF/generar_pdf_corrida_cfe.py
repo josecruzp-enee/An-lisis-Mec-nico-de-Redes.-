@@ -148,7 +148,8 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                             clima: dict | None = None,
                             proyecto: dict | None = None,
                             propiedades_inicial: dict | None = None,
-                            propiedades_final: dict | None = None) -> bytes:
+                            propiedades_final: dict | None = None,
+                            geometria_xyz=None) -> bytes:
     """Genera la memoria PDF desde DataFrames ya calculados, sin modificar valores."""
     if not isinstance(resumen, pd.DataFrame) or len(resumen) != 2:
         raise ValueError("Se necesitan las dos referencias inicial y final")
@@ -298,6 +299,34 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
               "Todos los vanos y escenarios se incluyen en los anexos.", nota)
     else:
         linea("No hay suficientes puntos de temperatura para dibujar curvas.", nota)
+
+    # Láminas de catenaria EXACTA por vano: H ya calculada, misma carga
+    # del motor. Contrasta flecha/desplazamiento con la tabla antes de dibujar.
+    if geometria_xyz is not None:
+        if not (propiedades_inicial and propiedades_final):
+            raise ValueError("Se necesitan las propiedades reales para el perfil")
+        from salidas.PDF.graficos_catenarias_cfe import graficar_perfiles_cfe
+        perfiles = graficar_perfiles_cfe(
+            tabla, geometria_xyz,
+            {"Inicial": propiedades_inicial, "Final": propiedades_final},
+            clima,
+        )
+        for nombre_vano, archivo_figura in perfiles:
+            historia.append(PageBreak())
+            titulo(f"Perfil de catenarias y desviación por viento — {nombre_vano}")
+            linea(
+                "Curvas obtenidas de la catenaria hiperbólica del motor con "
+                "la tensión calculada para cada estado. Se muestran las "
+                "hipótesis disponibles en la tabla y la condición térmica "
+                "final de 50 °C cuando está calculada. La vista inferior "
+                "representa la desviación lateral por viento.", nota,
+            )
+            historia.append(Image(archivo_figura, width=245*mm, height=128*mm))
+            linea(
+                "La línea punteada representa la cuerda entre amarres. "
+                "No se ha supuesto perfil de terreno: no se certifica "
+                "distancia mínima de seguridad ni libramiento.", nota,
+            )
 
     historia.append(PageBreak())
 
