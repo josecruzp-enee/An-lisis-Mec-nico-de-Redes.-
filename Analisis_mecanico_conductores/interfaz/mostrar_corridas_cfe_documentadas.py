@@ -31,6 +31,13 @@ def mostrar_corridas_cfe(puntos):
     if not opciones:
         st.error("No hay catálogo físico ENEE disponible")
         return
+    with st.expander("Datos de identificación para la memoria PDF", expanded=False):
+        proyecto_pdf = {
+            "nombre": st.text_input("Nombre del proyecto", value="", key="m1_nombre"),
+            "lugar": st.text_input("Municipio / ubicación", value="", key="m1_lugar"),
+            "responsable": st.text_input("Responsable del cálculo", value="", key="m1_responsable"),
+            "fecha": str(st.date_input("Fecha de la memoria", key="m1_fecha")),
+        }
     with st.form("cfe_climas_documentados"):
         indice=next((i for i,x in enumerate(opciones) if x==("1/0","RAVEN")),0)
         conductor=st.selectbox(
@@ -142,6 +149,9 @@ def mostrar_corridas_cfe(puntos):
             resumen=resumen, tabla=tabla,
             conductor=f"{conductor[0]} {conductor[1]}",
             fuente_material=fuente_material,
+            proyecto=proyecto_pdf,
+            propiedades_inicial=ini,
+            propiedades_final=fin,
             clima={
                 "viento_max_kmh": viento_max,
                 "viento_reducido_kmh": float(viento_reducido),
