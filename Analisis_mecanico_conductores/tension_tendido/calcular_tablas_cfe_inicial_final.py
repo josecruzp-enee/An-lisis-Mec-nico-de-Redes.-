@@ -133,14 +133,41 @@ def calcular_parametro_cfe_desde_limites(
             ratios.append(max(tensiones) / h.limite_tension_kN)
         return max(ratios)
 
-    muestra = np.array([relacion(float(x)) for x in np.linspace(minimo, maximo, 9)])
-    if not np.isfinite(muestra).all() or (np.diff(muestra) < -1e-5).any():
-        raise ValueError("La búsqueda de tensión no es monótona o es inválida")
-    if muestra[0] > 1.000001:
-        raise ValueError("No hay tensión factible en el intervalo solicitado")
-    H = maximo if muestra[-1] <= 1 else float(brentq(
-        lambda x: relacion(x)-1., minimo, maximo, xtol=1e-8,
-    ))
+    # La tensión MÁXIMA en el apoyo no es necesariamente monótona en H:
+    # cuando H es pequeña, la pendiente de la catenaria aumenta y la
+    # componente tangencial puede superar el límite. La función de
+    # utilización puede ser en forma de U (dos cruces con el límite).
+    # Por ello NO se debe exigir monotonicidad ni usar H_min como extremo
+    # necesariamente factible. Se busca el MAYOR H factible, detectando
+    # los cruces a partir de un barrido mixto logarítmico y lineal.
+    rejilla = np.unique(np.r_[
+        np.geomspace(minimo, maximo, 96),
+        np.linspace(minimo, maximo, 96),
+    ])
+    utilizaciones = np.array([relacion(float(h)) for h in rejilla])
+    if not np.isfinite(utilizaciones).all():
+        raise ValueError("Utilizaciones no finitas al dimensionar H a 50 °C")
+
+    factibles = np.flatnonzero(utilizaciones <= 1.0)
+    if len(factibles) == 0:
+        raise ValueError(
+            "Ninguna tensión de referencia evaluada satisface todos los "
+            "límites mecánicos. Revisar conductor, vano e hipótesis."
+        )
+    ultimo = int(factibles[-1])
+    cota_activa = ultimo == len(rejilla) - 1
+    if cota_activa:
+        H = float(maximo)
+    else:
+        # Último intervalo factible -> no factible; brentq encuentra la
+        # intersección superior sin exigir monotonía global.
+        H = float(brentq(
+            lambda h: relacion(float(h)) - 1.0,
+            float(rejilla[ultimo]), float(rejilla[ultimo + 1]),
+            xtol=1e-8,
+        ))
+    if relacion(H) > 1.000001:
+        raise ValueError("La tensión optimizada no satisface los límites")
     # Trazabilidad: identificar qué hipótesis restringió realmente H50.
     # Estos resultados son diagnósticos del optimizador, no una prueba de
     # que dicho criterio reproduzca el procedimiento histórico ENEE/SAGSEC.
@@ -169,7 +196,7 @@ def calcular_parametro_cfe_desde_limites(
         "tension_maxima_gobernante_kN": tension_real,
         "limite_gobernante_kN": gobernante.limite_tension_kN,
         "residuo_maximo_gobernante_m": residuo_max,
-        "cota_busqueda_activa": muestra[-1] <= 1,
+        "cota_busqueda_activa": cota_activa,
         "metodo": "Optimización de límites documentados, NO SAGSEC",
     }
 
