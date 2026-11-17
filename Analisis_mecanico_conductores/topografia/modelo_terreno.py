@@ -213,7 +213,7 @@ def leer_apoyos_kml(datos, *, epsg_xy=32616):
                 v=parte.split(",")
                 if len(v)>=2:
                     recorrido.append((float(v[0]),float(v[1])))
-        if pt is not None and pt.text and re.match(r"^P[-.\s]*\\d+",nombre,re.I):
+        if pt is not None and pt.text and re.match(r"^P[-.\s]*\d+",nombre,re.I):
             valores=pt.text.strip().split(",")
             if len(valores)<2:
                 continue
