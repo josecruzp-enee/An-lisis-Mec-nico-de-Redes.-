@@ -7,6 +7,7 @@ La fluencia entra como deformación permanente suministrada, no como predicción
 from __future__ import annotations
 import numpy as np
 from scipy.integrate import quad
+from scipy.optimize import brentq
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
 
@@ -78,17 +79,44 @@ def resolver_cambio_estado(vanos, H_inicial_kN, EA_kN, alpha_por_C,
                    for a,b,q0,q1 in vanos)-objetivo
 
     bajo, alto = _acotar_raiz(residuo, H_inicial_kN)
-    for i in range(max_iter):
-        H = (bajo+alto)/2
-        error = residuo(H)
-        if abs(error) <= tolerancia_m:
-            return {'H_kN': H, 'residual_m': error, 'iteraciones': i+1,
-                    'longitud_natural_objetivo_m': objetivo}
-        if error > 0:
-            bajo = H
-        else:
-            alto = H
-    raise ValueError('Cambio de estado sin convergencia; no se emite resultado')
+    # Resolver la ecuación de compatibilidad exacta, sin interpolación de
+    # resultados de tabla. Brent maneja mejor el estancamiento por precisión
+    # de coma flotante en vanos de geometría muy desnivelada.
+    rb, ra = residuo(bajo), residuo(alto)
+    if rb == 0:
+        H, iteraciones = bajo, 0
+    elif ra == 0:
+        H, iteraciones = alto, 0
+    else:
+        solucion = brentq(
+            residuo, bajo, alto, xtol=5e-13, rtol=1e-14,
+            maxiter=max_iter, full_output=True, disp=False,
+        )
+        H, diagnostico = solucion
+        iteraciones = int(diagnostico.iterations)
+        if not diagnostico.converged:
+            raise ValueError(
+                f"Cambio de estado: raíz no convergente en "
+                f"{iteraciones} iteraciones para H0={H_inicial_kN:.6g} kN"
+            )
+    error = residuo(H)
+    # La tolerancia de longitud no debe exigir más que la resolución de
+    # integración en vanos extensos. Equivale como máximo a una fracción
+    # de milímetro para vanos típicos de distribución; no modifica las
+    # ecuaciones ni oculta un estado físicamente inviable.
+    tolerancia_control = max(tolerancia_m, 1e-10*objetivo)
+    if abs(error) > tolerancia_control:
+        raise ValueError(
+            "Compatibilidad termoelástica fuera de tolerancia: "
+            f"residual={error:.4e} m, tolerancia={tolerancia_control:.4e} m; "
+            f"H0={H_inicial_kN:.8g} kN, H={H:.8g} kN, "
+            f"vano(s)={len(vanos)}, longitud objetivo={objetivo:.6f} m"
+        )
+    return {
+        'H_kN': float(H), 'residual_m': float(error),
+        'iteraciones': iteraciones,
+        'longitud_natural_objetivo_m': float(objetivo),
+    }
 
 
 def _acotar_raiz(residuo, H):
