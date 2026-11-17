@@ -88,6 +88,32 @@ class TopografiaModulo1(unittest.TestCase):
         self.assertTrue((libr["Libramiento mínimo muestreado (m)"]>0).all())
         self.assertTrue((libr["Libramiento mínimo muestreado (m)"]<9.5).all())
         self.assertTrue((libr["Clasificación"]=="PRELIMINAR - DEM").all())
+        from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+        from pypdf import PdfReader
+        resumen=pd.DataFrame([
+            {"Condición":"Inicial","H_50_kN":760.*ini["peso_kN_m"],
+             "parametro_P_m":760.,"hipotesis_gobernante":"Ensayo",
+             "relacion_critica":.9},
+            {"Condición":"Final","H_50_kN":660.*fin["peso_kN_m"],
+             "parametro_P_m":660.,"hipotesis_gobernante":"Ensayo",
+             "relacion_critica":.95},
+        ])
+        from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
+        xyz,_=_geometria(puntos)
+        pdf=generar_pdf_corrida_cfe(
+            resumen=resumen,tabla=tabla,conductor="1/0 RAVEN",
+            fuente_material="CFE 07 FT 01",
+            propiedades_inicial=ini,propiedades_final=fin,
+            geometria_xyz=xyz,
+            clima={"Cd":1.0,"rho_kg_m3":1.225,
+                   "viento_max_kmh":120.,"viento_reducido_kmh":0.,"hielo_mm":0.},
+            libramientos=libr,perfil_terreno=perfil,
+        )
+        lector=PdfReader(BytesIO(pdf))
+        texto=" ".join(page.extract_text() or "" for page in lector.pages)
+        self.assertIn("Perfil topográfico",texto)
+        self.assertIn("PRELIMINAR",texto)
+
 
 
 if __name__=="__main__":
