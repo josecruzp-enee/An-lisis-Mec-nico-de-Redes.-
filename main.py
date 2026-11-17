@@ -50,11 +50,15 @@ def ui_datos_proyecto() -> Dict[str, Any]:
     n_fases = st.sidebar.selectbox("Fases", [1, 2, 3], index=2)
     modo_tension = st.sidebar.radio(
         "Determinación de tensión",
-        ["Verificar tensión conocida (opción avanzada)"],
+        [
+            "Calcular tensión y flechas (3D, criterio documentado)",
+            "Verificar tensión conocida (opción avanzada)",
+        ],
         help=(
-            "La determinación automática de tensión por criterios Checa "
-            "se retiró del flujo activo. Solo se permite analizar "
-            "una tensión previamente justificada y conocida."
+            "El cálculo 3D resuelve cada vano nivelado o desnivelado mediante "
+            "catenaria y compatibilidad de longitud. Requiere seleccionar "
+            "propiedades del conductor y límites de tensión justificados. "
+            "Checa es una referencia técnica, no una validación CFE/ENEE."
         ),
     )
     if modo_tension.startswith("Verificar"):
@@ -525,11 +529,13 @@ def main() -> None:
         return
 
     st.title("Etapa 1 — Análisis mecánico de conductores")
-    st.warning(
-        "Cálculo automático de tensiones suspendido: los límites Checa "
-        "no son el método CFE solicitado. Se conserva el motor físico "
-        "para verificar una tensión de referencia documentada; no "
-        "se emitirá una tensión de diseño automática sin criterio validado."
+    st.info(
+        "Etapa 1: tensiones y flechas por vano nivelado o desnivelado. "
+        "El modelo 3D calcula las tensiones finales por cambio de estado "
+        "y la geometría de la catenaria. Las tensiones de referencia "
+        "dependen del criterio de diseño seleccionado; usar límites "
+        "documentados antes de emplear resultados en una obra real. "
+        "No incluye verificación de postes ni retenidas."
     )
     proyecto = ui_datos_proyecto()
     mostrar_resumen_proyecto(proyecto)
@@ -543,10 +549,10 @@ def main() -> None:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
         st.caption(
-            "Distribución con conductor fijado a aisladores de espiga. "
-            "Se calcula H inicial de tendido contra límites documentados "
-            "y se resuelve el cambio de estado INDEPENDIENTE por vano. "
-            "Admite desniveles. No solicita H inicial."
+            "Distribución con amarres fijos: se selecciona la tensión de "
+            "referencia conforme a las hipótesis de diseño y después se "
+            "resuelve el cambio de estado independiente de cada vano, "
+            "incluidos los desniveles XYZ. No calcula fuerzas en postes."
         )
     archivo = ui_cargar_excel()
     if not archivo:
