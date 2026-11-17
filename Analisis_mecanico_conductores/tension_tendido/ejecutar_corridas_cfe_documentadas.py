@@ -5,10 +5,9 @@ NO se usan los valores P, tensiones ni flechas de tablas ENEE como entrada.
 Los límites porcentuales se aplican a tensión MÁXIMA del conductor
 (apoyos), no a un valor de referencia H.
 
-Esta primera validación calcula referencias inicial y final SEPARADAS con
-las respectivas hipótesis y módulos. NO las presenta como una evolución
-física única entre tendido y servicio: esa transformación requiere
-modelo de deformación permanente documentado. No se inventa creep.
+La referencia final se dimensiona por hipótesis explícitas; la inicial
+se acopla a la tensión del estado final a -10 °C siguiendo CFE 07 FT 01.
+No se predice creep ni se afirma equivalencia exacta con SAGSEC.
 """
 from __future__ import annotations
 
@@ -25,6 +24,17 @@ from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de
 from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import vano_regulador
 
 
+# TENSIONES HORIZONTALES máximas de diseño de CFE 07 FT 10–14
+# (cabeceras, para estructuras tipo y viento regional de 120 km/h).
+# NO son porcentajes de la resistencia de rotura.
+CFE_TH_KN = {
+    "RAVEN": (6.495, 5.618),
+    "PIGEON": (8.824, 7.513),
+    "PARTRIDGE": (9.028, 7.451),
+    "LINNET": (8.904, 7.297),
+    "HAWK": (8.122, 6.637),
+}
+
 CFE_FUENTE = (
     "CFE DCCIAMBT (2014), secciones 05 00 02, 05 00 03 y 07 FT 01; "
     "límites del diseño básico de estructuras"
@@ -33,6 +43,7 @@ CFE_FUENTE = (
 
 def construir_hipotesis_cfe(
     ruptura_kN, *, viento_max_kmh, viento_reducido_kmh, hielo_mm,
+    nombre_conductor=None,
 ):
     """Devuelve hipótesis por condición, exclusivamente documentadas.
 
@@ -51,6 +62,12 @@ def construir_hipotesis_cfe(
         )
     if v_red>v_max:
         raise ValueError("Viento reducido no puede exceder viento máximo")
+    # Los TH publicados corresponden a VR=120 km/h. No extrapolarlos
+    # automáticamente a otras regiones de viento o configuraciones.
+    th = (CFE_TH_KN.get(str(nombre_conductor).strip().upper())
+          if abs(v_max - 120.) < 1e-9 else None)
+    limite_extremo_frio = min(rotura*.45, th[0]) if th else rotura*.45
+    limite_viento_max = min(rotura*.45, th[1]) if th else rotura*.45
     condicion_frio = (
         "CFE final -10°C viento reducido + hielo (45% RTS)"
         if hielo > 0 else
@@ -66,9 +83,9 @@ def construir_hipotesis_cfe(
         HipotesisDisenoCFE("CFE final 0°C sin viento (25% RTS)",
                            0.,0.,0.,rotura*.25,CFE_FUENTE),
         HipotesisDisenoCFE(condicion_frio,
-                           -10.,v_red,hielo,rotura*.45,CFE_FUENTE),
+                           -10.,v_red,hielo,limite_extremo_frio,CFE_FUENTE),
         HipotesisDisenoCFE("CFE final 0°C viento máximo (45% RTS)",
-                           0.,v_max,0.,rotura*.45,CFE_FUENTE),
+                           0.,v_max,0.,limite_viento_max,CFE_FUENTE),
     ]
     return inicial,final
 
@@ -185,6 +202,7 @@ def ejecutar_corridas_cfe_por_vano(
     ini,fin=construir_hipotesis_cfe(
         propiedades.ruptura_kN,viento_max_kmh=viento_max_kmh,
         viento_reducido_kmh=viento_reducido_kmh,hielo_mm=hielo_mm,
+        nombre_conductor=ficha_inicial.get("nombre"),
     )
     xyz,luces=_geometria(puntos)
     # Claro regla informativo: equivalente convencional de una sección
