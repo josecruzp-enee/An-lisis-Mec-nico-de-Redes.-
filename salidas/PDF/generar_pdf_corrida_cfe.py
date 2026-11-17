@@ -300,6 +300,53 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     else:
         linea("No hay suficientes puntos de temperatura para dibujar curvas.", nota)
 
+    # Control explícito de las CINCO hipótesis documentadas CFE.
+    # Si no existe una fila calculada, se informa SIN EVALUAR.
+    if propiedades_final and clima.get("viento_max_kmh") is not None:
+        from salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
+        clave = str(conductor).split()[-1].upper()
+        control = verificar_cinco_hipotesis(
+            tabla, ruptura_kN=float(propiedades_final["ruptura_kN"]),
+            nombre_conductor=clave,
+            viento_max_kmh=float(clima["viento_max_kmh"]),
+            viento_reducido_kmh=float(clima.get("viento_reducido_kmh", 0.)),
+            hielo_mm=float(clima.get("hielo_mm", 0.)),
+        )
+        historia.append(PageBreak())
+        titulo("Control de las cinco hipótesis mecánicas CFE")
+        linea("Se contrasta la tensión máxima del conductor, entre todos los "
+              "vanos calculados, con el límite aplicable de cada hipótesis. "
+              "CUMPLE significa utilización menor o igual al 100%; "
+              "SIN EVALUAR indica que faltó calcular ese estado.", nota)
+        filas_control = [[
+            "Caso", "Estado", "Temp. °C", "Viento km/h", "Hielo mm",
+            "T máx. kN", "Límite kN", "Uso %", "Resultado",
+        ]]
+        for _, r in control.iterrows():
+            uso = r["Utilización"]
+            filas_control.append([
+                r["Código"], r["Condición"],
+                _fmt(r["Temperatura (°C)"], 0),
+                _fmt(r["Viento (km/h)"], 0),
+                _fmt(r["Hielo (mm)"], 1),
+                _fmt(r["T máxima (kN)"], 3) if pd.notna(r["T máxima (kN)"]) else "—",
+                _fmt(r["Límite (kN)"], 3),
+                _fmt(uso*100, 2) if pd.notna(uso) else "—",
+                r["Estado"],
+            ])
+        datos_tabla(filas_control, [0.7,0.9,0.9,1,0.8,1.2,1.1,0.9,1.3])
+        for _, r in control.iterrows():
+            linea(f"{r['Código']}: {r['Hipótesis']}", nota)
+        if (control["Estado"] == "SIN EVALUAR").any():
+            linea("No se puede declarar que se satisficieron las cinco "
+                  "hipótesis: existen estados sin evaluar.", nota)
+        elif (control["Estado"] == "NO CUMPLE").any():
+            linea("NO CUMPLE: una o más hipótesis superan su límite de tensión.", nota)
+        else:
+            linea("Las cinco hipótesis satisfacen los límites de tensión "
+                  "definidos por el procedimiento implementado. Esto NO "
+                  "equivale a certificar despejes ni apoyos.", nota)
+
     # Láminas de catenaria EXACTA por vano: H ya calculada, misma carga
     # del motor. Contrasta flecha/desplazamiento con la tabla antes de dibujar.
     if geometria_xyz is not None:
