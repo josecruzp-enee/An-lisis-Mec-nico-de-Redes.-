@@ -157,11 +157,15 @@ def mostrar_corridas_cfe(puntos):
             puntos_calculo=extraer_terreno_apoyos(
                 puntos_calculo,elevaciones,epsg_xy=int(epsg_xy),
             )
-        if "Altitud" not in puntos_calculo or puntos_calculo["Altitud"].isna().any():
-            raise ValueError("Faltan cotas: completalas o activá DEM para apoyos")
-        if ("Altura_Amarre_m" not in puntos_calculo or
-            puntos_calculo["Altura_Amarre_m"].isna().any()):
-            raise ValueError("Falta altura de amarre en uno o más apoyos")
+        if archivo_kml is not None or elevaciones is not None:
+            if ("Altitud" not in puntos_calculo or
+                puntos_calculo["Altitud"].isna().any()):
+                raise ValueError(
+                    "Faltan cotas: completalas o activá DEM para apoyos"
+                )
+            if ("Altura_Amarre_m" not in puntos_calculo or
+                puntos_calculo["Altura_Amarre_m"].isna().any()):
+                raise ValueError("Falta altura de amarre en uno o más apoyos")
         resumen,tabla=ejecutar_corridas_cfe_por_vano(
             puntos_calculo,ini,fin,
             viento_max_kmh=viento_max,
