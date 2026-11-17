@@ -9,6 +9,7 @@ from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee impo
 )
 from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
     ejecutar_corridas_cfe_por_vano,CFE_FUENTE,
+    seleccionar_propiedades_cfe_07_ft_01,
 )
 
 
@@ -25,7 +26,8 @@ def mostrar_corridas_cfe(puntos):
         "del procedimiento normativo. El claro regla se mostrará solo como "
         "dato orientativo: este motor calcula amarres fijos por vano."
     )
-    opciones=[(f["calibre"],f["nombre"]) for f in leer_catalogo_enee()]
+    opciones=[(f["calibre"],f["nombre"]) for f in leer_catalogo_enee()
+             if f["nombre"] in ("RAVEN","PIGEON","PARTRIDGE","LINNET","HAWK")]
     if not opciones:
         st.error("No hay catálogo físico ENEE disponible")
         return
@@ -34,6 +36,11 @@ def mostrar_corridas_cfe(puntos):
         conductor=st.selectbox(
             "Conductor del catálogo físico ENEE",opciones,index=indice,
             format_func=lambda x:f"{x[0]} — {x[1]}",
+        )
+        fuente_material=st.radio(
+            "Propiedades mecánicas",
+            ["CFE 07 FT 01 — fuente normativa", "ENEE Tabla 16 — comparación"],
+            help="La reproducción CFE exige sus propiedades específicas; ENEE se conserva como alternativa comparativa.",
         )
         st.markdown("**Condiciones climáticas del proyecto**")
         viento_max=st.number_input(
@@ -72,8 +79,11 @@ def mostrar_corridas_cfe(puntos):
                 "Faltan viento reducido y/o espesor de hielo documentados. "
                 "Introducí valores numéricos, incluido 0 cuando corresponda."
             )
-        ini=seleccionar_conductor_enee(*conductor,"Inicial")
-        fin=seleccionar_conductor_enee(*conductor,"Final")
+        if fuente_material.startswith("CFE"):
+            ini,fin=seleccionar_propiedades_cfe_07_ft_01(conductor[1])
+        else:
+            ini=seleccionar_conductor_enee(*conductor,"Inicial")
+            fin=seleccionar_conductor_enee(*conductor,"Final")
         temperaturas=[]
         actual=float(tmin)
         while actual<=tmax+1e-9:
@@ -90,6 +100,12 @@ def mostrar_corridas_cfe(puntos):
             Cd=1.,rho_kg_m3=float(rho),
         )
         st.subheader("Referencias final e inicial acopladas (modelo experimental)")
+        if float(viento_reducido)==0. and float(hielo)==0.:
+            st.warning(
+                "Viento reducido e hielo ingresados como cero: estas condiciones "
+                "NO reproducen el clima extremo que sirvió para publicar las "
+                "tablas CFE 07 FT. La comparación con P tabulado no valida el diseño."
+            )
         st.dataframe(resumen,hide_index=True,use_container_width=True)
         st.caption(
             "El claro regla de la tabla resumen NO interviene en las ecuaciones "
