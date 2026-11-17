@@ -88,6 +88,48 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
         self.assertTrue((tabla["Hielo (mm)"] == 0).all())
         self.assertTrue((tabla["Flecha (m)"] > 0).all())
 
+    def test_pigeon_3_0_sin_hielo_en_vano_50m(self):
+        """Regresión: H50 no monótona a cargas tangenciales altas."""
+        import pandas as pd
+        import numpy as np
+        from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_conductor_enee
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import ejecutar_corridas_cfe_por_vano
+        puntos = pd.DataFrame({
+            "Punto": ["P1", "P2"], "X": [0., 50.], "Y": [0., 0.],
+            "Altitud": [100., 100.], "Altura_Amarre_m": [9.5, 9.5],
+        })
+        inicial = seleccionar_conductor_enee("3/0", "PIGEON", "Inicial")
+        final = seleccionar_conductor_enee("3/0", "PIGEON", "Final")
+        resumen, tabla = ejecutar_corridas_cfe_por_vano(
+            puntos, inicial, final,
+            viento_max_kmh=120., viento_reducido_kmh=0., hielo_mm=0.,
+            temperaturas_C=[-10., 0., 20., 50.],
+        )
+        self.assertEqual(len(resumen), 2)
+        self.assertEqual(len(tabla), 12)
+        self.assertTrue(np.isfinite(tabla["H (kN)"]).all())
+        self.assertTrue((tabla["H (kN)"] > 0).all())
+        self.assertTrue((tabla["Residual (m)"].abs() < 1e-7).all())
+
+    def test_pigeon_3_0_desnivel_10m(self):
+        import pandas as pd
+        from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_conductor_enee
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import ejecutar_corridas_cfe_por_vano
+        puntos = pd.DataFrame({
+            "Punto": ["P1", "P2"], "X": [0., 50.], "Y": [0., 0.],
+            "Altitud": [100., 110.], "Altura_Amarre_m": [9.5, 9.5],
+        })
+        inicial = seleccionar_conductor_enee("3/0", "PIGEON", "Inicial")
+        final = seleccionar_conductor_enee("3/0", "PIGEON", "Final")
+        resumen, tabla = ejecutar_corridas_cfe_por_vano(
+            puntos, inicial, final,
+            viento_max_kmh=120., viento_reducido_kmh=0., hielo_mm=0.,
+            temperaturas_C=[0., 20., 50.],
+        )
+        self.assertEqual(resumen["Desnivel máximo entre apoyos (m)"].iloc[0], 10.)
+        self.assertTrue((tabla["Flecha (m)"] >= 0).all())
+        self.assertTrue((tabla["Residual (m)"].abs() < 1e-7).all())
+
     def test_rechaza_viento_reducido_mayor(self):
         with self.assertRaises(ValueError):
             construir_hipotesis_cfe(
