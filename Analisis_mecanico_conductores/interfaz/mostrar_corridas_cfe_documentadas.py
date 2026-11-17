@@ -113,11 +113,48 @@ def mostrar_corridas_cfe(puntos):
             "convencional requiere un modelo de regulación apropiado."
         )
         st.subheader("Resultados por vano, temperatura y condición")
+        st.caption(
+            "La tensión H es la componente transversal a la carga del cable, "
+            "no necesariamente horizontal global cuando actúa el viento. "
+            "Las flechas corresponden a la geometría exacta."
+        )
+        max_residual = float(tabla["Residual (m)"].abs().max())
+        minimo_h = float(tabla["H (kN)"].min())
+        max_tension = float(tabla["T máx. (kN)"].max())
+        k1, k2, k3 = st.columns(3)
+        k1.metric("Tensión H mínima", f"{minimo_h:.3f} kN")
+        k2.metric("Tensión máxima del cable", f"{max_tension:.3f} kN")
+        k3.metric("Máximo residual de compatibilidad", f"{max_residual:.2e} m")
+        if max_residual > 1e-7:
+            st.warning(
+                "El máximo residual excede 1e-7 m; comprobar convergencia "
+                "antes de usar los resultados."
+            )
+
         st.dataframe(tabla,hide_index=True,use_container_width=True)
         st.download_button(
             "Descargar corridas CFE (CSV)",
             tabla.to_csv(index=False).encode("utf-8-sig"),
             "cfe_corridas_por_vano.csv","text/csv",
+        )
+        from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+        memoria_pdf = generar_pdf_corrida_cfe(
+            resumen=resumen, tabla=tabla,
+            conductor=f"{conductor[0]} {conductor[1]}",
+            fuente_material=fuente_material,
+            clima={
+                "viento_max_kmh": viento_max,
+                "viento_reducido_kmh": float(viento_reducido),
+                "hielo_mm": float(hielo),
+                "rho_kg_m3": float(rho),
+            },
+        )
+        st.download_button(
+            "Descargar memoria independiente — Módulo 1 (PDF)",
+            data=memoria_pdf,
+            file_name="modulo_01_analisis_mecanico_conductores.pdf",
+            mime="application/pdf",
+            key="descarga_pdf_modulo1_cfe",
         )
         st.warning(
             "ESTADO DEL MÉTODO: las referencias inicial y final se obtienen "
