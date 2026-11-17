@@ -111,6 +111,25 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
         self.assertTrue((tabla["H (kN)"] > 0).all())
         self.assertTrue((tabla["Residual (m)"].abs() < 1e-7).all())
 
+    def test_limites_estructurales_cfe_pigeon_y_raven(self):
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import construir_hipotesis_cfe
+        for nombre, th1, th2 in [
+            ("RAVEN", 6.495, 5.618),
+            ("PIGEON", 8.824, 7.513),
+        ]:
+            _ini, finales = construir_hipotesis_cfe(
+                100., viento_max_kmh=120.,
+                viento_reducido_kmh=80., hielo_mm=3.,
+                nombre_conductor=nombre,
+            )
+            self.assertAlmostEqual(finales[2].limite_tension_kN, th1)
+            self.assertAlmostEqual(finales[3].limite_tension_kN, th2)
+        _ini, sin_especificar = construir_hipotesis_cfe(
+            100., viento_max_kmh=120., viento_reducido_kmh=80.,
+            hielo_mm=3.,
+        )
+        self.assertAlmostEqual(sin_especificar[2].limite_tension_kN, 45.)
+
     def test_estado_inicial_acoplado_al_extremo_final(self):
         """CFE 07 FT 01: misma tensión extrema a -10 °C, no P iguales."""
         import pandas as pd
