@@ -111,6 +111,28 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
         self.assertTrue((tabla["H (kN)"] > 0).all())
         self.assertTrue((tabla["Residual (m)"].abs() < 1e-7).all())
 
+    def test_fuente_cfe_tendido_inicial_tiene_P_mayor_que_final(self):
+        """CFE 07 FT 10/11: P inicial supera P final a 50 °C."""
+        import pandas as pd
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
+            seleccionar_propiedades_cfe_07_ft_01, ejecutar_corridas_cfe_por_vano,
+        )
+        puntos = pd.DataFrame({
+            "Punto": ["P1", "P2"], "X": [0., 50.], "Y": [0., 0.],
+            "Altitud": [100., 100.], "Altura_Amarre_m": [9.5, 9.5],
+        })
+        for nombre in ("RAVEN", "PIGEON"):
+            ini, fin = seleccionar_propiedades_cfe_07_ft_01(nombre)
+            resumen, _ = ejecutar_corridas_cfe_por_vano(
+                puntos, ini, fin,
+                viento_max_kmh=120., viento_reducido_kmh=0., hielo_mm=0.,
+                temperaturas_C=[20., 50.],
+            )
+            p_ini = float(resumen.iloc[0]["parametro_P_m"])
+            p_fin = float(resumen.iloc[1]["parametro_P_m"])
+            self.assertGreater(p_ini, p_fin,
+                f"{nombre}: P inicial {p_ini:.3f} no supera P final {p_fin:.3f}")
+
     def test_limites_estructurales_cfe_pigeon_y_raven(self):
         from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import construir_hipotesis_cfe
         for nombre, th1, th2 in [
