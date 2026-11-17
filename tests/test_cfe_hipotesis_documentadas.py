@@ -111,6 +111,36 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
         self.assertTrue((tabla["H (kN)"] > 0).all())
         self.assertTrue((tabla["Residual (m)"].abs() < 1e-7).all())
 
+    def test_estado_inicial_acoplado_al_extremo_final(self):
+        """CFE 07 FT 01: misma tensión extrema a -10 °C, no P iguales."""
+        import pandas as pd
+        from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_conductor_enee
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import ejecutar_corridas_cfe_por_vano
+        puntos = pd.DataFrame({
+            "Punto": ["P1", "P2"], "X": [0., 50.], "Y": [0., 0.],
+            "Altitud": [100., 100.], "Altura_Amarre_m": [9.5, 9.5],
+        })
+        for calibre, nombre in [("1/0", "RAVEN"), ("3/0", "PIGEON")]:
+            ini = seleccionar_conductor_enee(calibre, nombre, "Inicial")
+            fin = seleccionar_conductor_enee(calibre, nombre, "Final")
+            resumen, tabla = ejecutar_corridas_cfe_por_vano(
+                puntos, ini, fin, viento_max_kmh=120.,
+                viento_reducido_kmh=0., hielo_mm=0.,
+                temperaturas_C=[-10., 20., 50.],
+            )
+            extremos = tabla[
+                (tabla["Hipótesis"] == "CFE viento reducido SIN hielo")
+            ].set_index("Condición")
+            self.assertAlmostEqual(
+                float(extremos.loc["Inicial", "T máx. (kN)"]),
+                float(extremos.loc["Final", "T máx. (kN)"]),
+                delta=1e-5,
+            )
+            self.assertNotAlmostEqual(
+                resumen.iloc[0]["parametro_P_m"],
+                resumen.iloc[1]["parametro_P_m"], delta=1e-4,
+            )
+
     def test_pigeon_3_0_desnivel_10m(self):
         import pandas as pd
         from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_conductor_enee
