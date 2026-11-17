@@ -51,7 +51,7 @@ class PerfilesCFE(unittest.TestCase):
                       {"Inicial":self.ini,"Final":self.fin},self.clima)
         self.assertEqual(len(salidas),2)
         for nombre,buf in salidas:
-            self.assertTrue(buf.getvalue().startswith(b"\\x89PNG"))
+            self.assertTrue(buf.getvalue().startswith(bytes((137,80,78,71))))
     def test_control_cinco_hipotesis(self):
         c=verificar_cinco_hipotesis(
             self.tabla,ruptura_kN=self.ini["ruptura_kN"],
