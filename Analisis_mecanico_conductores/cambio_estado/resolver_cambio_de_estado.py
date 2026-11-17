@@ -9,16 +9,27 @@ import numpy as np
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
 
-# Cuadratura Gauss-Legendre de orden fijo, contrastada con orden 128 en pruebas.
-_ABSCISAS, _PESOS = np.polynomial.legendre.leggauss(64)
+# Cuadratura de Gauss-Legendre de alto orden (NO aproximación parabólica).\n# Se verifica el orden 64 contra 128, y se refina a 256 de ser necesario.\n_CUADRATURAS = {n: np.polynomial.legendre.leggauss(n) for n in (64, 128, 256)}
 
 
 def longitud_natural(cable, EA_kN: float) -> float:
     """Integra ds/(1+T/EA) para recuperar la longitud descargada en m."""
     EA = finito(EA_kN, 'EA_kN', 0, True)
-    x = (_ABSCISAS+1)*cable.luz/2
-    tangente = np.cosh((x-cable.xc)/cable.a)
-    return float(cable.luz/2 * np.dot(_PESOS, tangente/(1+cable.tension(x)/EA)))
+    def integrar(orden):
+        abscisas, pesos = _CUADRATURAS[orden]
+        x = (abscisas+1)*cable.luz/2
+        tangente = np.cosh((x-cable.xc)/cable.a)
+        integrando = tangente/(1+cable.tension(x)/EA)
+        return float(cable.luz/2 * np.dot(pesos, integrando))
+
+    n64 = integrar(64)
+    n128 = integrar(128)
+    if abs(n128-n64) <= 1e-10*max(1.,abs(n128)):
+        return n128
+    n256 = integrar(256)
+    if abs(n256-n128) <= 1e-10*max(1.,abs(n256)):
+        return n256
+    raise ValueError("La integración de deformación no alcanzó convergencia")
 
 
 def resolver_cambio_estado(vanos, H_inicial_kN, EA_kN, alpha_por_C,
