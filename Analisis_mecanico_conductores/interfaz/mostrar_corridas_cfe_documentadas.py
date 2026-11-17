@@ -89,7 +89,7 @@ def mostrar_corridas_cfe(puntos):
             temperaturas_C=temperaturas,
             Cd=1.,rho_kg_m3=float(rho),
         )
-        st.subheader("Referencias independientes bajo restricciones CFE (experimental)")
+        st.subheader("Referencias final e inicial acopladas (modelo experimental)")
         st.dataframe(resumen,hide_index=True,use_container_width=True)
         st.caption(
             "El claro regla de la tabla resumen NO interviene en las ecuaciones "
