@@ -38,6 +38,42 @@ def mostrar_corridas_cfe(puntos):
             "responsable": st.text_input("Responsable del cálculo", value="", key="m1_responsable"),
             "fecha": str(st.date_input("Fecha de la memoria", key="m1_fecha")),
         }
+    from Analisis_mecanico_conductores.topografia.modelo_terreno import (
+        leer_apoyos_kml, ElevacionesGeoTIFF, ElevacionesTerrarium,
+        extraer_terreno_apoyos, calcular_libramientos_muestreados,
+    )
+    with st.expander("Topografía y libramientos (preliminares)", expanded=False):
+        st.caption("Importá los apoyos KML y/o un DEM; no se inventan cotas ni alturas de amarre.")
+        epsg_xy=st.number_input("EPSG del proyecto (X/Y UTM)",value=32616,min_value=2000,
+                                 max_value=999999,key="m1_epsg")
+        archivo_kml=st.file_uploader("KML de los apoyos",type="kml",key="m1_kml")
+        puntos_topo=puntos
+        if archivo_kml is not None:
+            try:
+                p_kml=leer_apoyos_kml(archivo_kml.getvalue(),epsg_xy=int(epsg_xy))
+                st.info("Completá Altura_Amarre_m; las Altitud del KML se dejan vacías.")
+                puntos_topo=st.data_editor(
+                    p_kml,hide_index=True,num_rows="fixed",
+                    disabled=["Punto","X","Y"],key="m1_cotas_kml",
+                )
+            except ValueError as exc:
+                st.error(str(exc))
+                puntos_topo=None
+        fuente_topo=st.selectbox(
+            "Fuente topográfica",
+            ["Ninguna","GeoTIFF subido","Mapzen/AWS gratuito"],
+            key="m1_dem_origen",
+        )
+        dem_archivo=(st.file_uploader("DEM GeoTIFF",type=["tif","tiff"],key="m1_dem")
+                     if fuente_topo=="GeoTIFF subido" else None)
+        sustituir_cotas=st.checkbox(
+            "Sustituir expresamente las altitudes de los apoyos por el DEM",
+            value=False,key="m1_dem_apoyos",
+        )
+        paso_topo=st.number_input("Paso de muestreo (m)",min_value=1.,
+                                 max_value=20.,value=3.,key="m1_paso_dem")
+        st.warning("Modelo preliminar: DEM no certifica distancias reglamentarias; "
+                   "Mapzen/AWS requiere Internet.")
     with st.form("cfe_climas_documentados"):
         indice=next((i for i,x in enumerate(opciones) if x==("1/0","RAVEN")),0)
         conductor=st.selectbox(
@@ -105,8 +141,29 @@ def mostrar_corridas_cfe(puntos):
         if tmin <= 16 <= tmax and not any(abs(t-16.) < 1e-9 for t in temperaturas):
             temperaturas.append(16.)
         temperaturas.sort()
+        if puntos_topo is None:
+            raise ValueError("Revisar la importación del KML")
+        puntos_calculo=puntos_topo.copy(deep=True)
+        elevaciones=None
+        if fuente_topo=="GeoTIFF subido":
+            if dem_archivo is None:
+                raise ValueError("Adjuntá el DEM GeoTIFF")
+            elevaciones=ElevacionesGeoTIFF(dem_archivo.getvalue())
+        elif fuente_topo=="Mapzen/AWS gratuito":
+            elevaciones=ElevacionesTerrarium()
+        if sustituir_cotas:
+            if elevaciones is None:
+                raise ValueError("Seleccioná un DEM para sustituir las cotas")
+            puntos_calculo=extraer_terreno_apoyos(
+                puntos_calculo,elevaciones,epsg_xy=int(epsg_xy),
+            )
+        if "Altitud" not in puntos_calculo or puntos_calculo["Altitud"].isna().any():
+            raise ValueError("Faltan cotas: completalas o activá DEM para apoyos")
+        if ("Altura_Amarre_m" not in puntos_calculo or
+            puntos_calculo["Altura_Amarre_m"].isna().any()):
+            raise ValueError("Falta altura de amarre en uno o más apoyos")
         resumen,tabla=ejecutar_corridas_cfe_por_vano(
-            puntos,ini,fin,
+            puntos_calculo,ini,fin,
             viento_max_kmh=viento_max,
             viento_reducido_kmh=float(viento_reducido),
             hielo_mm=float(hielo),
@@ -146,6 +203,27 @@ def mostrar_corridas_cfe(puntos):
             )
 
         st.dataframe(tabla,hide_index=True,use_container_width=True)
+        tabla_libramientos=None
+        perfiles_terreno=None
+        if elevaciones is not None:
+            tabla_libramientos,perfiles_terreno=calcular_libramientos_muestreados(
+                tabla,puntos_calculo,{"Inicial":ini,"Final":fin},
+                elevaciones,epsg_xy=int(epsg_xy),paso_m=float(paso_topo),
+                clima={"rho_kg_m3":float(rho),"Cd":1.0},
+            )
+            st.subheader("Libramientos preliminares: no certificados")
+            st.caption(f"Fuente: {elevaciones.fuente}. Mínimos muestreados.")
+            st.dataframe(tabla_libramientos,hide_index=True,use_container_width=True)
+            st.download_button(
+                "Descargar perfil terreno/conductor (CSV)",
+                perfiles_terreno.to_csv(index=False).encode("utf-8-sig"),
+                "perfil_terreno_y_conductor.csv","text/csv",key="m1_csv_perfil",
+            )
+            st.download_button(
+                "Descargar libramientos (CSV)",
+                tabla_libramientos.to_csv(index=False).encode("utf-8-sig"),
+                "libramientos_preliminares.csv","text/csv",key="m1_csv_libr",
+            )
         st.download_button(
             "Descargar corridas CFE (CSV)",
             tabla.to_csv(index=False).encode("utf-8-sig"),
@@ -153,7 +231,7 @@ def mostrar_corridas_cfe(puntos):
         )
         from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
         from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
-        xyz_pdf, _ = _geometria(puntos)
+        xyz_pdf, _ = _geometria(puntos_calculo)
         memoria_pdf = generar_pdf_corrida_cfe(
             resumen=resumen, tabla=tabla,
             conductor=f"{conductor[0]} {conductor[1]}",
@@ -162,6 +240,8 @@ def mostrar_corridas_cfe(puntos):
             propiedades_inicial=ini,
             propiedades_final=fin,
             geometria_xyz=xyz_pdf,
+            libramientos=tabla_libramientos,
+            perfil_terreno=perfiles_terreno,
             clima={
                 "viento_max_kmh": viento_max,
                 "viento_reducido_kmh": float(viento_reducido),
@@ -177,6 +257,8 @@ def mostrar_corridas_cfe(puntos):
             mime="application/pdf",
             key="descarga_pdf_modulo1_cfe",
         )
+        if elevaciones is not None:
+            elevaciones.cerrar()
         st.warning(
             "ESTADO DEL MÉTODO: las referencias inicial y final se obtienen "
             "por sus respectivas restricciones CFE; todavía no existe "
