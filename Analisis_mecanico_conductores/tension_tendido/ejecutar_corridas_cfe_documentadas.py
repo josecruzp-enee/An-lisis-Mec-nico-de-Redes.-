@@ -12,10 +12,13 @@ modelo de deformación permanente documentado. No se inventa creep.
 """
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
+from scipy.optimize import brentq
 
 from Analisis_mecanico_conductores.tension_tendido.calcular_tablas_cfe_inicial_final import (
     PropiedadesConductorCFE, EstadoReferenciaCFE, HipotesisDisenoCFE,
+    _evaluador,
     calcular_parametro_cfe_desde_limites, calcular_tablas_inicial_final,
 )
 from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
@@ -70,6 +73,86 @@ def construir_hipotesis_cfe(
     return inicial,final
 
 
+
+def obtener_referencia_inicial_desde_extremo(
+    xyz, propiedades, referencia_final, hipotesis_final,
+    *, Cd=1.0, rho_kg_m3=1.225, densidad_hielo_kg_m3=900.,
+):
+    """Vincula el estado de tendido al extremo final, según CFE 07 FT 01.
+
+    En el estado de carga extrema que gobierna la referencia FINAL, se
+    exige igual tensión máxima en ambos estados, con E y alfa propios.
+    No se optimiza P inicial por separado ni se presupone creep.
+    """
+    gobernante = next(
+        (h for h in hipotesis_final
+         if h.nombre == referencia_final["hipotesis_gobernante"]),
+        None,
+    )
+    if gobernante is None:
+        raise ValueError("No se identificó la hipótesis extrema final")
+    if gobernante.viento_kmh == 0 and gobernante.hielo_mm == 0:
+        # Un caso térmico sin viento ni hielo puede gobernar por
+        # restricciones de tracción, pero no sustituye una condición
+        # extrema especificada en la norma.
+        pass
+    evaluador_final = _evaluador(xyz, propiedades, "Final", Cd, rho_kg_m3)
+    evaluador_inicial = _evaluador(xyz, propiedades, "Inicial", Cd, rho_kg_m3)
+    h_final = referencia_final["H_50_kN"]
+    def evaluar(evaluador, H):
+        return evaluador.evaluar_estado_con_hielo(
+            float(H), gobernante.temperatura_C,
+            gobernante.viento_kmh / 3.6, gobernante.hielo_mm,
+            densidad_hielo_kg_m3,
+        )
+    _, tensiones_finales, _, _, _ = evaluar(evaluador_final, h_final)
+    objetivo = max(map(float, tensiones_finales))
+    def diferencia(H):
+        _, tensiones, _, _, _ = evaluar(evaluador_inicial, H)
+        return max(map(float, tensiones)) - objetivo
+
+    minimo = max(0.01, propiedades.peso_kN_m)
+    maximo = propiedades.ruptura_kN
+    hs = np.unique(np.r_[np.geomspace(minimo, maximo, 120),
+                         np.linspace(minimo, maximo, 120)])
+    fs = np.array([diferencia(float(H)) for H in hs])
+    raices = []
+    for i in range(len(hs)-1):
+        if fs[i] == 0:
+            raices.append(float(hs[i]))
+        elif fs[i]*fs[i+1] < 0:
+            raices.append(float(brentq(
+                diferencia, float(hs[i]), float(hs[i+1]), xtol=1e-9,
+            )))
+    if not raices:
+        raise ValueError(
+            "No existe referencia inicial que reproduzca la tensión "
+            "extrema final para esta geometría y propiedades."
+        )
+    # Rama de mayor H, correspondiente al tendido ordinario y no a la
+    # rama floja con pendientes extremas.
+    h_inicial = max(raices)
+    _, t_iniciales, _, _, _ = evaluar(evaluador_inicial, h_inicial)
+    error = max(map(float,t_iniciales)) - objetivo
+    if abs(error) > max(1e-5, objetivo*1e-6):
+        raise ValueError("No se logró acoplar la tensión extrema inicial/final")
+    return {
+        "condicion": "Inicial",
+        "H_50_kN": h_inicial,
+        "parametro_P_m": h_inicial / propiedades.peso_kN_m,
+        "relacion_critica": objetivo / gobernante.limite_tension_kN,
+        "hipotesis_gobernante": gobernante.nombre,
+        "temperatura_gobernante_C": gobernante.temperatura_C,
+        "viento_gobernante_kmh": gobernante.viento_kmh,
+        "hielo_gobernante_mm": gobernante.hielo_mm,
+        "tension_maxima_gobernante_kN": max(map(float,t_iniciales)),
+        "limite_gobernante_kN": gobernante.limite_tension_kN,
+        "residuo_maximo_gobernante_m": abs(error),
+        "cota_busqueda_activa": False,
+        "metodo": "Tensión extrema acoplada a condición final, CFE 07 FT 01",
+    }
+
+
 def ejecutar_corridas_cfe_por_vano(
     puntos, ficha_inicial, ficha_final, *, viento_max_kmh,
     viento_reducido_kmh, hielo_mm, temperaturas_C,
@@ -109,12 +192,26 @@ def ejecutar_corridas_cfe_por_vano(
     # condición de contorno ni confundirlo con el claro de diseño ENEE.
     claro_regla_m=vano_regulador(luces)
     desnivel_max_m=max(abs(float(xyz[i+1,2]-xyz[i,2])) for i in range(len(luces)))
-    referencia_inicial=calcular_parametro_cfe_desde_limites(
-        xyz,propiedades,ini,condicion="Inicial",Cd=Cd,rho_kg_m3=rho_kg_m3,
-    )
     referencia_final=calcular_parametro_cfe_desde_limites(
         xyz,propiedades,fin,condicion="Final",Cd=Cd,rho_kg_m3=rho_kg_m3,
     )
+    referencia_inicial=obtener_referencia_inicial_desde_extremo(
+        xyz,propiedades,referencia_final,fin,
+        Cd=Cd,rho_kg_m3=rho_kg_m3,
+    )
+    # Verificar además el límite propio del estado inicial a 0 °C:
+    # el acoplamiento con el extremo final no da permiso para superarlo.
+    evaluador_inicial = _evaluador(xyz,propiedades,"Inicial",Cd,rho_kg_m3)
+    for caso in ini:
+        _, ts, _, _, _ = evaluador_inicial.evaluar_estado_con_hielo(
+            referencia_inicial["H_50_kN"],caso.temperatura_C,
+            caso.viento_kmh/3.6,caso.hielo_mm,900.,
+        )
+        if max(ts) > caso.limite_tension_kN*(1+1e-6):
+            raise ValueError(
+                "La condición inicial acoplada excede el límite de "
+                f"{caso.nombre}. No se puede emitir diseño factible."
+            )
     if referencia_inicial["cota_busqueda_activa"] or referencia_final["cota_busqueda_activa"]:
         raise ValueError(
             "Se alcanzó el límite superior sin hipótesis gobernante. "
@@ -133,9 +230,9 @@ def ejecutar_corridas_cfe_por_vano(
         Cd=Cd,rho_kg_m3=rho_kg_m3,
     )
     resumen=pd.DataFrame([
-        {"Condición":"Inicial — referencia independiente",
+        {"Condición":"Inicial — vinculada por tensión extrema final",
          "Hipótesis aplicadas":"; ".join(h.nombre for h in ini),**referencia_inicial},
-        {"Condición":"Final — referencia independiente (NO creep)",
+        {"Condición":"Final — referencia climática (sin creep validado)",
          "Hipótesis aplicadas":"; ".join(h.nombre for h in fin),**referencia_final},
     ])
     resumen["Claro regla convencional orientativo (m)"]=claro_regla_m
@@ -144,6 +241,6 @@ def ejecutar_corridas_cfe_por_vano(
     resumen["Advertencia"]=(
         "Claros reales: motor de amarres fijos por vano. "
         "Claro regla: solo informativo, no usado en el cálculo. "
-        "Referencias inicial/final independientes, sin creep validado."
+        "Referencia inicial derivada del extremo final; sin creep validado."
     )
     return resumen,tabla
