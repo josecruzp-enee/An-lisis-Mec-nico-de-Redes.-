@@ -84,18 +84,19 @@ def obtener_referencia_inicial_desde_extremo(
     exige igual tensión máxima en ambos estados, con E y alfa propios.
     No se optimiza P inicial por separado ni se presupone creep.
     """
+    # CFE 07 FT 01, hoja 5/6, inciso b: el tendido inicial se deriva
+    # de la tensión de -10 °C de la condición FINAL, no de la condición
+    # que gobierne la relación tensión / límite (podría ser 0 o 16 °C).
     gobernante = next(
         (h for h in hipotesis_final
-         if h.nombre == referencia_final["hipotesis_gobernante"]),
+         if h.temperatura_C == -10. and "reducido" in h.nombre.lower()),
         None,
     )
     if gobernante is None:
-        raise ValueError("No se identificó la hipótesis extrema final")
-    if gobernante.viento_kmh == 0 and gobernante.hielo_mm == 0:
-        # Un caso térmico sin viento ni hielo puede gobernar por
-        # restricciones de tracción, pero no sustituye una condición
-        # extrema especificada en la norma.
-        pass
+        raise ValueError(
+            "Falta el estado final de -10 °C con viento reducido e hielo "
+            "para acoplar la condición inicial CFE."
+        )
     evaluador_final = _evaluador(xyz, propiedades, "Final", Cd, rho_kg_m3)
     evaluador_inicial = _evaluador(xyz, propiedades, "Inicial", Cd, rho_kg_m3)
     h_final = referencia_final["H_50_kN"]
