@@ -6,6 +6,7 @@ La fluencia entra como deformación permanente suministrada, no como predicción
 """
 from __future__ import annotations
 import numpy as np
+from scipy.integrate import quad
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
 
@@ -31,7 +32,22 @@ def longitud_natural(cable, EA_kN: float) -> float:
     n256 = integrar(256)
     if abs(n256-n128) <= 1e-10*max(1.,abs(n256)):
         return n256
-    raise ValueError("La integración de deformación no alcanzó convergencia")
+    # Para estados extremos de búsqueda, los nodos fijos pueden ser insuficientes.
+    # Integración adaptativa de la MISMA función física, sin truncar la catenaria.
+    def integrando_adaptativo(x):
+        c = np.cosh((x-cable.xc)/cable.a)
+        return float(c/(1+cable.H*c/EA))
+    valor, estimacion = quad(
+        integrando_adaptativo, 0., cable.luz,
+        epsabs=1e-10, epsrel=1e-11, limit=500,
+    )
+    if not np.isfinite(valor) or not np.isfinite(estimacion):
+        raise ValueError("La integración de deformación no es finita")
+    if estimacion > 1e-9*max(1., abs(valor)):
+        raise ValueError(
+            "La integración de deformación no alcanzó convergencia adaptativa"
+        )
+    return float(valor)
 
 
 def resolver_cambio_estado(vanos, H_inicial_kN, EA_kN, alpha_por_C,
