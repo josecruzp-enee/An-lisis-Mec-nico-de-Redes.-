@@ -98,6 +98,13 @@ def mostrar_corridas_cfe(puntos):
             actual+=float(paso)
             if len(temperaturas)>200:
                 raise ValueError("Rango de temperaturas demasiado amplio")
+        # Las cinco hipótesis se verifican también cuando no coinciden con
+        # el paso de la tabla térmica (por ejemplo, 16 °C).
+        if tmin <= 0 <= tmax and not any(abs(t) < 1e-9 for t in temperaturas):
+            temperaturas.append(0.)
+        if tmin <= 16 <= tmax and not any(abs(t-16.) < 1e-9 for t in temperaturas):
+            temperaturas.append(16.)
+        temperaturas.sort()
         resumen,tabla=ejecutar_corridas_cfe_por_vano(
             puntos,ini,fin,
             viento_max_kmh=viento_max,
@@ -145,6 +152,8 @@ def mostrar_corridas_cfe(puntos):
             "cfe_corridas_por_vano.csv","text/csv",
         )
         from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+        from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
+        xyz_pdf, _ = _geometria(puntos)
         memoria_pdf = generar_pdf_corrida_cfe(
             resumen=resumen, tabla=tabla,
             conductor=f"{conductor[0]} {conductor[1]}",
@@ -152,11 +161,13 @@ def mostrar_corridas_cfe(puntos):
             proyecto=proyecto_pdf,
             propiedades_inicial=ini,
             propiedades_final=fin,
+            geometria_xyz=xyz_pdf,
             clima={
                 "viento_max_kmh": viento_max,
                 "viento_reducido_kmh": float(viento_reducido),
                 "hielo_mm": float(hielo),
                 "rho_kg_m3": float(rho),
+                "Cd": 1.0,
             },
         )
         st.download_button(
