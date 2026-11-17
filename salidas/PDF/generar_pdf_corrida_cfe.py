@@ -149,7 +149,8 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                             proyecto: dict | None = None,
                             propiedades_inicial: dict | None = None,
                             propiedades_final: dict | None = None,
-                            geometria_xyz=None) -> bytes:
+                            geometria_xyz=None,
+                            libramientos=None, perfil_terreno=None) -> bytes:
     """Genera la memoria PDF desde DataFrames ya calculados, sin modificar valores."""
     if not isinstance(resumen, pd.DataFrame) or len(resumen) != 2:
         raise ValueError("Se necesitan las dos referencias inicial y final")
@@ -346,6 +347,78 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
             linea("Las cinco hipótesis satisfacen los límites de tensión "
                   "definidos por el procedimiento implementado. Esto NO "
                   "equivale a certificar despejes ni apoyos.", nota)
+
+    # Topografía opcional: representa valores muestreados de la fuente DEM.
+    # No afirma un mínimo exacto continuo ni una distancia reglamentaria.
+    if libramientos is not None and perfil_terreno is not None:
+        if libramientos.empty or perfil_terreno.empty:
+            raise ValueError("La topografía no contiene resultados")
+        historia.append(PageBreak())
+        titulo("Perfil topográfico y libramientos (evaluación preliminar)")
+        linea(
+            "Las cotas del terreno proceden del DEM seleccionado, no de "
+            "un levantamiento de precisión. Las distancias son verticales, "
+            "estimadas en puntos discretos del conductor con desplazamiento "
+            "lateral incluido. NO se certifica cumplimiento reglamentario.",
+            nota,
+        )
+        minimo_total=libramientos.sort_values(
+            "Libramiento mínimo muestreado (m)",ascending=True
+        )
+        fila_global=minimo_total.iloc[0]
+        linea(
+            f"Menor separación muestreada: "
+            f"{_fmt(float(fila_global['Libramiento mínimo muestreado (m)']),3)} m, "
+            f"vano {fila_global['Vano']}, condición "
+            f"{fila_global['Condición']} "
+            f"({fila_global['Hipótesis']}).",nota,
+        )
+        filas_topo=[["Vano", "Condición", "Hipótesis", "Temp. °C",
+                      "Separación min. (m)", "Distancia desde apoyo (m)"]]
+        for _,r in minimo_total.iterrows():
+            filas_topo.append([
+                r["Vano"],r["Condición"],r["Hipótesis"],
+                _fmt(float(r["Temperatura (°C)"]),0),
+                _fmt(float(r["Libramiento mínimo muestreado (m)"]),3),
+                _fmt(float(r["Distancia crítica desde apoyo (m)"]),2),
+            ])
+        datos_tabla(filas_topo,[1,1,2,1,1.3,1.5],compacto=True)
+        for vano,grupo in minimo_total.groupby("Vano",sort=False):
+            critico=grupo.iloc[0]
+            sub=perfil_terreno[
+                (perfil_terreno["Vano"]==vano)
+                & (perfil_terreno["Condición"]==critico["Condición"])
+                & (perfil_terreno["Hipótesis"]==critico["Hipótesis"])
+                & (perfil_terreno["Temperatura (°C)"]==critico["Temperatura (°C)"])
+            ].sort_values("Distancia desde apoyo (m)")
+            if sub.empty:
+                raise ValueError("No existe perfil para la hipótesis crítica")
+            figura,eje=plt.subplots(figsize=(9.3,3.1))
+            x=sub["Distancia desde apoyo (m)"].to_numpy(float)
+            terreno=sub["Elevación terreno (m)"].to_numpy(float)
+            cable=sub["Elevación conductor (m)"].to_numpy(float)
+            eje.plot(x,terreno,color="#7a654a",lw=2,label="Superficie DEM")
+            eje.plot(x,cable,color="#2355a4",lw=1.6,label="Conductor calculado")
+            eje.fill_between(x,terreno,cable,alpha=.12,color="#64748b")
+            eje.set_title(f"{vano} — condición de menor separación muestreada",fontsize=10)
+            eje.set_xlabel("Distancia horizontal desde el apoyo (m)",fontsize=8)
+            eje.set_ylabel("Elevación (m)",fontsize=8)
+            eje.grid(alpha=.2)
+            eje.legend(fontsize=8)
+            figura.tight_layout()
+            imagen=BytesIO()
+            figura.savefig(imagen,format="png",dpi=155)
+            plt.close(figura)
+            imagen.seek(0)
+            historia.append(PageBreak())
+            titulo(f"Superposición DEM-catenaria — {vano}")
+            historia.append(Image(imagen,width=224*mm,height=77*mm))
+            linea(
+                "Condición visualizada: "+str(critico["Condición"])+", "+
+                str(critico["Hipótesis"])+", "+
+                _fmt(float(critico["Temperatura (°C)"]),0)+" °C. "+
+                "Cotas y mínimos de naturaleza preliminar.", nota,
+            )
 
     # Láminas de catenaria EXACTA por vano: H ya calculada, misma carga
     # del motor. Contrasta flecha/desplazamiento con la tabla antes de dibujar.
