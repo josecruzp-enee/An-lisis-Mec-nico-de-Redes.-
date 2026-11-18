@@ -260,6 +260,87 @@ def _longitudes_de_tendido_continuo(puntos, xyz, ficha, H_50_kN,
     return longitudes,float(res.residual_max_kN)
 
 
+def _ajustar_referencia_final_multivano(puntos,xyz,ficha,propiedades,
+                                        hipotesis,referencia,*,Cd,rho_kg_m3):
+    """Reoptimiza H50 sobre tendido continuo y vanos fijados, no vanos aislados.
+
+    El valor anterior sirve solo de semilla. Busca una raiz de utilizacion
+    total igual a 1 en el borde superior de un intervalo factible.
+    """
+    from functools import lru_cache
+    @lru_cache(maxsize=192)
+    def evaluar(H):
+        longitudes,continuidad=_longitudes_de_tendido_continuo(
+            puntos,xyz,ficha,float(H),Cd=Cd,rho_kg_m3=rho_kg_m3)
+        ev=_evaluador(xyz,propiedades,"Final",Cd,rho_kg_m3,
+                      longitudes_fijadas=longitudes)
+        detalles=[]
+        for caso in hipotesis:
+            hs,ts,_,residuales,_=ev.evaluar_estado_con_hielo(
+                float(H),caso.temperatura_C,caso.viento_kmh/3.6,
+                caso.hielo_mm,900.)
+            uso_t=max(map(float,ts))/caso.limite_tension_kN
+            uso_h=(max(map(float,hs))/caso.limite_horizontal_kN
+                   if caso.limite_horizontal_kN is not None else 0.)
+            detalles.append((max(uso_t,uso_h),caso,max(map(float,ts)),
+                             max(abs(float(r)) for r in residuales)))
+        ratio,caso,tension,residual=max(detalles,key=lambda item:item[0])
+        return ratio,longitudes,continuidad,caso,tension,residual
+
+    semilla=float(referencia["H_50_kN"])
+    u0=evaluar(semilla)[0]
+    # Recorrer el intervalo superior desde una semilla cercana; la
+    # utilizacion puede tener forma de U, por lo que no se presume
+    # monotonia desde H=0.
+    if u0>1.:
+        alto=semilla
+        bajo=None
+        for paso in range(1,91):
+            candidato=semilla*(0.97**paso)
+            if candidato<=0.01: break
+            if evaluar(candidato)[0]<=1.:
+                bajo=candidato
+                break
+            alto=candidato
+        if bajo is None:
+            raise ValueError(
+                "No se encontro tension factible para tendido continuo "
+                "seguido de fijacion; revisar geometria y restricciones."
+            )
+        H=float(brentq(lambda h:evaluar(float(h))[0]-1.,
+                        bajo,alto,xtol=1e-7,rtol=1e-9))
+    else:
+        H=semilla
+        # La referencia anterior no necesariamente es el borde superior
+        # factible despues de la redistribucion del material.
+        for paso in range(1,61):
+            candidato=semilla*(1.02**paso)
+            if candidato>=propiedades.ruptura_kN: break
+            if evaluar(candidato)[0]>1.:
+                H=float(brentq(lambda h:evaluar(float(h))[0]-1.,
+                              H,candidato,xtol=1e-7,rtol=1e-9))
+                break
+            H=candidato
+    ratio,longitudes,continuidad,caso,tension,residual=evaluar(H)
+    if ratio>1.+1e-6:
+        raise ValueError("Tendido continuo: la referencia optimizada incumple")
+    nueva=dict(referencia)
+    nueva.update({
+        "H_50_kN":H,
+        "parametro_P_m":H/propiedades.peso_kN_m,
+        "relacion_critica":ratio,
+        "hipotesis_gobernante":caso.nombre,
+        "temperatura_gobernante_C":caso.temperatura_C,
+        "viento_gobernante_kmh":caso.viento_kmh,
+        "hielo_gobernante_mm":caso.hielo_mm,
+        "tension_maxima_gobernante_kN":tension,
+        "limite_gobernante_kN":caso.limite_tension_kN,
+        "residuo_maximo_gobernante_m":residual,
+        "metodo":"Tendido continuo, fijacion por vano y limites climaticos",
+    })
+    return nueva,longitudes,continuidad
+
+
 def ejecutar_corridas_cfe_por_vano(
     puntos, ficha_inicial, ficha_final, *, viento_max_kmh,
     viento_reducido_kmh, hielo_mm, temperaturas_C,
@@ -303,6 +384,10 @@ def ejecutar_corridas_cfe_por_vano(
     referencia_final=calcular_parametro_cfe_desde_limites(
         xyz,propiedades,fin,condicion="Final",Cd=Cd,rho_kg_m3=rho_kg_m3,
     )
+    referencia_final, longitudes_final, residual_final = _ajustar_referencia_final_multivano(
+        puntos,xyz,ficha_final,propiedades,fin,referencia_final,
+        Cd=Cd,rho_kg_m3=rho_kg_m3,
+    )
     referencia_inicial=obtener_referencia_inicial_desde_extremo(
         xyz,propiedades,referencia_final,fin,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
@@ -344,16 +429,14 @@ def ejecutar_corridas_cfe_por_vano(
     # distintas; no se atribuye la diferencia a creep no caracterizado.
     longitudes_fijadas={}
     residuales_continuidad={}
-    for condicion,ficha,referencia in (
-        ("Inicial",ficha_inicial,referencia_inicial),
-        ("Final",ficha_final,referencia_final),
-    ):
-        lon,residual=_longitudes_de_tendido_continuo(
-            puntos,xyz,ficha,referencia["H_50_kN"],
-            Cd=Cd,rho_kg_m3=rho_kg_m3,
-        )
-        longitudes_fijadas[condicion]=lon
-        residuales_continuidad[condicion]=residual
+    longitudes_fijadas["Final"]=longitudes_final
+    residuales_continuidad["Final"]=residual_final
+    lon,residual=_longitudes_de_tendido_continuo(
+        puntos,xyz,ficha_inicial,referencia_inicial["H_50_kN"],
+        Cd=Cd,rho_kg_m3=rho_kg_m3,
+    )
+    longitudes_fijadas["Inicial"]=lon
+    residuales_continuidad["Inicial"]=residual
     # Los limites se verifican de NUEVO tras redistribuir material:
     # la factibilidad del modelo de amarres fijos anterior no se hereda.
     for condicion,casos,referencia in (
