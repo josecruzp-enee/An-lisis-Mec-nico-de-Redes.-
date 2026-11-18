@@ -42,6 +42,19 @@ def evaluar_corrida_documentada(tabla, puntos, *, estructura, conductor,
         plano = bool(max(terreno)-min(terreno) < 1e-7)
     else:
         plano = False
+    # Ángulos geométricos reales entre tramos: 0° significa alineamiento.
+    coordenadas=puntos[["X","Y"]].to_numpy(dtype=float)
+    angulos_apoyo=[0.]*len(puntos)
+    for j in range(1,len(puntos)-1):
+        ax=float(coordenadas[j,0]-coordenadas[j-1,0])
+        ay=float(coordenadas[j,1]-coordenadas[j-1,1])
+        bx=float(coordenadas[j+1,0]-coordenadas[j,0])
+        by=float(coordenadas[j+1,1]-coordenadas[j,1])
+        if math.hypot(ax,ay)<=0 or math.hypot(bx,by)<=0:
+            raise ValueError("Vano de longitud cero en geometría de apoyos")
+        angulos_apoyo[j]=math.degrees(math.atan2(
+            abs(ax*by-ay*bx),ax*bx+ay*by,
+        ))
     resultados=[]
     for i,(p,q) in enumerate(vanos):
         clave=f"{p} → {q}"
@@ -56,11 +69,16 @@ def evaluar_corrida_documentada(tabla, puntos, *, estructura, conductor,
                          & (grupo["Hipótesis"]=="Tabla térmica")
                          & ((grupo["Temperatura (°C)"]-16.).abs()<1e-7)]
         luz=float(grupo["Luz (m)"].iloc[0])
+        angulo_mayor=max(angulos_apoyo[i],angulos_apoyo[i+1])
+        desnivel=(abs(float((terreno[i+1]+amarres[i+1])-
+                             (terreno[i]+amarres[i])))
+                 if hay_terreno else None)
         tb=verificar_tabla_estructura(
             luz,estructura,f"ACSR {conductor.upper()} "+
             {"RAVEN":"1/0","PIGEON":"3/0","PARTRIDGE":"266.8",
              "LINNET":"336.4","HAWK":"477"}[conductor.upper()],
             clase_kV,ambiente,hielo=hielo,
+            angulo_grados=angulo_mayor,desnivel_m=desnivel,
         )
         f50=float(final50["Flecha (m)"].iloc[0]) if len(final50)==1 else None
         fases=verificar_fases(clase_kV,f50,area,separacion_fases_m) if f50 is not None else {"estado":"NO VERIFICABLE"}
@@ -112,6 +130,8 @@ def evaluar_corrida_documentada(tabla, puntos, *, estructura, conductor,
         excedidos=[k for k,v in criterios_tb.items() if not v["cumple"]]
         resultados.append({
             "Vano":clave,"Luz (m)":luz,
+            "Deflexión máx. en apoyos (°)":angulo_mayor,
+            "Desnivel entre amarres (m)":desnivel,
             "P final 50°C (m)":float(final50["P a 50 °C (m)"].iloc[0]) if len(final50)==1 else None,
             "Flecha final 50°C (m)":f50,
             "T final 0°C (kN)":float(grupo.loc[(grupo["Condición"]=="Final") &
@@ -151,7 +171,7 @@ def mostrar_verificacion_integrada(tabla, puntos, conductor, *, hielo_mm=0.):
                            help="Necesaria para libramiento vertical normativo.")
     separacion=st.number_input("Separación mínima real entre fases (m; 0 = no disponible)",
                                value=0.,min_value=0.,step=.1)
-    obstaculo=st.number_input("Distancia horizontal en reposo a construcción (m; 0 = no disponible)",
+    obstaculo=st.number_input("Distancia horizontal MÍNIMA en reposo para todos los vanos (m; 0 = sin dato)",
                               value=0.,min_value=0.,step=.1)
     comprobacion=evaluar_corrida_documentada(
         tabla,puntos,estructura=estructura,conductor=conductor,
