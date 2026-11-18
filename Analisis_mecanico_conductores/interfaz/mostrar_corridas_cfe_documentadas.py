@@ -9,6 +9,7 @@ from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee impo
 )
 from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
     ejecutar_corridas_cfe_por_vano,CFE_FUENTE,
+    DENSIDAD_HIELO_ENSAYO_KG_M3,
     seleccionar_propiedades_cfe_07_ft_01,
 )
 
@@ -174,7 +175,9 @@ def mostrar_corridas_cfe(puntos):
             temperaturas_C=temperaturas,
             Cd=1.,rho_kg_m3=float(rho),
             incluir_ensayo_viento_16C=True,
+            densidad_hielo_kg_m3=DENSIDAD_HIELO_ENSAYO_KG_M3,
         )
+        st.caption(f"Hielo: densidad fijada para este ensayo = {DENSIDAD_HIELO_ENSAYO_KG_M3:g} kg/m³.")
         st.subheader("Referencias inicial y final — modelo multivano experimental")
         if float(viento_reducido)==0. and float(hielo)==0.:
             st.warning(
@@ -305,6 +308,7 @@ def mostrar_corridas_cfe(puntos):
                 "viento_max_kmh": viento_max,
                 "viento_reducido_kmh": float(viento_reducido),
                 "hielo_mm": float(hielo),
+                "densidad_hielo_kg_m3":DENSIDAD_HIELO_ENSAYO_KG_M3,
                 "rho_kg_m3": float(rho),
                 "Cd": 1.0,
             },
