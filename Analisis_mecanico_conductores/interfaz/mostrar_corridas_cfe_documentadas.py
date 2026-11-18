@@ -207,6 +207,12 @@ def mostrar_corridas_cfe(puntos):
             )
 
         st.dataframe(tabla,hide_index=True,use_container_width=True)
+        from Analisis_mecanico_conductores.interfaz.mostrar_verificaciones_cfe_integradas import (
+            mostrar_verificacion_integrada,
+        )
+        mostrar_verificacion_integrada(
+            tabla,puntos_calculo,conductor[1],hielo_mm=float(hielo),
+        )
         tabla_libramientos=None
         perfiles_terreno=None
         if elevaciones is not None:
@@ -264,11 +270,10 @@ def mostrar_corridas_cfe(puntos):
         if elevaciones is not None:
             elevaciones.cerrar()
         st.warning(
-            "ESTADO DEL MÉTODO: las referencias inicial y final se obtienen "
-            "por sus respectivas restricciones CFE; todavía no existe "
-            "un modelo constitutivo de creep que las vincule. "
-            "No presentar esta salida como reproducción validada de SAGSEC "
-            "ni como condición final histórica ENEE."
+            "ESTADO DEL MÉTODO: la referencia FINAL se dimensiona con restricciones "
+            "y la INICIAL se vincula a la tensión extrema final (-10°C). "
+            "No se ha validado un modelo constitutivo de creep ni su equivalencia "
+            "con SAGSEC. Las comprobaciones de estructuras CFE NO sustituyen ENEE."
         )
     except (ValueError,KeyError,TypeError,OverflowError,ArithmeticError) as exc:
         st.error(f"No se pudo resolver el caso: {exc}")
