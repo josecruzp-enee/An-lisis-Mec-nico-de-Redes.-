@@ -37,3 +37,38 @@ def test_horizontal_requiere_obstaculo_y_viento_especificado():
     assert verificar_horizontal_construccion(13,None,None)["estado"]=="NO VERIFICABLE"
     assert verificar_horizontal_construccion(13,3.0,.5)["estado"]=="CUMPLE"
     assert verificar_horizontal_construccion(13,2.5,.5)["estado"]=="NO CUMPLE"
+
+
+def test_vertical_no_confunde_suelo_plano_con_tipo_via():
+    from Analisis_mecanico_conductores.verificaciones.verificar_restricciones_documentadas_cfe import (
+        verificar_vertical_superficie,
+    )
+    assert verificar_vertical_superficie(6.0,0.0,None)["estado"]=="NO VERIFICABLE"
+    assert verificar_vertical_superficie(6.0,0.0,
+        "a_lo_largo_caminos_y_zonas_rurales")["estado"]=="CUMPLE"
+    assert verificar_vertical_superficie(6.0,0.0,
+        "carreteras_calles_callejones_caminos_vecinales")["estado"]=="NO CUMPLE"
+
+def test_integracion_tablas_y_geometrias_incompletas():
+    from types import SimpleNamespace
+    import pandas as pd
+    from Analisis_mecanico_conductores.verificaciones.evaluar_requisitos_cfe_por_vano import (
+        evaluar_requisitos_cfe_por_vano,
+    )
+    muestra=SimpleNamespace(flechas=pd.DataFrame([
+        {"Vano":"P1 → P2","Luz (m)":50.0,"Hipótesis":"Final 0C",
+         "T máxima vano (kN)":3.0},
+        {"Vano":"P2 → P3","Luz (m)":150.0,"Hipótesis":"Final 0C",
+         "T máxima vano (kN)":3.2},
+    ]))
+    r=evaluar_requisitos_cfe_por_vano(muestra,ruptura_N=19477.4,configuracion={
+        "conductor":"ACSR RAVEN 1/0","clase_kV":13,
+        "estructura_por_vano":{"P1 → P2":"TS3N","P2 → P3":"TS3N"},
+        "clases_cfe_por_hipotesis":{"Final 0C":"final_0C_sin_viento"},
+    })
+    f=r["verificaciones_vanos"]
+    assert f.iloc[0]["Tabla estructura CFE"].startswith("DENTRO")
+    assert f.iloc[1]["Tabla estructura CFE"]=="EXCEDE TABLA CFE"
+    assert f.iloc[0]["Libramiento vertical"]=="NO VERIFICABLE"
+    assert r["traccion_CFE"]["final_0C_sin_viento"]["estado"]=="CUMPLE"
+    assert r["traccion_CFE"]["inicial_0C_sin_viento"]["estado"]=="NO VERIFICABLE"
