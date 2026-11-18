@@ -222,7 +222,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
 
     titulo("Estado de referencia y criterio gobernante")
     rfilas = [[
-        "Condición", "H a 50 °C (kN)", "P a 50 °C (m)",
+        "Condición", "H referencia 50 °C (kN)", "P referencia (m)",
         "Hipótesis gobernante", "Utilización",
     ]]
     for _, r in resumen.iterrows():
@@ -234,6 +234,17 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
             _fmt(r.get("relacion_critica"), 4),
         ])
     datos_tabla(rfilas, [1, 1.2, 1.2, 3.5, 1.2])
+    linea(
+        "H referencia es el parámetro de entrada para distribuir longitud "
+        "durante el tendido continuo. No equivale a una componente H común "
+        "en todos los vanos ni a la tensión de tracción de los apoyos.", nota,
+    )
+    linea(
+        "Condiciones inicial/final acopladas por tensión extrema sobre "
+        "multivano fijado. No se dispone de una ley constitutiva de creep; "
+        "la diferencia entre longitudes naturales no constituye una "
+        "predicción de deformación permanente.", nota,
+    )
 
     residuo = float(tabla["Residual (m)"].abs().max())
     tension = float(tabla["T máx. (kN)"].max())
@@ -244,6 +255,19 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
          "Flecha máxima (m)", "Máximo residual (m)"],
         [str(len(tabla)), _fmt(tension, 4), _fmt(flecha, 4), _fmt(residuo)],
     ], [1, 1, 1, 1])
+    if "Longitud natural fijada (m)" in tabla:
+        titulo("Tendido continuo - longitudes naturales por vano")
+        datos=tabla[
+            ["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
+        ].drop_duplicates(["Condición","Vano"])
+        filas=[["Condición","Vano","Luz (m)","L0 fijada (m)"]]
+        for _,fila in datos.iterrows():
+            filas.append([
+                fila["Condición"],fila["Vano"],
+                _fmt(fila["Luz (m)"],2),
+                _fmt(fila["Longitud natural fijada (m)"],6),
+            ])
+        datos_tabla(filas,[1,1.7,1,1.3],compacto=True)
     historia.append(PageBreak())
 
     # Página 2: supuestos, ecuaciones y curvas sin estimaciones inventadas.
