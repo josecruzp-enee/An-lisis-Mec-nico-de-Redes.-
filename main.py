@@ -505,29 +505,11 @@ def main() -> None:
     )
     if modo == "CFE — cálculo por vano":
         st.title("Análisis mecánico CFE — validación por vano")
-        ensayo=st.checkbox(
-            "Usar caso de ensayo: 5 vanos RAVEN (50, 65, 90, 120 y 150 m)",
-            value=False,key="ensayo_cfe_cinco_vanos",
-            help=("Seis apoyos alineados en suelo plano, amarre a 10 m. "
-                  "Geometría de ensayo, no un proyecto construido."),
-        )
-        archivo=None if ensayo else ui_cargar_excel()
-        if not ensayo and not archivo:
+        archivo = ui_cargar_excel()
+        if archivo is None:
             st.stop()
         try:
-            if ensayo:
-                coordenadas=[0.,50.,115.,205.,325.,475.]
-                puntos=pd.DataFrame({
-                    "Punto":[f"P{i+1}" for i in range(6)],
-                    "X":coordenadas,
-                    "Y":[0.]*6,
-                    "Altitud":[0.]*6,
-                    "Altura_Amarre_m":[10.]*6,
-                })
-                st.info("Ensayo geométrico: suelo horizontal, 475 m de longitud, "
-                        "amarres a 10 m. Clima y hielo se introducen en el formulario.")
-            else:
-                puntos = leer_puntos_excel(archivo)
+            puntos = leer_puntos_excel(archivo)
             from Analisis_mecanico_conductores.interfaz.mostrar_corridas_cfe_documentadas import (
                 mostrar_corridas_cfe,
             )
