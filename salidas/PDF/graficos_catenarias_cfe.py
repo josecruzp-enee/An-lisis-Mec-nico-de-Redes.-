@@ -59,7 +59,7 @@ def _carga(xyz, i, row, propiedades, clima):
     if hielo_mm:
         radio = diametro/2
         espesor = hielo_mm/1000.
-        densidad_hielo = float(clima.get("densidad_hielo_kg_m3",900.))
+        densidad_hielo = float(clima.get("densidad_hielo_kg_m3",913.))
         peso += pi*((radio+espesor)**2-radio**2)*densidad_hielo*9.80665/1000.
         diametro += 2*espesor
     cargas, _ = calcular_cargas_transversales_por_vano(
