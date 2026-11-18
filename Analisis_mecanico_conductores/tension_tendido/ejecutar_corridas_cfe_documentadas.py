@@ -220,7 +220,8 @@ def obtener_referencia_inicial_desde_extremo(
         "hielo_gobernante_mm":extremo.hielo_mm,
         "tension_maxima_gobernante_kN":tension,
         "limite_gobernante_kN":extremo.limite_tension_kN,
-        "residuo_maximo_gobernante_m":abs(error),
+        "residuo_maximo_gobernante_m":residuo,
+        "residuo_acoplamiento_tension_kN":abs(error),
         "cota_busqueda_activa":False,
         "metodo":"Acoplamiento de tensión extrema sobre multivano fijado; NO creep",
     },longitudes,continuidad
