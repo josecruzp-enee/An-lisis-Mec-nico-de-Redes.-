@@ -35,6 +35,8 @@ CFE_TH_KN = {
     "HAWK": (8.122, 6.637),
 }
 
+DENSIDAD_HIELO_ENSAYO_KG_M3 = 913.0  # Dato fijado por el usuario; no proviene del manual CFE.
+
 CFE_FUENTE = (
     "CFE DCCIAMBT (2014), secciones 05 00 02, 05 00 03 y 07 FT 01; "
     "límites del diseño básico de estructuras"
@@ -139,7 +141,7 @@ def construir_hipotesis_cfe(
 def obtener_referencia_inicial_desde_extremo(
     xyz, propiedades, referencia_final, hipotesis_final,
     *, puntos, ficha_inicial, longitudes_final,
-    Cd=1.0, rho_kg_m3=1.225, densidad_hielo_kg_m3=900.,
+    Cd=1.0, rho_kg_m3=1.225, densidad_hielo_kg_m3=DENSIDAD_HIELO_ENSAYO_KG_M3,
 ):
     """Acoplamiento de referencia inicial/final sobre el MISMO esquema multivano.
 
@@ -272,7 +274,7 @@ def _longitudes_de_tendido_continuo(puntos, xyz, ficha, H_50_kN,
 
 
 def _ajustar_referencia_final_multivano(puntos,xyz,ficha,propiedades,
-                                        hipotesis,referencia,*,Cd,rho_kg_m3):
+                                        hipotesis,referencia,*,Cd,rho_kg_m3,densidad_hielo_kg_m3):
     """Reoptimiza H50 sobre tendido continuo y vanos fijados, no vanos aislados.
 
     El valor anterior sirve solo de semilla. Busca una raiz de utilizacion
@@ -289,7 +291,7 @@ def _ajustar_referencia_final_multivano(puntos,xyz,ficha,propiedades,
         for caso in hipotesis:
             hs,ts,_,residuales,_=ev.evaluar_estado_con_hielo(
                 float(H),caso.temperatura_C,caso.viento_kmh/3.6,
-                caso.hielo_mm,900.)
+                caso.hielo_mm,densidad_hielo_kg_m3)
             uso_t=max(map(float,ts))/caso.limite_tension_kN
             uso_h=(max(map(float,hs))/caso.limite_horizontal_kN
                    if caso.limite_horizontal_kN is not None else 0.)
@@ -356,6 +358,7 @@ def ejecutar_corridas_cfe_por_vano(
     puntos, ficha_inicial, ficha_final, *, viento_max_kmh,
     viento_reducido_kmh, hielo_mm, temperaturas_C,
     Cd=1.0, rho_kg_m3=1.225, incluir_ensayo_viento_16C=False,
+    densidad_hielo_kg_m3=DENSIDAD_HIELO_ENSAYO_KG_M3,
 ):
     """Calcula condiciones de referencia y tablas por vano real.
 
@@ -394,16 +397,19 @@ def ejecutar_corridas_cfe_por_vano(
     desnivel_max_m=max(abs(float(xyz[i+1,2]-xyz[i,2])) for i in range(len(luces)))
     referencia_final=calcular_parametro_cfe_desde_limites(
         xyz,propiedades,fin,condicion="Final",Cd=Cd,rho_kg_m3=rho_kg_m3,
+        densidad_hielo_kg_m3=densidad_hielo_kg_m3,
     )
     referencia_final, longitudes_final, residual_final = _ajustar_referencia_final_multivano(
         puntos,xyz,ficha_final,propiedades,fin,referencia_final,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
+        densidad_hielo_kg_m3=densidad_hielo_kg_m3,
     )
     referencia_inicial, longitudes_inicial, residual_inicial = obtener_referencia_inicial_desde_extremo(
         xyz,propiedades,referencia_final,fin,
         puntos=puntos,ficha_inicial=ficha_inicial,
         longitudes_final=longitudes_final,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
+        densidad_hielo_kg_m3=densidad_hielo_kg_m3,
     )
     # Verificar además el límite propio del estado inicial a 0 °C:
     # el acoplamiento con el extremo final no da permiso para superarlo.
@@ -414,7 +420,7 @@ def ejecutar_corridas_cfe_por_vano(
     for caso in ini:
         hs, ts, _, _, _ = evaluador_inicial.evaluar_estado_con_hielo(
             referencia_inicial["H_50_kN"],caso.temperatura_C,
-            caso.viento_kmh/3.6,caso.hielo_mm,900.,
+            caso.viento_kmh/3.6,caso.hielo_mm,densidad_hielo_kg_m3,
         )
         if (max(ts) > caso.limite_tension_kN*(1+1e-6) or
             (caso.limite_horizontal_kN is not None and
@@ -462,7 +468,7 @@ def ejecutar_corridas_cfe_por_vano(
         for caso in casos:
             hs,ts,_,residuales,_=evaluador.evaluar_estado_con_hielo(
                 referencia["H_50_kN"],caso.temperatura_C,
-                caso.viento_kmh/3.6,caso.hielo_mm,900.,
+                caso.viento_kmh/3.6,caso.hielo_mm,densidad_hielo_kg_m3,
             )
             uso_t=max(ts)/caso.limite_tension_kN
             uso_h=(max(hs)/caso.limite_horizontal_kN
@@ -482,6 +488,7 @@ def ejecutar_corridas_cfe_por_vano(
         EstadoReferenciaCFE(referencia_final["parametro_P_m"],CFE_FUENTE),
         temperaturas_C,estados_climaticos=estados_extra,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
+        densidad_hielo_kg_m3=densidad_hielo_kg_m3,
         longitudes_fijadas=longitudes_fijadas,
     )
     resumen=pd.DataFrame([
