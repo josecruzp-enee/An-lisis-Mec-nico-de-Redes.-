@@ -87,7 +87,7 @@ def separacion_fases_minima(clase_kV, flecha_final_50C_m, area_mm2):
     f=float(flecha_final_50C_m)
     if not math.isfinite(f) or f<0:raise ValueError("Flecha inválida")
     if f<=.60:return SEPARACION_APOYOS_CM[k]/100.
-    if area_mm2<53.5:return None
+    if area_mm2<53.49:return None
     for fc,sc in zip(FLECHAS_TABLA_CM,SEPARACION_FASES_TABLA_CM[k]):
         if f*100<=fc+1e-9:return sc/100.
     return None   # el manual no tabula flecha >300 cm
@@ -103,7 +103,7 @@ def verificar_fases(clase_kV,flecha_final_50C_m,area_mm2,separacion_real_minima_
 
 def verificar_horizontal_construccion(clase_kV,distancia_reposo_m,
                                       desplazamiento_viento_16C_m,desnudo=True):
-    """02 00 04: distancia a construcción BAJO VIENTO (16°C, 19 kgf/m²).
+    """02 00 04: distancia a construcción BAJO VIENTO (16°C).\n    CFE p45 imprime literalmente 19 kg/m como "presión": unidad ambigua.\n    El solver debe documentar cómo estableció la carga de viento; no\n    convertirla automáticamente a 19 kgf/m².
     El desplazamiento debe provenir del solver; no se inventa.
     """
     k=int(clase_kV)
@@ -116,7 +116,7 @@ def verificar_horizontal_construccion(clase_kV,distancia_reposo_m,
     if not math.isfinite(distancia):raise ValueError("Distancia inválida")
     return {"estado":"CUMPLE" if distancia>=limite-1e-9 else "NO CUMPLE",
             "distancia_desfavorable_m":distancia,"minimo_m":limite,
-            "caso":"16°C final; viento hacia construcción de 19 kgf/m²"}
+            "caso":"16°C final; CFE p45: 19 kg/m impreso, unidad a aclarar"}
 
 
 # CFE 02 00 03, hoja 1 de 2 (PDF p.43). Conductores desnudos MT.
