@@ -24,7 +24,7 @@ class Tramo510CFE(unittest.TestCase):
         resumen, tabla = ejecutar_corridas_cfe_por_vano(
             puntos, inicial, final, viento_max_kmh=120.,
             viento_reducido_kmh=0., hielo_mm=6.,
-            temperaturas_C=[0., 20., 30., 50.],
+            temperaturas_C=[0., 16., 20., 30., 50.],
         )
         self.assertEqual(len(resumen), 2)
         self.assertEqual(set(tabla["Luz (m)"]), {50., 70., 120., 150.})
