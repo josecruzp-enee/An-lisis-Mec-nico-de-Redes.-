@@ -117,3 +117,38 @@ def verificar_horizontal_construccion(clase_kV,distancia_reposo_m,
     return {"estado":"CUMPLE" if distancia>=limite-1e-9 else "NO CUMPLE",
             "distancia_desfavorable_m":distancia,"minimo_m":limite,
             "caso":"16°C final; viento hacia construcción de 19 kgf/m²"}
+
+
+# CFE 02 00 03, hoja 1 de 2 (PDF p.43). Conductores desnudos MT.
+# Alturas a 50 °C, sin viento y con flecha FINAL. Valores en metros.
+ALTURAS_MINIMAS_MT_M = {
+    "espacio_no_transitado_vehiculos": 7.0,
+    "vias_ferreas": 9.0,
+    "carreteras_calles_callejones_caminos_vecinales": 7.0,
+    "aguas_no_navegables": 5.5,
+    "aguas_navegables_area_hasta_8ha": 6.5,
+    "aguas_navegables_area_8_a_80ha": 9.5,
+    "aguas_navegables_area_80_a_800ha": 11.6,
+    "aguas_navegables_area_mayor_800ha": 13.0,
+    "a_lo_largo_caminos_y_zonas_rurales": 6.0,
+    "a_lo_largo_carreteras_calles_callejones_zonas_urbanas": 7.0,
+}
+
+def verificar_vertical_superficie(cota_conductor_minima_m,
+                                 cota_superficie_m, tipo_superficie=None):
+    """Distancia vertical a superficie específica, 50 °C final sin viento.
+
+    La clase de superficie NO puede inferirse del hecho 'terreno plano'.
+    """
+    if tipo_superficie is None:
+        return {"estado":"NO VERIFICABLE","motivo":"Falta categoría de superficie"}
+    minimo=ALTURAS_MINIMAS_MT_M.get(tipo_superficie)
+    if minimo is None:
+        return {"estado":"NO VERIFICABLE","motivo":"Categoría no documentada"}
+    if cota_conductor_minima_m is None or cota_superficie_m is None:
+        return {"estado":"NO VERIFICABLE","motivo":"Faltan cotas de terreno y conductor"}
+    real=float(cota_conductor_minima_m)-float(cota_superficie_m)
+    if not math.isfinite(real):raise ValueError("Altura inválida")
+    return {"estado":"CUMPLE" if real>=minimo-1e-9 else "NO CUMPLE",
+            "libramiento_real_m":real,"libramiento_minimo_m":minimo,
+            "fuente":"CFE 02 00 03, PDF p.43; MT, final 50C sin viento"}
