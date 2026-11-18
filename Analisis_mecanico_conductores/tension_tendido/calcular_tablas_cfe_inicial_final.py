@@ -90,13 +90,14 @@ class HipotesisDisenoCFE:
             raise ValueError("Hipótesis CFE sin nombre o fuente")
 
 
-def _evaluador(xyz, propiedades, condicion, Cd, rho):
+def _evaluador(xyz, propiedades, condicion, Cd, rho, longitudes_fijadas=None):
     inicial = condicion == "Inicial"
     return EvaluadorVanosAmarrados(
         xyz, propiedades.peso_kN_m, propiedades.diametro_m,
         propiedades.EA_inicial_kN if inicial else propiedades.EA_final_kN,
         propiedades.alpha_inicial_por_C if inicial else propiedades.alpha_final_por_C,
         50., Cd, rho,
+        longitudes_naturales_referencia_m=longitudes_fijadas,
     )
 
 
@@ -215,7 +216,7 @@ def calcular_tablas_inicial_final(
     referencia_final: EstadoReferenciaCFE,
     temperaturas_C, *,
     estados_climaticos=(), Cd=1.2, rho_kg_m3=1.225,
-    densidad_hielo_kg_m3=900.,
+    densidad_hielo_kg_m3=900., longitudes_fijadas=None,
 ):
     """Genera ambas tablas por vano; también admite estados viento/hielo.
 
@@ -232,7 +233,9 @@ def calcular_tablas_inicial_final(
     filas = []
     for condicion, referencia in (("Inicial", referencia_inicial),
                                   ("Final", referencia_final)):
-        evaluador = _evaluador(xyz, propiedades, condicion, Cd, rho_kg_m3)
+        longitudes = (longitudes_fijadas or {}).get(condicion)
+        evaluador = _evaluador(xyz, propiedades, condicion, Cd, rho_kg_m3,
+                               longitudes_fijadas=longitudes)
         H_50 = referencia.parametro_P_m * propiedades.peso_kN_m
         estados = [("Tabla térmica", float(t), 0., 0.) for t in temperaturas_C]
         estados.extend((str(x[0]), float(x[1]), float(x[2]), float(x[3]))
@@ -262,6 +265,7 @@ def calcular_tablas_inicial_final(
                     "Vano": str(puntos.iloc[i]["Punto"]) + " → " +
                             str(puntos.iloc[i+1]["Punto"]),
                     "Luz (m)": float(luces[i]),
+                    "Longitud natural fijada (m)": (float(longitudes[i]) if longitudes is not None else None),
                     "P a 50 °C (m)": referencia.parametro_P_m,
                     "H (kN)": float(hs[i]),
                     "T máx. (kN)": float(tensiones[i]),
