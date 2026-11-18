@@ -92,11 +92,11 @@ def mostrar_corridas_cfe(puntos):
             help="Verificar la zona de viento prevista en CFE para el proyecto.",
         )
         viento_reducido=st.text_input(
-            "Viento reducido (km/h) — condición del caso",value="0",
+            "Viento reducido (km/h) — condición del caso",value="109",
             help="No se inventa ni se deduce automáticamente del viento máximo.",
         )
         hielo=st.text_input(
-            "Espesor de hielo radial (mm) — condición del caso",value="0",
+            "Espesor de hielo radial (mm) — condición del caso",value="6",
             help="No se sustituye una hipótesis con hielo por hielo cero.",
         )
         rho=st.number_input(
@@ -106,8 +106,8 @@ def mostrar_corridas_cfe(puntos):
         )
         st.caption(
             "Coeficiente de arrastre CFE para cables: Cd = 1.0. "
-            "Se conserva el cálculo de viento del motor; se debe verificar "
-            "su equivalencia con las expresiones de presión de CFE."
+            "Modo CFE: presión por claro de 05 00 03 (VR=120 km/h), "
+            "sin volver a multiplicar por Cd ni por presión dinámica."
         )
         a,b,c=st.columns(3)
         with a:tmin=st.number_input("Temperatura mínima (°C)",value=-10.)
@@ -176,8 +176,9 @@ def mostrar_corridas_cfe(puntos):
             Cd=1.,rho_kg_m3=float(rho),
             incluir_ensayo_viento_16C=True,
             densidad_hielo_kg_m3=DENSIDAD_HIELO_ENSAYO_KG_M3,
+            modelo_presion_cfe=True,
         )
-        st.caption(f"Hielo: densidad fijada para este ensayo = {DENSIDAD_HIELO_ENSAYO_KG_M3:g} kg/m³.")
+        st.caption(f"Hielo: densidad fijada = {DENSIDAD_HIELO_ENSAYO_KG_M3:g} kg/m³. Viento: presiones CFE 05 00 03 por claro, VR 120 km/h.")
         st.subheader("Referencias inicial y final — modelo multivano experimental")
         if float(viento_reducido)==0. and float(hielo)==0.:
             st.warning(
@@ -309,6 +310,7 @@ def mostrar_corridas_cfe(puntos):
                 "viento_reducido_kmh": float(viento_reducido),
                 "hielo_mm": float(hielo),
                 "densidad_hielo_kg_m3":DENSIDAD_HIELO_ENSAYO_KG_M3,
+                "modelo_presion_cfe":True,
                 "rho_kg_m3": float(rho),
                 "Cd": 1.0,
             },
