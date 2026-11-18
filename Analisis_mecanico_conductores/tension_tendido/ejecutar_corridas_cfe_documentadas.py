@@ -287,6 +287,10 @@ def ejecutar_corridas_cfe_por_vano(
         ("CFE viento reducido + hielo" if hielo_mm > 0 else
          "CFE viento reducido SIN hielo",-10.,float(viento_reducido_kmh),float(hielo_mm)),
         ("CFE viento máximo",0.,float(viento_max_kmh),0.),
+        # Estado geométrico adicional para evaluar alejamiento lateral de
+        # construcciones. El viento aquí es el máximo declarado; NO se
+        # atribuye a la presión específica de libramiento de CFE 02 00 04.
+        ("Exploratorio 16°C viento máximo",16.,float(viento_max_kmh),0.),
     ]
     tabla=calcular_tablas_inicial_final(
         puntos,propiedades,
