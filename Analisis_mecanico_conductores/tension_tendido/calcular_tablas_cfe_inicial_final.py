@@ -77,8 +77,11 @@ class HipotesisDisenoCFE:
     hielo_mm: float
     limite_tension_kN: float
     fuente: str
+    limite_horizontal_kN: float | None = None
 
     def validar(self):
+        if self.limite_horizontal_kN is not None:
+            finito(self.limite_horizontal_kN, "Límite horizontal", 0, True)
         finito(self.temperatura_C, "Temperatura")
         for nombre in ("viento_kmh", "hielo_mm"):
             finito(getattr(self, nombre), nombre, 0)
@@ -126,11 +129,13 @@ def calcular_parametro_cfe_desde_limites(
     def relacion(H):
         ratios = []
         for h in hipotesis:
-            _, tensiones, _, _, _ = evaluador.evaluar_estado_con_hielo(
+            hs, tensiones, _, _, _ = evaluador.evaluar_estado_con_hielo(
                 H, h.temperatura_C, h.viento_kmh / 3.6,
                 h.hielo_mm, densidad_hielo_kg_m3,
             )
             ratios.append(max(tensiones) / h.limite_tension_kN)
+            if h.limite_horizontal_kN is not None:
+                ratios.append(max(hs) / h.limite_horizontal_kN)
         return max(ratios)
 
     # La tensión MÁXIMA en el apoyo no es necesariamente monótona en H:
@@ -173,14 +178,17 @@ def calcular_parametro_cfe_desde_limites(
     # que dicho criterio reproduzca el procedimiento histórico ENEE/SAGSEC.
     detalles = []
     for hip in hipotesis:
-        _, tensiones, _, residuales, _ = evaluador.evaluar_estado_con_hielo(
+        hs, tensiones, _, residuales, _ = evaluador.evaluar_estado_con_hielo(
             H, hip.temperatura_C, hip.viento_kmh / 3.6,
             hip.hielo_mm, densidad_hielo_kg_m3,
         )
         tension_maxima = max(float(t) for t in tensiones)
+        uso_total = tension_maxima / hip.limite_tension_kN
+        uso_horizontal = (max(hs) / hip.limite_horizontal_kN
+                          if hip.limite_horizontal_kN is not None else 0.)
         detalles.append((
-            tension_maxima / hip.limite_tension_kN,
-            hip, tension_maxima, max(abs(float(r)) for r in residuales),
+            max(uso_total, uso_horizontal), hip, tension_maxima,
+            max(abs(float(r)) for r in residuales),
         ))
     indice_critico = max(range(len(detalles)), key=lambda i: detalles[i][0])
     ratio, gobernante, tension_real, residuo_max = detalles[indice_critico]
