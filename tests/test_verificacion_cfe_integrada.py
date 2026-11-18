@@ -50,7 +50,8 @@ class TestVerificacionCFEIntegrada(unittest.TestCase):
             self.tabla,self.puntos,estructura="TS3N",conductor="RAVEN",
             clase_kV=13,separacion_fases_m=.2,
         )
-        self.assertTrue((r["Separación entre fases"]=="NO CUMPLE").all())
+        self.assertTrue((r["Separación entre fases"].iloc[:4]=="NO CUMPLE").all())
+        self.assertEqual(r.loc[4,"Separación entre fases"],"NO VERIFICABLE")
 
     def test_alturas_inexistentes_no_aprueba_libramiento(self):
         puntos=self.puntos.drop(columns=["Altura_Amarre_m"])
