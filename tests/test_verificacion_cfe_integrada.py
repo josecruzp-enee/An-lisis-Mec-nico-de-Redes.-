@@ -53,6 +53,18 @@ class TestVerificacionCFEIntegrada(unittest.TestCase):
         self.assertTrue((r["Separación entre fases"].iloc[:4]=="NO CUMPLE").all())
         self.assertEqual(r.loc[4,"Separación entre fases"],"NO VERIFICABLE")
 
+    def test_angulo_en_apoyo_se_compara_con_limitante(self):
+        puntos=self.puntos.copy()
+        # Desvío de 90 grados en un apoyo de paso: supera 1.85° TS3N.
+        puntos.loc[2:,"Y"]=[20.,40.,60.,80.]
+        r=evaluar_corrida_documentada(
+            self.tabla,puntos,estructura="TS3N",conductor="RAVEN",
+            clase_kV=13,
+        )
+        self.assertGreater(r.loc[1,"Deflexión máx. en apoyos (°)"],1.85)
+        self.assertIn("deflexion_max_grados",
+                      r.loc[1,"Limitantes excedidas CFE"])
+
     def test_alturas_inexistentes_no_aprueba_libramiento(self):
         puntos=self.puntos.drop(columns=["Altura_Amarre_m"])
         r=evaluar_corrida_documentada(
