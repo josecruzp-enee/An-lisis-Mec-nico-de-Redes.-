@@ -138,82 +138,92 @@ def construir_hipotesis_cfe(
 
 def obtener_referencia_inicial_desde_extremo(
     xyz, propiedades, referencia_final, hipotesis_final,
-    *, Cd=1.0, rho_kg_m3=1.225, densidad_hielo_kg_m3=900.,
+    *, puntos, ficha_inicial, longitudes_final,
+    Cd=1.0, rho_kg_m3=1.225, densidad_hielo_kg_m3=900.,
 ):
-    """Vincula el estado de tendido al extremo final, según CFE 07 FT 01.
+    """Acoplamiento de referencia inicial/final sobre el MISMO esquema multivano.
 
-    En el estado de carga extrema que gobierna la referencia FINAL, se
-    exige igual tensión máxima en ambos estados, con E y alfa propios.
-    No se optimiza P inicial por separado ni se presupone creep.
+    Se iguala la tensión máxima de la condición extrema -10 °C, después
+    de distribuir y fijar las longitudes naturales de cada condición.
+    Esta igualdad de referencia no es una ley constitutiva de creep.
     """
-    # CFE 07 FT 01, hoja 5/6, inciso b: el tendido inicial se deriva
-    # de la tensión de -10 °C de la condición FINAL, no de la condición
-    # que gobierne la relación tensión / límite (podría ser 0 o 16 °C).
-    gobernante = next(
+    from functools import lru_cache
+    extremo=next(
         (h for h in hipotesis_final
          if h.temperatura_C == -10. and "reducido" in h.nombre.lower()),
         None,
     )
-    if gobernante is None:
-        raise ValueError(
-            "Falta el estado final de -10 °C con viento reducido e hielo "
-            "para acoplar la condición inicial CFE."
-        )
-    evaluador_final = _evaluador(xyz, propiedades, "Final", Cd, rho_kg_m3)
-    evaluador_inicial = _evaluador(xyz, propiedades, "Inicial", Cd, rho_kg_m3)
-    h_final = referencia_final["H_50_kN"]
-    def evaluar(evaluador, H):
-        return evaluador.evaluar_estado_con_hielo(
-            float(H), gobernante.temperatura_C,
-            gobernante.viento_kmh / 3.6, gobernante.hielo_mm,
-            densidad_hielo_kg_m3,
-        )
-    _, tensiones_finales, _, _, _ = evaluar(evaluador_final, h_final)
-    objetivo = max(map(float, tensiones_finales))
-    def diferencia(H):
-        _, tensiones, _, _, _ = evaluar(evaluador_inicial, H)
-        return max(map(float, tensiones)) - objetivo
+    if extremo is None:
+        raise ValueError("No se dispone de la hipótesis final extrema a -10 °C")
 
-    minimo = max(0.01, propiedades.peso_kN_m)
-    maximo = propiedades.ruptura_kN
-    hs = np.unique(np.r_[np.geomspace(minimo, maximo, 120),
-                         np.linspace(minimo, maximo, 120)])
-    fs = np.array([diferencia(float(H)) for H in hs])
-    raices = []
-    for i in range(len(hs)-1):
-        if fs[i] == 0:
-            raices.append(float(hs[i]))
-        elif fs[i]*fs[i+1] < 0:
-            raices.append(float(brentq(
-                diferencia, float(hs[i]), float(hs[i+1]), xtol=1e-9,
-            )))
-    if not raices:
-        raise ValueError(
-            "No existe referencia inicial que reproduzca la tensión "
-            "extrema final para esta geometría y propiedades."
+    h_final=float(referencia_final["H_50_kN"])
+    ev_final=_evaluador(
+        xyz,propiedades,"Final",Cd,rho_kg_m3,
+        longitudes_fijadas=longitudes_final,
+    )
+    _,tf,_,_,_=ev_final.evaluar_estado_con_hielo(
+        h_final,extremo.temperatura_C,extremo.viento_kmh/3.6,
+        extremo.hielo_mm,densidad_hielo_kg_m3,
+    )
+    objetivo=max(map(float,tf))
+    @lru_cache(maxsize=96)
+    def evaluar(h):
+        longs,continuidad=_longitudes_de_tendido_continuo(
+            puntos,xyz,ficha_inicial,float(h),Cd=Cd,rho_kg_m3=rho_kg_m3,
         )
-    # Rama de mayor H, correspondiente al tendido ordinario y no a la
-    # rama floja con pendientes extremas.
-    h_inicial = max(raices)
-    _, t_iniciales, _, _, _ = evaluar(evaluador_inicial, h_inicial)
-    error = max(map(float,t_iniciales)) - objetivo
-    if abs(error) > max(1e-5, objetivo*1e-6):
-        raise ValueError("No se logró acoplar la tensión extrema inicial/final")
+        ev=_evaluador(xyz,propiedades,"Inicial",Cd,rho_kg_m3,
+                      longitudes_fijadas=longs)
+        _,tensiones,_,residuales,_=ev.evaluar_estado_con_hielo(
+            float(h),extremo.temperatura_C,extremo.viento_kmh/3.6,
+            extremo.hielo_mm,densidad_hielo_kg_m3,
+        )
+        return (max(map(float,tensiones))-objetivo,
+                longs,continuidad,max(map(float,tensiones)),
+                max(abs(float(x)) for x in residuales))
+
+    # Buscar una raíz cerca de la referencia final sin asumir monotonicidad
+    # global ni permitir un estado que supere la resistencia a rotura.
+    semilla=float(referencia_final["H_50_kN"])
+    minimo=max(0.05,semilla*0.60)
+    maximo=min(propiedades.ruptura_kN*0.95,semilla*1.55)
+    muestras=np.unique(np.r_[
+        np.linspace(minimo,maximo,13),semilla,
+    ])
+    valores=[evaluar(float(h))[0] for h in muestras]
+    intervalos=[]
+    for i in range(len(muestras)-1):
+        if valores[i]*valores[i+1]<=0.:
+            intervalos.append((float(muestras[i]),float(muestras[i+1])))
+    if not intervalos:
+        raise ValueError(
+            "El acoplamiento inicial/final multivano no tiene raíz "
+            "identificada en el intervalo físico explorado; "
+            "no se sustituye por el ajuste de vanos fijos."
+        )
+    a,b=min(intervalos,key=lambda x:abs((x[0]+x[1])/2-semilla))
+    h_inicial=float(a if a==b else brentq(
+        lambda h:evaluar(float(h))[0],a,b,xtol=1e-8,rtol=1e-10,
+    ))
+    error,longitudes,continuidad,tension,residuo=evaluar(h_inicial)
+    if abs(error)>max(1e-5,objetivo*1e-6):
+        raise ValueError("Acoplamiento de tensiones extremas fuera de tolerancia")
+    if continuidad>1e-4 or residuo>1e-7:
+        raise ValueError("La referencia inicial incumple equilibrio/compatibilidad")
     return {
-        "condicion": "Inicial",
-        "H_50_kN": h_inicial,
-        "parametro_P_m": h_inicial / propiedades.peso_kN_m,
-        "relacion_critica": objetivo / gobernante.limite_tension_kN,
-        "hipotesis_gobernante": gobernante.nombre,
-        "temperatura_gobernante_C": gobernante.temperatura_C,
-        "viento_gobernante_kmh": gobernante.viento_kmh,
-        "hielo_gobernante_mm": gobernante.hielo_mm,
-        "tension_maxima_gobernante_kN": max(map(float,t_iniciales)),
-        "limite_gobernante_kN": gobernante.limite_tension_kN,
-        "residuo_maximo_gobernante_m": abs(error),
-        "cota_busqueda_activa": False,
-        "metodo": "Tensión extrema acoplada a condición final, CFE 07 FT 01",
-    }
+        "condicion":"Inicial",
+        "H_50_kN":h_inicial,
+        "parametro_P_m":h_inicial/propiedades.peso_kN_m,
+        "relacion_critica":tension/extremo.limite_tension_kN,
+        "hipotesis_gobernante":extremo.nombre,
+        "temperatura_gobernante_C":extremo.temperatura_C,
+        "viento_gobernante_kmh":extremo.viento_kmh,
+        "hielo_gobernante_mm":extremo.hielo_mm,
+        "tension_maxima_gobernante_kN":tension,
+        "limite_gobernante_kN":extremo.limite_tension_kN,
+        "residuo_maximo_gobernante_m":abs(error),
+        "cota_busqueda_activa":False,
+        "metodo":"Acoplamiento de tensión extrema sobre multivano fijado; NO creep",
+    },longitudes,continuidad
 
 
 def _longitudes_de_tendido_continuo(puntos, xyz, ficha, H_50_kN,
@@ -388,13 +398,18 @@ def ejecutar_corridas_cfe_por_vano(
         puntos,xyz,ficha_final,propiedades,fin,referencia_final,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
     )
-    referencia_inicial=obtener_referencia_inicial_desde_extremo(
+    referencia_inicial, longitudes_inicial, residual_inicial = obtener_referencia_inicial_desde_extremo(
         xyz,propiedades,referencia_final,fin,
+        puntos=puntos,ficha_inicial=ficha_inicial,
+        longitudes_final=longitudes_final,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
     )
     # Verificar además el límite propio del estado inicial a 0 °C:
     # el acoplamiento con el extremo final no da permiso para superarlo.
-    evaluador_inicial = _evaluador(xyz,propiedades,"Inicial",Cd,rho_kg_m3)
+    evaluador_inicial = _evaluador(
+        xyz,propiedades,"Inicial",Cd,rho_kg_m3,
+        longitudes_fijadas=longitudes_inicial,
+    )
     for caso in ini:
         hs, ts, _, _, _ = evaluador_inicial.evaluar_estado_con_hielo(
             referencia_inicial["H_50_kN"],caso.temperatura_C,
@@ -431,12 +446,8 @@ def ejecutar_corridas_cfe_por_vano(
     residuales_continuidad={}
     longitudes_fijadas["Final"]=longitudes_final
     residuales_continuidad["Final"]=residual_final
-    lon,residual=_longitudes_de_tendido_continuo(
-        puntos,xyz,ficha_inicial,referencia_inicial["H_50_kN"],
-        Cd=Cd,rho_kg_m3=rho_kg_m3,
-    )
-    longitudes_fijadas["Inicial"]=lon
-    residuales_continuidad["Inicial"]=residual
+    longitudes_fijadas["Inicial"]=longitudes_inicial
+    residuales_continuidad["Inicial"]=residual_inicial
     # Los limites se verifican de NUEVO tras redistribuir material:
     # la factibilidad del modelo de amarres fijos anterior no se hereda.
     for condicion,casos,referencia in (
@@ -480,6 +491,16 @@ def ejecutar_corridas_cfe_por_vano(
     ])
     resumen["Claro regla convencional orientativo (m)"]=claro_regla_m
     resumen["Número de vanos"]=len(luces)
+    # Diagnóstico, NO ley de creep: diferencias geométricas/constitutivas
+    # implícitas entre referencias calculadas por separado.
+    deformaciones_aparentes=[
+        (lf/li-1.) for li,lf in zip(longitudes_inicial,longitudes_final)
+    ]
+    resumen["Deformación aparente inicial→final máxima |ΔL0/L0|"]=[
+        float(max(abs(v) for v in deformaciones_aparentes))]*2
+    resumen["Modelo de deformación permanente"]=[
+        "NO suministrado: referencias acopladas por tensión, no por creep"
+    ]*2
     resumen["Longitud natural total fijada (m)"]=[
         sum(longitudes_fijadas["Inicial"]),sum(longitudes_fijadas["Final"])]
     resumen["Residual continuidad tendido (kN)"]=[
