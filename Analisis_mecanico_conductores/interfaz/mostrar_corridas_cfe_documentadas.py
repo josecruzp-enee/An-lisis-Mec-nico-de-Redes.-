@@ -173,6 +173,7 @@ def mostrar_corridas_cfe(puntos):
             hielo_mm=float(hielo),
             temperaturas_C=temperaturas,
             Cd=1.,rho_kg_m3=float(rho),
+            incluir_ensayo_viento_16C=True,
         )
         st.subheader("Referencias final e inicial acopladas (modelo experimental)")
         if float(viento_reducido)==0. and float(hielo)==0.:
