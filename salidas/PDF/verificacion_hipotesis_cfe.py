@@ -45,12 +45,19 @@ def verificar_cinco_hipotesis(tabla, *, ruptura_kN, nombre_conductor,
             ]
         if candidatos.empty:
             tension = None
+            horizontal = None
             utilizacion = None
             veredicto = "SIN EVALUAR"
         else:
             tension = float(candidatos["T máx. (kN)"].max())
-            utilizacion = tension/float(hip.limite_tension_kN)
-            veredicto = "CUMPLE" if utilizacion<=1.000001 else "NO CUMPLE"
+            horizontal = float(candidatos["H (kN)"].max())
+            uso_total = tension / float(hip.limite_tension_kN)
+            uso_horizontal = (
+                horizontal / float(hip.limite_horizontal_kN)
+                if hip.limite_horizontal_kN is not None else 0.
+            )
+            utilizacion = max(uso_total, uso_horizontal)
+            veredicto = "CUMPLE" if utilizacion <= 1.000001 else "NO CUMPLE"
         resultados.append({
             "Código":f"H{idx}",
             "Condición":estado,
@@ -59,6 +66,8 @@ def verificar_cinco_hipotesis(tabla, *, ruptura_kN, nombre_conductor,
             "Viento (km/h)":hip.viento_kmh,
             "Hielo (mm)":hip.hielo_mm,
             "Límite (kN)":hip.limite_tension_kN,
+            "Límite H (kN)":hip.limite_horizontal_kN,
+            "H máxima (kN)":horizontal,
             "T máxima (kN)":tension,
             "Utilización":utilizacion,
             "Estado":veredicto,
