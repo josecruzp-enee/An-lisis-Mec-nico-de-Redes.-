@@ -64,22 +64,29 @@ def evaluar_corrida_documentada(tabla, puntos, *, estructura, conductor,
         )
         f50=float(final50["Flecha (m)"].iloc[0]) if len(final50)==1 else None
         fases=verificar_fases(clase_kV,f50,area,separacion_fases_m) if f50 is not None else {"estado":"NO VERIFICABLE"}
-        if f50 is not None and plano:
-            zmin=min(terreno[i]+amarres[i],terreno[i+1]+amarres[i+1])-f50
+        if f50 is not None and plano and abs(float(amarres[i]-amarres[i+1]))<1e-7:
+            zmin=float(terreno[i]+amarres[i])-f50
             altura=verificar_vertical_superficie(
                 zmin,float(terreno[i]),tipo_superficie,
             )
         else:
             altura={"estado":"NO VERIFICABLE",
-                    "motivo":"Requiere terreno plano y cotas de amarre completas"}
-        if distancia_construccion_m is not None and len(final16)==1:
-            # La tabla térmica de 16C no incluye viento transversal:
-            # por ello no se deduce el desplazamiento lateral a 16C.
-            horizontal={"estado":"NO VERIFICABLE",
-                        "motivo":"Falta corrida final a 16°C con viento horizontal documentado"}
+                    "motivo":"Requiere terreno plano, amarres a igual cota y cotas completas"}
+        viento16=grupo.loc[(grupo["Condición"]=="Final")
+                         &(grupo["Hipótesis"]=="Exploratorio 16°C viento máximo")
+                         &((grupo["Temperatura (°C)"]-16.).abs()<1e-7)]
+        if distancia_construccion_m is not None and len(viento16)==1:
+            desplazamiento=float(viento16["Lateral (m)"].iloc[0])
+            # Comprobación conservadora: se resta el desplazamiento
+            # absoluto aunque el viento real aleje el cable del edificio.
+            horizontal=verificar_horizontal_construccion(
+                clase_kV,distancia_construccion_m,desplazamiento
+            )
+            if horizontal["estado"] in ("CUMPLE","NO CUMPLE"):
+                horizontal["estado"] += " (ENSAYO VIENTO DECLARADO, NO CFE 02 00 04)"
         else:
             horizontal={"estado":"NO VERIFICABLE",
-                        "motivo":"No se dispone de obstáculo y/o desplazamiento a 16°C con viento"}
+                        "motivo":"Se requiere distancia a construcción y corrida 16°C con viento"}
         # Comprobaciones de tracción disponibles: usar T resultante,
         # no componente H; no declarar completa si falta un caso.
         por_caso={
@@ -158,5 +165,6 @@ def mostrar_verificacion_integrada(tabla, puntos, conductor, *, hielo_mm=0.):
                        comprobacion.to_csv(index=False).encode("utf-8-sig"),
                        "verificacion_integral_cfe_por_vano.csv","text/csv",
                        key="descarga_verificacion_cfe_integral")
-    st.caption("No se completan verificaciones horizontales con desplazamiento de viento inventado.")
+    st.caption("Horizontal: usa desplazamiento numérico a 16°C con viento máximo declarado; "
+               "es un ensayo conservador, NO la condición de presión específica CFE 02 00 04.")
     return comprobacion
