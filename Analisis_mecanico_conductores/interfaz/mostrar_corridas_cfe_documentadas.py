@@ -183,6 +183,15 @@ def mostrar_corridas_cfe(puntos):
                 "tablas CFE 07 FT. La comparación con P tabulado no valida el diseño."
             )
         st.dataframe(resumen,hide_index=True,use_container_width=True)
+        st.subheader("Tendido continuo y fijación por vano")
+        st.caption(
+            "Etapa 1: sección continua con deslizamiento ideal a 50 °C. "
+            "Etapa 2: longitud natural individual fijada; cambios de estado "
+            "independientes sin deslizamiento posterior."
+        )
+        columnas=["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
+        longitudes=tabla[columnas].drop_duplicates(["Condición","Vano"])
+        st.dataframe(longitudes,hide_index=True,use_container_width=True)
         st.caption(
             "El claro regla de la tabla resumen NO interviene en las ecuaciones "
             "de estas corridas. Para vanos desnivelados su interpretación "
