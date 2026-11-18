@@ -152,3 +152,28 @@ def verificar_vertical_superficie(cota_conductor_minima_m,
     return {"estado":"CUMPLE" if real>=minimo-1e-9 else "NO CUMPLE",
             "libramiento_real_m":real,"libramiento_minimo_m":minimo,
             "fuente":"CFE 02 00 03, PDF p.43; MT, final 50C sin viento"}
+
+
+# Las estructuras H tienen tabla independiente y no son equiparables a TS.
+CATALOGO_H = Path(__file__).resolve().parents[2] / "entradas/catalogos/cfe_limitantes_estructuras_H_120kmh.csv"
+
+def verificar_estructura_H(estructura, conductor, claro_medio_horizontal_m,
+                          claro_vertical_m, *, catalogo=None):
+    """CFE 05 H0 02, PDF pp.496-497. Conjunto H con cable de guarda."""
+    with Path(catalogo or CATALOGO_H).open(encoding="utf-8-sig",newline="") as f:
+        filas=[x for x in csv.DictReader(f) if x["estructura"]==estructura
+               and x["conductor"]==conductor]
+    if len(filas)!=1:
+        return {"estado":"NO VERIFICABLE","motivo":"Sin fila H unívoca"}
+    x=filas[0]
+    h=float(claro_medio_horizontal_m);v=float(claro_vertical_m)
+    if not all(math.isfinite(a) and a>0 for a in (h,v)):
+        raise ValueError("Claros H inválidos")
+    mh=float(x["claro_medio_horizontal_m"]);mv=float(x["claro_vertical_m"])
+    return {"estado":"DENTRO DE TABLA H CFE; NO ES APROBACION ENEE" if h<=mh and v<=mv
+                      else "EXCEDE TABLA H CFE",
+            "claro_horizontal_m":h,"maximo_horizontal_m":mh,
+            "claro_vertical_m":v,"maximo_vertical_m":mv,
+            "TH_viento_max_N":float(x["TH_viento_max_conductor_N"]),
+            "TH_viento_reducido_hielo_N":float(x["TH_viento_reducido_hielo_conductor_N"]),
+            "pagina_pdf":int(x["pagina_pdf"])}
