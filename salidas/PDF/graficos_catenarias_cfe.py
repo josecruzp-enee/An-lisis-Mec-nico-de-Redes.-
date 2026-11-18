@@ -65,6 +65,7 @@ def _carga(xyz, i, row, propiedades, clima):
     cargas, _ = calcular_cargas_transversales_por_vano(
         xyz, peso, diametro, float(row["Viento (km/h)"])/3.6,
         float(clima.get("Cd",1.)),float(clima.get("rho_kg_m3",1.225)),
+        modelo_presion_cfe=bool(clima.get("modelo_presion_cfe",False)),
     )
     return cargas[i][1]
 
