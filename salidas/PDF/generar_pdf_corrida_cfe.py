@@ -312,13 +312,14 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         )
         historia.append(PageBreak())
         titulo("Control de las cinco hipótesis mecánicas CFE")
-        linea("Se contrasta la tensión máxima del conductor, entre todos los "
-              "vanos calculados, con el límite aplicable de cada hipótesis. "
-              "CUMPLE significa utilización menor o igual al 100%; "
-              "SIN EVALUAR indica que faltó calcular ese estado.", nota)
+        linea("Se verifican dos magnitudes distintas: T total frente al "
+              "porcentaje RTS y H frente al límite horizontal TH1/TH2 "
+              "cuando corresponda. Uso % es el mayor de ambos cocientes; "
+              "SIN EVALUAR indica estados no calculados.", nota)
         filas_control = [[
             "Caso", "Estado", "Temp. °C", "Viento km/h", "Hielo mm",
-            "T máx. kN", "Límite kN", "Uso %", "Resultado",
+            "T máx. kN", "Límite T kN", "H máx. kN", "Límite H kN",
+            "Uso %", "Resultado",
         ]]
         for _, r in control.iterrows():
             uso = r["Utilización"]
@@ -329,10 +330,12 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 _fmt(r["Hielo (mm)"], 1),
                 _fmt(r["T máxima (kN)"], 3) if pd.notna(r["T máxima (kN)"]) else "—",
                 _fmt(r["Límite (kN)"], 3),
+                _fmt(r["H máxima (kN)"], 3) if pd.notna(r["H máxima (kN)"]) else "—",
+                _fmt(r["Límite H (kN)"], 3) if pd.notna(r["Límite H (kN)"]) else "—",
                 _fmt(uso*100, 2) if pd.notna(uso) else "—",
                 r["Estado"],
             ])
-        datos_tabla(filas_control, [0.7,0.9,0.9,1,0.8,1.2,1.1,0.9,1.3])
+        datos_tabla(filas_control, [0.6,0.8,0.75,0.9,0.75,1.0,1.0,0.95,1.0,0.8,1.05])
         for _, r in control.iterrows():
             linea(f"{r['Código']}: {r['Hipótesis']}", nota)
         if (control["Estado"] == "SIN EVALUAR").any():
