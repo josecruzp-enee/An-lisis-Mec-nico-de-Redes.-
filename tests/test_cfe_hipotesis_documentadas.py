@@ -144,13 +144,27 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
                 viento_reducido_kmh=80., hielo_mm=3.,
                 nombre_conductor=nombre,
             )
-            self.assertAlmostEqual(finales[2].limite_tension_kN, th1)
-            self.assertAlmostEqual(finales[3].limite_tension_kN, th2)
+            self.assertAlmostEqual(finales[2].limite_tension_kN, 45.)
+            self.assertAlmostEqual(finales[3].limite_tension_kN, 45.)
+            self.assertAlmostEqual(finales[2].limite_horizontal_kN, th1)
+            self.assertAlmostEqual(finales[3].limite_horizontal_kN, th2)
         _ini, sin_especificar = construir_hipotesis_cfe(
             100., viento_max_kmh=120., viento_reducido_kmh=80.,
             hielo_mm=3.,
         )
         self.assertAlmostEqual(sin_especificar[2].limite_tension_kN, 45.)
+        self.assertIsNone(sin_especificar[2].limite_horizontal_kN)
+
+    def test_th_horizontal_y_porcentaje_total_son_restricciones_distintas(self):
+        inicial, final = construir_hipotesis_cfe(
+            19.4774, viento_max_kmh=120., viento_reducido_kmh=0.,
+            hielo_mm=6., nombre_conductor="RAVEN",
+        )
+        self.assertAlmostEqual(final[2].limite_tension_kN, 19.4774 * .45)
+        self.assertAlmostEqual(final[3].limite_tension_kN, 19.4774 * .45)
+        self.assertAlmostEqual(final[2].limite_horizontal_kN, 6.495)
+        self.assertAlmostEqual(final[3].limite_horizontal_kN, 5.618)
+        self.assertIsNone(inicial[0].limite_horizontal_kN)
 
     def test_estado_inicial_acoplado_al_extremo_final(self):
         """CFE 07 FT 01: misma tensión extrema a -10 °C, no P iguales."""
