@@ -216,6 +216,50 @@ def obtener_referencia_inicial_desde_extremo(
     }
 
 
+def _longitudes_de_tendido_continuo(puntos, xyz, ficha, H_50_kN,
+                                     *, Cd, rho_kg_m3):
+    """Etapa 1: continuidad ideal a 50 C sin viento, antes de fijar."""
+    from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import longitud_natural
+    from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
+    if len(xyz) == 2:
+        cable=resolver_catenaria(xyz[0],xyz[1],
+                                [0.,0.,-float(ficha["peso_kN_m"])],float(H_50_kN))
+        return [longitud_natural(cable,float(ficha["EA_kN"]))],0.
+    from Analisis_mecanico_conductores.tension_tendido.comparar_multivano_deslizante_cfe import (
+        construir_red_deslizante_de_puntos,
+    )
+    from Analisis_mecanico_conductores.tension_tendido.resolver_seccion_deslizante_ideal import (
+        resolver_seccion_deslizante,
+    )
+    # La geometría ya fue validada por _geometria. Se crea una representación
+    # equivalente sin inventar un desnivel: z_amarre permanece idéntico.
+    geom=puntos[["Punto","X","Y"]].copy()
+    geom["Altitud"]=xyz[:,2]-10.
+    geom["Altura_Amarre_m"]=10.
+    red=construir_red_deslizante_de_puntos(geom,str(ficha["nombre"]).upper())
+    nombre=str(ficha["nombre"]).upper()
+    materiales={nombre:{
+        "peso_kN_m":float(ficha["peso_kN_m"]),
+        "diametro_m":float(ficha["diametro_m"]),
+        "EA_kN":float(ficha["EA_kN"]),
+        "alpha_por_C":float(ficha["alpha_por_C"]),
+        "H_tendido_kN":float(H_50_kN),
+        "temperatura_tendido_C":50.,
+        "fuente":str(ficha["fuente"]),
+    }}
+    res=resolver_seccion_deslizante(
+        red,materiales=materiales,circuito="C1",seccion="S1",
+        temperatura_C=50.,viento_ms=0.,azimut_deg=90.,
+        Cd=float(Cd),rho_kg_m3=float(rho_kg_m3),
+    )
+    orden=[str(puntos.iloc[i]["Punto"])+" → "+str(puntos.iloc[i+1]["Punto"])
+           for i in range(len(puntos)-1)]
+    longitudes=[float(res.longitudes_naturales_referencia_m[k]) for k in orden]
+    if abs(sum(longitudes)-res.longitud_natural_total_m)>1e-7:
+        raise ValueError("El tendido continuo no conserva longitud total")
+    return longitudes,float(res.residual_max_kN)
+
+
 def ejecutar_corridas_cfe_por_vano(
     puntos, ficha_inicial, ficha_final, *, viento_max_kmh,
     viento_reducido_kmh, hielo_mm, temperaturas_C,
@@ -294,12 +338,29 @@ def ejecutar_corridas_cfe_por_vano(
         estados_extra.append(
             ("Exploratorio 16°C viento máximo",16.,float(viento_max_kmh),0.),
         )
+    # Etapa 1: resolver la sección continua y obtener longitudes descargadas
+    # para cada vano. Etapa 2: fijarlas antes de los cambios climáticos.
+    # Las referencias inicial/final CFE son condiciones constitutivas
+    # distintas; no se atribuye la diferencia a creep no caracterizado.
+    longitudes_fijadas={}
+    residuales_continuidad={}
+    for condicion,ficha,referencia in (
+        ("Inicial",ficha_inicial,referencia_inicial),
+        ("Final",ficha_final,referencia_final),
+    ):
+        lon,residual=_longitudes_de_tendido_continuo(
+            puntos,xyz,ficha,referencia["H_50_kN"],
+            Cd=Cd,rho_kg_m3=rho_kg_m3,
+        )
+        longitudes_fijadas[condicion]=lon
+        residuales_continuidad[condicion]=residual
     tabla=calcular_tablas_inicial_final(
         puntos,propiedades,
         EstadoReferenciaCFE(referencia_inicial["parametro_P_m"],CFE_FUENTE),
         EstadoReferenciaCFE(referencia_final["parametro_P_m"],CFE_FUENTE),
         temperaturas_C,estados_climaticos=estados_extra,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
+        longitudes_fijadas=longitudes_fijadas,
     )
     resumen=pd.DataFrame([
         {"Condición":"Inicial — vinculada por tensión extrema final",
@@ -309,6 +370,10 @@ def ejecutar_corridas_cfe_por_vano(
     ])
     resumen["Claro regla convencional orientativo (m)"]=claro_regla_m
     resumen["Número de vanos"]=len(luces)
+    resumen["Longitud natural total fijada (m)"]=[
+        sum(longitudes_fijadas["Inicial"]),sum(longitudes_fijadas["Final"])]
+    resumen["Residual continuidad tendido (kN)"]=[
+        residuales_continuidad["Inicial"],residuales_continuidad["Final"]]
     resumen["Desnivel máximo entre apoyos (m)"]=desnivel_max_m
     resumen["Advertencia"]=(
         "Claros reales: motor de amarres fijos por vano. "
