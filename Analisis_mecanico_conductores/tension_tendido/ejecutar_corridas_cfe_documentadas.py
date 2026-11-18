@@ -142,6 +142,7 @@ def obtener_referencia_inicial_desde_extremo(
     xyz, propiedades, referencia_final, hipotesis_final,
     *, puntos, ficha_inicial, longitudes_final,
     Cd=1.0, rho_kg_m3=1.225, densidad_hielo_kg_m3=DENSIDAD_HIELO_ENSAYO_KG_M3,
+    modelo_presion_cfe=False,
 ):
     """Acoplamiento de referencia inicial/final sobre el MISMO esquema multivano.
 
@@ -162,6 +163,7 @@ def obtener_referencia_inicial_desde_extremo(
     ev_final=_evaluador(
         xyz,propiedades,"Final",Cd,rho_kg_m3,
         longitudes_fijadas=longitudes_final,
+        modelo_presion_cfe=modelo_presion_cfe,
     )
     _,tf,_,_,_=ev_final.evaluar_estado_con_hielo(
         h_final,extremo.temperatura_C,extremo.viento_kmh/3.6,
@@ -174,7 +176,8 @@ def obtener_referencia_inicial_desde_extremo(
             puntos,xyz,ficha_inicial,float(h),Cd=Cd,rho_kg_m3=rho_kg_m3,
         )
         ev=_evaluador(xyz,propiedades,"Inicial",Cd,rho_kg_m3,
-                      longitudes_fijadas=longs)
+                      longitudes_fijadas=longs,
+                      modelo_presion_cfe=modelo_presion_cfe)
         _,tensiones,_,residuales,_=ev.evaluar_estado_con_hielo(
             float(h),extremo.temperatura_C,extremo.viento_kmh/3.6,
             extremo.hielo_mm,densidad_hielo_kg_m3,
@@ -274,7 +277,8 @@ def _longitudes_de_tendido_continuo(puntos, xyz, ficha, H_50_kN,
 
 
 def _ajustar_referencia_final_multivano(puntos,xyz,ficha,propiedades,
-                                        hipotesis,referencia,*,Cd,rho_kg_m3,densidad_hielo_kg_m3):
+                                        hipotesis,referencia,*,Cd,rho_kg_m3,densidad_hielo_kg_m3,
+                                        modelo_presion_cfe=False):
     """Reoptimiza H50 sobre tendido continuo y vanos fijados, no vanos aislados.
 
     El valor anterior sirve solo de semilla. Busca una raiz de utilizacion
@@ -286,7 +290,8 @@ def _ajustar_referencia_final_multivano(puntos,xyz,ficha,propiedades,
         longitudes,continuidad=_longitudes_de_tendido_continuo(
             puntos,xyz,ficha,float(H),Cd=Cd,rho_kg_m3=rho_kg_m3)
         ev=_evaluador(xyz,propiedades,"Final",Cd,rho_kg_m3,
-                      longitudes_fijadas=longitudes)
+                      longitudes_fijadas=longitudes,
+                      modelo_presion_cfe=modelo_presion_cfe)
         detalles=[]
         for caso in hipotesis:
             hs,ts,_,residuales,_=ev.evaluar_estado_con_hielo(
@@ -359,6 +364,7 @@ def ejecutar_corridas_cfe_por_vano(
     viento_reducido_kmh, hielo_mm, temperaturas_C,
     Cd=1.0, rho_kg_m3=1.225, incluir_ensayo_viento_16C=False,
     densidad_hielo_kg_m3=DENSIDAD_HIELO_ENSAYO_KG_M3,
+    modelo_presion_cfe=False,
 ):
     """Calcula condiciones de referencia y tablas por vano real.
 
@@ -398,11 +404,13 @@ def ejecutar_corridas_cfe_por_vano(
     referencia_final=calcular_parametro_cfe_desde_limites(
         xyz,propiedades,fin,condicion="Final",Cd=Cd,rho_kg_m3=rho_kg_m3,
         densidad_hielo_kg_m3=densidad_hielo_kg_m3,
+        modelo_presion_cfe=modelo_presion_cfe,
     )
     referencia_final, longitudes_final, residual_final = _ajustar_referencia_final_multivano(
         puntos,xyz,ficha_final,propiedades,fin,referencia_final,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
         densidad_hielo_kg_m3=densidad_hielo_kg_m3,
+        modelo_presion_cfe=modelo_presion_cfe,
     )
     referencia_inicial, longitudes_inicial, residual_inicial = obtener_referencia_inicial_desde_extremo(
         xyz,propiedades,referencia_final,fin,
@@ -410,12 +418,14 @@ def ejecutar_corridas_cfe_por_vano(
         longitudes_final=longitudes_final,
         Cd=Cd,rho_kg_m3=rho_kg_m3,
         densidad_hielo_kg_m3=densidad_hielo_kg_m3,
+        modelo_presion_cfe=modelo_presion_cfe,
     )
     # Verificar además el límite propio del estado inicial a 0 °C:
     # el acoplamiento con el extremo final no da permiso para superarlo.
     evaluador_inicial = _evaluador(
         xyz,propiedades,"Inicial",Cd,rho_kg_m3,
         longitudes_fijadas=longitudes_inicial,
+        modelo_presion_cfe=modelo_presion_cfe,
     )
     for caso in ini:
         hs, ts, _, _, _ = evaluador_inicial.evaluar_estado_con_hielo(
@@ -464,6 +474,7 @@ def ejecutar_corridas_cfe_por_vano(
         evaluador=_evaluador(
             xyz,propiedades,condicion,Cd,rho_kg_m3,
             longitudes_fijadas=longitudes_fijadas[condicion],
+            modelo_presion_cfe=modelo_presion_cfe,
         )
         for caso in casos:
             hs,ts,_,residuales,_=evaluador.evaluar_estado_con_hielo(
@@ -490,6 +501,7 @@ def ejecutar_corridas_cfe_por_vano(
         Cd=Cd,rho_kg_m3=rho_kg_m3,
         densidad_hielo_kg_m3=densidad_hielo_kg_m3,
         longitudes_fijadas=longitudes_fijadas,
+        modelo_presion_cfe=modelo_presion_cfe,
     )
     resumen=pd.DataFrame([
         {"Condición":"Inicial — vinculada por tensión extrema final",
