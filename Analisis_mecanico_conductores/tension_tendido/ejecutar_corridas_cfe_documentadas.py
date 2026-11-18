@@ -219,7 +219,7 @@ def obtener_referencia_inicial_desde_extremo(
 def ejecutar_corridas_cfe_por_vano(
     puntos, ficha_inicial, ficha_final, *, viento_max_kmh,
     viento_reducido_kmh, hielo_mm, temperaturas_C,
-    Cd=1.0, rho_kg_m3=1.225,
+    Cd=1.0, rho_kg_m3=1.225, incluir_ensayo_viento_16C=False,
 ):
     """Calcula condiciones de referencia y tablas por vano real.
 
@@ -287,11 +287,13 @@ def ejecutar_corridas_cfe_por_vano(
         ("CFE viento reducido + hielo" if hielo_mm > 0 else
          "CFE viento reducido SIN hielo",-10.,float(viento_reducido_kmh),float(hielo_mm)),
         ("CFE viento máximo",0.,float(viento_max_kmh),0.),
-        # Estado geométrico adicional para evaluar alejamiento lateral de
-        # construcciones. El viento aquí es el máximo declarado; NO se
-        # atribuye a la presión específica de libramiento de CFE 02 00 04.
-        ("Exploratorio 16°C viento máximo",16.,float(viento_max_kmh),0.),
     ]
+    # Estado opcional que se muestra SOLO en la interfaz de verificación.
+    # Preserva la salida pública existente del calculador y sus pruebas.
+    if incluir_ensayo_viento_16C:
+        estados_extra.append(
+            ("Exploratorio 16°C viento máximo",16.,float(viento_max_kmh),0.),
+        )
     tabla=calcular_tablas_inicial_final(
         puntos,propiedades,
         EstadoReferenciaCFE(referencia_inicial["parametro_P_m"],CFE_FUENTE),
