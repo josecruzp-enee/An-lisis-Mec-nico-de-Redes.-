@@ -105,8 +105,12 @@ def construir_hipotesis_cfe(
     # automáticamente a otras regiones de viento o configuraciones.
     th = (CFE_TH_KN.get(str(nombre_conductor).strip().upper())
           if abs(v_max - 120.) < 1e-9 else None)
-    limite_extremo_frio = min(rotura*.45, th[0]) if th else rotura*.45
-    limite_viento_max = min(rotura*.45, th[1]) if th else rotura*.45
+    # Los límites TH1/TH2 de la cabecera CFE son HORIZONTALES;
+    # el 45 % RTS es un límite de tensión TOTAL del conductor.
+    # Se verifican AMBOS de forma independiente, sin tomar un min
+    # entre magnitudes físicas distintas.
+    limite_extremo_frio = rotura*.45
+    limite_viento_max = rotura*.45
     condicion_frio = (
         "CFE final -10°C viento reducido + hielo (45% RTS)"
         if hielo > 0 else
@@ -122,9 +126,11 @@ def construir_hipotesis_cfe(
         HipotesisDisenoCFE("CFE final 0°C sin viento (25% RTS)",
                            0.,0.,0.,rotura*.25,CFE_FUENTE),
         HipotesisDisenoCFE(condicion_frio,
-                           -10.,v_red,hielo,limite_extremo_frio,CFE_FUENTE),
+                           -10.,v_red,hielo,limite_extremo_frio,CFE_FUENTE,
+                           limite_horizontal_kN=th[0] if th else None),
         HipotesisDisenoCFE("CFE final 0°C viento máximo (45% RTS)",
-                           0.,v_max,0.,limite_viento_max,CFE_FUENTE),
+                           0.,v_max,0.,limite_viento_max,CFE_FUENTE,
+                           limite_horizontal_kN=th[1] if th else None),
     ]
     return inicial,final
 
@@ -245,7 +251,7 @@ def ejecutar_corridas_cfe_por_vano(
     )
     xyz,luces=_geometria(puntos)
     # Claro regla informativo: equivalente convencional de una sección
-    # con suspensión deslizante ideal y vanos aproximadamente nivelados.
+    # en regulación con deslizamiento ideal y vanos aproximadamente nivelados.
     # El motor actual mantiene amarres fijos; NO emplear este claro como
     # condición de contorno ni confundirlo con el claro de diseño ENEE.
     claro_regla_m=vano_regulador(luces)
@@ -261,11 +267,13 @@ def ejecutar_corridas_cfe_por_vano(
     # el acoplamiento con el extremo final no da permiso para superarlo.
     evaluador_inicial = _evaluador(xyz,propiedades,"Inicial",Cd,rho_kg_m3)
     for caso in ini:
-        _, ts, _, _, _ = evaluador_inicial.evaluar_estado_con_hielo(
+        hs, ts, _, _, _ = evaluador_inicial.evaluar_estado_con_hielo(
             referencia_inicial["H_50_kN"],caso.temperatura_C,
             caso.viento_kmh/3.6,caso.hielo_mm,900.,
         )
-        if max(ts) > caso.limite_tension_kN*(1+1e-6):
+        if (max(ts) > caso.limite_tension_kN*(1+1e-6) or
+            (caso.limite_horizontal_kN is not None and
+             max(hs) > caso.limite_horizontal_kN*(1+1e-6))):
             raise ValueError(
                 "La condición inicial acoplada excede el límite de "
                 f"{caso.nombre}. No se puede emitir diseño factible."
