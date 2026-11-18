@@ -20,7 +20,7 @@ from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import fin
 def ejecutar_analisis_integral(
     puntos, *, propiedades, temperatura_tendido_C=20.,
     perfil_tension="Checa", hipotesis_manuales=None,
-    configuracion_barrido=None, Cd=1.2, rho=1.225,
+    configuracion_barrido=None, Cd=1.2, rho=1.225, configuracion_cfe=None,
 ):
     """Ejecuta análisis integral de una sección nivelada entre remates.
 
@@ -69,4 +69,13 @@ def ejecutar_analisis_integral(
     resultado.propiedades_pdf = dict(propiedades)
     resultado.temperatura_tendido_C = float(temperatura_tendido_C)
     resultado.perfil_tension_pdf = perfil
+    # Opt-in: verificar SOLO con estructura y geometría CFE explícitas.
+    # Nunca se crea una aprobación ENEE por equivalencia nominal.
+    if configuracion_cfe is not None:
+        from Analisis_mecanico_conductores.verificaciones.evaluar_requisitos_cfe_por_vano import (
+            evaluar_requisitos_cfe_por_vano,
+        )
+        resultado.verificaciones_cfe = evaluar_requisitos_cfe_por_vano(
+            resultado, ruptura_N=rotura * 1000., configuracion=configuracion_cfe,
+        )
     return resultado
