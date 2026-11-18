@@ -56,7 +56,8 @@ class TestVerificacionCFEIntegrada(unittest.TestCase):
     def test_angulo_en_apoyo_se_compara_con_limitante(self):
         puntos=self.puntos.copy()
         # Desvío de 90 grados en un apoyo de paso: supera 1.85° TS3N.
-        puntos.loc[2:,"Y"]=[20.,40.,60.,80.]
+        puntos.loc[2:,"X"]=[50.,50.,50.,50.]
+        puntos.loc[2:,"Y"]=[65.,155.,275.,425.]
         r=evaluar_corrida_documentada(
             self.tabla,puntos,estructura="TS3N",conductor="RAVEN",
             clase_kV=13,
