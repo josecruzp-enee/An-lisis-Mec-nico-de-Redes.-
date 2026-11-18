@@ -90,7 +90,8 @@ class HipotesisDisenoCFE:
             raise ValueError("Hipótesis CFE sin nombre o fuente")
 
 
-def _evaluador(xyz, propiedades, condicion, Cd, rho, longitudes_fijadas=None):
+def _evaluador(xyz, propiedades, condicion, Cd, rho, longitudes_fijadas=None,
+               modelo_presion_cfe=False):
     inicial = condicion == "Inicial"
     return EvaluadorVanosAmarrados(
         xyz, propiedades.peso_kN_m, propiedades.diametro_m,
@@ -98,6 +99,7 @@ def _evaluador(xyz, propiedades, condicion, Cd, rho, longitudes_fijadas=None):
         propiedades.alpha_inicial_por_C if inicial else propiedades.alpha_final_por_C,
         50., Cd, rho,
         longitudes_naturales_referencia_m=longitudes_fijadas,
+        modelo_presion_cfe=modelo_presion_cfe,
     )
 
 
@@ -105,6 +107,7 @@ def calcular_parametro_cfe_desde_limites(
     xyz, propiedades: PropiedadesConductorCFE, hipotesis,
     *, condicion="Inicial", H_min_kN=0.01, H_max_kN=None,
     Cd=1.2, rho_kg_m3=1.225, densidad_hielo_kg_m3=913.,
+    modelo_presion_cfe=False,
 ):
     """Halla máximo P50 admisible por TODAS las hipótesis y vanos fijos.
 
@@ -120,7 +123,8 @@ def calcular_parametro_cfe_desde_limites(
         raise ValueError("Sin hipótesis de diseño")
     for h in hipotesis:
         h.validar()
-    evaluador = _evaluador(xyz, propiedades, condicion, Cd, rho_kg_m3)
+    evaluador = _evaluador(xyz, propiedades, condicion, Cd, rho_kg_m3,
+                           modelo_presion_cfe=modelo_presion_cfe)
     minimo = finito(H_min_kN, "H mínimo", 0, True)
     maximo = finito(
         H_max_kN if H_max_kN is not None else propiedades.ruptura_kN,
@@ -217,6 +221,7 @@ def calcular_tablas_inicial_final(
     temperaturas_C, *,
     estados_climaticos=(), Cd=1.2, rho_kg_m3=1.225,
     densidad_hielo_kg_m3=913., longitudes_fijadas=None,
+    modelo_presion_cfe=False,
 ):
     """Genera ambas tablas por vano; también admite estados viento/hielo.
 
@@ -235,7 +240,8 @@ def calcular_tablas_inicial_final(
                                   ("Final", referencia_final)):
         longitudes = (longitudes_fijadas or {}).get(condicion)
         evaluador = _evaluador(xyz, propiedades, condicion, Cd, rho_kg_m3,
-                               longitudes_fijadas=longitudes)
+                               longitudes_fijadas=longitudes,
+                               modelo_presion_cfe=modelo_presion_cfe)
         H_50 = referencia.parametro_P_m * propiedades.peso_kN_m
         estados = [("Tabla térmica", float(t), 0., 0.) for t in temperaturas_C]
         estados.extend((str(x[0]), float(x[1]), float(x[2]), float(x[3]))
