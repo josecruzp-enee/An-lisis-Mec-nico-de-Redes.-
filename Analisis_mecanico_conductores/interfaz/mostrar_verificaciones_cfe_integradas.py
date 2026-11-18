@@ -69,6 +69,15 @@ def evaluar_corrida_documentada(tabla, puntos, *, estructura, conductor,
                          & (grupo["Hipótesis"]=="Tabla térmica")
                          & ((grupo["Temperatura (°C)"]-16.).abs()<1e-7)]
         luz=float(grupo["Luz (m)"].iloc[0])
+        luz_real=math.hypot(
+            float(coordenadas[i+1,0]-coordenadas[i,0]),
+            float(coordenadas[i+1,1]-coordenadas[i,1]),
+        )
+        if abs(luz-luz_real)>max(0.01,1e-6*luz_real):
+            raise ValueError(
+                f"{clave}: la luz de los resultados ({luz:.3f}m) no coincide "
+                f"con la geometría ({luz_real:.3f}m)."
+            )
         angulo_mayor=max(angulos_apoyo[i],angulos_apoyo[i+1])
         desnivel=(abs(float((terreno[i+1]+amarres[i+1])-
                              (terreno[i]+amarres[i])))
