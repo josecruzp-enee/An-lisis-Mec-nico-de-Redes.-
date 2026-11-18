@@ -1,0 +1,663 @@
+estructura,ambiente,conductor,tension_clase_kV,poste_max_m,cable_max_m,perno_max_m,punta_poste_max_m,cruceta_sin_hielo_max_m,cruceta_con_hielo_max_m,libramiento_piso_max_m,separacion_fases_max_m,deflexion_max_grados,deflexion_max_m,desnivel_sin_hielo_max_m,desnivel_con_hielo_max_m,seccion_cfe,pagina_pdf,estado_fila
+TS3N,normal,Cu 1/0,13,78,78,1898,,238,155,90,114,3.94,2.68,6.8,4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 1/0,23,78,78,1898,,238,155,78,106,3.94,2.68,6.8,4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 1/0,33,78,78,1898,,150,98,78,113,3.94,2.68,3,1,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 3/0,13,78,78,1506,,150,108,90,125,2.21,1.5,3,1.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 3/0,23,78,78,1506,,150,108,78,117,2.21,1.5,3,1.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 3/0,33,78,78,1506,,94,68,78,124,2.21,1.31,0.6,0,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 250 kcmil,13,70,79,1216,,101,77,81,121,1.09,0.67,1.5,0.3,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 250 kcmil,23,70,79,1216,,101,77,70,113,1.09,0.67,1.5,0.3,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,Cu 250 kcmil,33,70,79,1216,,63,49,70,120,1.09,0.47,0,0,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 1/0,13,84,84,1900,,784,284,97,90,5.02,3.68,13.3,9,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 1/0,23,84,84,1900,,784,284,84,84,5.02,3.68,13.3,9,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 1/0,33,84,84,1900,,494,179,84,89,5.02,3.68,8.8,4.2,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 3/0,13,82,82,1507,,493,216,95,91,3.09,2.21,9.1,5.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 3/0,23,82,82,1507,,493,216,82,86,3.09,2.21,9.1,5.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 3/0,33,82,82,1507,,311,136,82,91,3.09,2.21,5,2.1,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 266.8,13,83,83,1180,,310,159,96,97,1.35,0.98,5,2.7,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 266.8,23,83,83,1180,,310,159,83,91,1.35,0.98,5,2.7,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 266.8,33,83,83,1180,,195,100,83,96,1.35,0.98,2.5,0.5,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 336.4,13,80,83,1050,,246,135,92,96,1,0.7,3.9,2,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 336.4,23,80,83,1050,,246,135,80,90,1,0.7,3.9,2,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 336.4,33,80,83,1050,,155,85,80,95,1,0.7,1.7,0.15,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 477,13,69,81,882,,173,104,80,86,1,0.6,3.3,1.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 477,23,69,81,882,,173,104,69,81,1,0.6,3.3,1.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,AAC 477,33,69,81,882,,109,66,69,85,1,0.58,1.3,0,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR RAVEN 1/0,13,109,109,1757,,564,242,126,123,1.85,1.76,9.1,5.2,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR RAVEN 1/0,23,109,109,1757,,564,242,109,115,1.85,1.76,9.1,5.2,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR RAVEN 1/0,33,109,109,1757,,355,152,109,122,1.85,1.76,4.9,1.6,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR PIGEON 3/0,13,103,106,1394,,355,180,118,121,1,0.9,5.3,2.8,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR PIGEON 3/0,23,103,106,1394,,355,180,103,113,1,0.9,5.3,2.8,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR PIGEON 3/0,33,103,106,1394,,223,113,103,120,1,0.9,2.55,0.35,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR PARTRIDGE 266.8,13,82,112,1089,,222,129,95,102,1,0.72,4,1.8,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR PARTRIDGE 266.8,23,82,112,1089,,222,129,82,96,1,0.72,4,1.8,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR PARTRIDGE 266.8,33,82,112,1089,,140,81,82,101,1,0.71,1.6,0,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR LINNET 336.4,13,75,112,970,,177,109,86,96,1,0.65,3.5,1.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR LINNET 336.4,23,75,112,970,,177,109,75,90,1,0.65,3.5,1.4,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR LINNET 336.4,33,75,112,970,,111,68,75,95,1,0.59,1.25,0,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR HAWK 477,13,65,111,815,,125,83,75,87,1,0.57,2.9,0.9,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR HAWK 477,23,65,111,815,,125,83,65,82,1,0.57,2.9,0.9,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3N,normal,ACSR HAWK 477,33,65,111,815,,78,52,65,87,1,0.45,0.6,0,05 T0 02,181,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 1/0,13,78,78,1898,,238,155,83,114,4.45,3.03,6.8,4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 1/0,23,78,78,1898,,238,155,78,106,4.45,3.03,6.8,4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 1/0,33,78,78,1898,,150,98,78,113,4.45,3.03,3,1,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 3/0,13,78,78,1506,,150,108,83,125,2.62,1.78,3,1.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 3/0,23,78,78,1506,,150,108,78,117,2.62,1.78,3,1.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 3/0,33,78,78,1506,,94,68,78,124,2.62,1.55,0.6,0,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 250 kcmil,13,72,79,1216,,101,77,76,125,2.03,1.28,1.5,0.3,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 250 kcmil,23,72,79,1216,,101,77,72,117,2.03,1.28,1.5,0.3,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,Cu 250 kcmil,33,72,79,1216,,63,49,72,124,2.03,0.87,0,0,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 1/0,13,84,84,1900,,784,284,89,90,5.71,4.18,13.3,9,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 1/0,23,84,84,1900,,784,284,84,84,5.71,4.18,13.3,9,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 1/0,33,84,84,1900,,494,179,84,89,5.71,4.18,8.8,4.2,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 3/0,13,82,82,1507,,493,216,87,91,3.7,2.65,9.1,5.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 3/0,23,82,82,1507,,493,216,82,86,3.7,2.65,9.1,5.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 3/0,33,82,82,1507,,311,136,82,91,3.7,2.65,5,2.1,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 266.8,13,83,83,1180,,310,159,88,97,1.83,1.33,5,2.7,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 266.8,23,83,83,1180,,310,159,83,91,1.83,1.33,5,2.7,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 266.8,33,83,83,1180,,195,100,83,96,1.83,1.33,2.5,0.5,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 336.4,13,81,83,1050,,246,135,86,97,1.35,0.95,3.9,2,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 336.4,23,81,83,1050,,246,135,81,91,1.35,0.95,3.9,2,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 336.4,33,81,83,1050,,155,85,81,96,1.35,0.95,1.7,0.15,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 477,13,70,81,882,,173,104,74,87,1.42,0.87,3.3,1.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 477,23,70,81,882,,173,104,70,82,1.42,0.87,3.3,1.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,AAC 477,33,70,81,882,,109,66,70,87,1.42,0.82,1.3,0,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR RAVEN 1/0,13,109,109,1757,,564,242,116,123,2.28,2.17,9.1,5.2,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR RAVEN 1/0,23,109,109,1757,,564,242,109,115,2.28,2.17,9.1,5.2,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR RAVEN 1/0,33,109,109,1757,,355,152,109,122,2.28,2.17,4.9,1.6,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR PIGEON 3/0,13,105,106,1394,,355,180,111,124,1.23,1.13,5.3,2.8,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR PIGEON 3/0,23,105,106,1394,,355,180,105,116,1.23,1.13,5.3,2.8,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR PIGEON 3/0,33,105,106,1394,,223,113,105,123,1.23,1.13,2.55,0.35,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR PARTRIDGE 266.8,13,85,112,1089,,222,129,90,105,1.26,0.93,4,1.8,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR PARTRIDGE 266.8,23,85,112,1089,,222,129,85,99,1.26,0.93,4,1.8,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR PARTRIDGE 266.8,33,85,112,1089,,140,81,85,105,1.26,0.89,1.6,0,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR LINNET 336.4,13,77,112,970,,177,109,82,99,1.28,0.86,3.5,1.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR LINNET 336.4,23,77,112,970,,177,109,77,92,1.28,0.86,3.5,1.4,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR LINNET 336.4,33,77,112,970,,111,68,77,98,1.28,0.76,1.25,0,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR HAWK 477,13,65,111,815,,125,83,69,88,1.6,0.91,2.9,0.9,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR HAWK 477,23,65,111,815,,125,83,65,82,1.6,0.91,2.9,0.9,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3G,normal,ACSR HAWK 477,33,65,111,815,,78,52,65,87,1.6,0.73,0.6,0,05 T0 02,182,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 1/0,13,78,78,1395,,529,344,90,102,1,0.68,17.25,13.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 1/0,23,78,78,1395,,529,344,78,95,1,0.68,17.25,13.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 1/0,33,78,78,1395,,529,344,78,87,1,0.68,17.25,13.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 3/0,13,63,78,1106,,332,239,73,88,1,0.55,14.6,11.6,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 3/0,23,63,78,1106,,332,239,63,83,1,0.55,14.6,11.6,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 3/0,33,63,78,1106,,332,239,63,75,1,0.55,14.6,11.6,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 250 kcmil,13,53,79,894,,223,171,61,80,1,0.46,12,9.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 250 kcmil,23,53,79,894,,223,171,53,75,1,0.46,12,9.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,Cu 250 kcmil,33,53,79,894,,223,171,53,68,1,0.46,12,9.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 1/0,13,82,84,1396,,1739,629,94,84,1,0.72,25,23.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 1/0,23,82,84,1396,,1739,629,82,79,1,0.69,25,23.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 1/0,33,82,84,1396,,1739,629,82,72,1,0.63,25,23.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 3/0,13,66,82,1107,,1094,478,77,70,1,0.58,21.45,19.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 3/0,23,66,82,1107,,1094,478,66,66,1,0.58,21.45,19.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 3/0,33,66,82,1107,,1094,478,66,60,1,0.52,21.45,19.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 266.8,13,55,83,867,,688,352,63,60,1,0.48,18.85,18.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 266.8,23,55,83,867,,688,352,55,56,1,0.48,18.85,18.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 266.8,33,55,83,867,,688,352,55,51,1,0.45,18.85,18.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 336.4,13,50,83,772,,545,299,57,55,1,0.44,18.5,18.5,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 336.4,23,50,83,772,,545,299,50,52,1,0.44,18.5,18.5,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 336.4,33,50,83,772,,545,299,50,47,1,0.41,18.5,18.5,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 477,13,43,81,648,,385,231,50,49,1,0.38,17.3,17.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 477,23,43,81,648,,385,231,43,46,1,0.38,17.3,17.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,AAC 477,33,43,81,648,,385,231,43,42,1,0.37,17.3,17.4,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR RAVEN 1/0,13,75,109,1291,,1250,537,87,80,1,0.65,24,21.3,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR RAVEN 1/0,23,75,109,1291,,1250,537,75,75,1,0.65,24,21.3,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR RAVEN 1/0,33,75,109,1291,,1250,537,75,68,1,0.59,24,21.3,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR PIGEON 3/0,13,62,106,1024,,786,399,72,68,1,0.54,20.6,19,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR PIGEON 3/0,23,62,106,1024,,786,399,62,64,1,0.54,20.6,19,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR PIGEON 3/0,33,62,106,1024,,786,399,62,58,1,0.51,20.6,19,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR PARTRIDGE 266.8,13,51,112,800,,493,286,59,59,1,0.45,18.2,17.75,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR PARTRIDGE 266.8,23,51,112,800,,493,286,51,55,1,0.45,18.2,17.75,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR PARTRIDGE 266.8,33,51,112,800,,493,286,51,50,1,0.44,18.2,17.75,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR LINNET 336.4,13,47,112,713,,392,241,54,54,1,0.41,18,17.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR LINNET 336.4,23,47,112,713,,392,241,47,51,1,0.41,18,17.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR LINNET 336.4,33,47,112,713,,392,241,47,47,1,0.41,18,17.7,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR HAWK 477,13,40,111,599,,276,183,46,49,1,0.35,16,15.9,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR HAWK 477,23,40,111,599,,276,183,40,46,1,0.35,16,15.9,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3N,contaminacion,ACSR HAWK 477,33,40,111,599,,276,183,40,42,1,0.35,16,15.9,05 T0 02,183,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 1/0,13,78,78,1395,,529,344,83,102,1.31,0.89,17.25,13.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 1/0,23,78,78,1395,,529,344,78,95,1.31,0.89,17.25,13.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 1/0,33,78,78,1395,,529,344,78,87,1.31,0.89,17.25,13.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 3/0,13,70,78,1106,,332,239,74,98,1,0.61,14.6,11.6,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 3/0,23,70,78,1106,,332,239,70,92,1,0.61,14.6,11.6,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 3/0,33,70,78,1106,,332,239,70,84,1,0.61,14.6,11.6,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 250 kcmil,13,59,79,894,,223,171,63,89,1,0.51,12,9.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 250 kcmil,23,59,79,894,,223,171,59,83,1,0.51,12,9.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,Cu 250 kcmil,33,59,79,894,,223,171,59,76,1,0.51,12,9.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 1/0,13,84,84,1396,,1739,629,89,87,1.27,0.93,25,23.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 1/0,23,84,84,1396,,1739,629,84,81,1.27,0.9,25,23.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 1/0,33,84,84,1396,,1739,629,84,74,1.27,0.82,25,23.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 3/0,13,73,82,1107,,1094,478,77,77,1,0.64,21.45,19.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 3/0,23,73,82,1107,,1094,478,72,72,1,0.63,21.45,19.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 3/0,33,73,82,1107,,1094,478,72,66,1,0.58,21.45,19.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 266.8,13,60,83,867,,688,352,63,65,1,0.52,18.85,18.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 266.8,23,60,83,867,,688,352,60,61,1,0.52,18.85,18.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 266.8,33,60,83,867,,688,352,60,56,1,0.49,18.85,18.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 336.4,13,54,83,772,,545,299,58,60,1,0.47,18.5,18.5,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 336.4,23,54,83,772,,545,299,54,56,1,0.47,18.5,18.5,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 336.4,33,54,83,772,,545,299,54,51,1,0.45,18.5,18.5,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 477,13,47,81,648,,385,231,50,54,1,0.41,17.3,17.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 477,23,47,81,648,,385,231,47,51,1,0.41,17.3,17.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,AAC 477,33,47,81,648,,385,231,47,46,1,0.4,17.3,17.4,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR RAVEN 1/0,13,81,109,1291,,1250,537,86,87,1,0.71,24,21.3,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR RAVEN 1/0,23,81,109,1291,,1250,537,81,81,1,0.71,24,21.3,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR RAVEN 1/0,33,81,109,1291,,1250,537,81,74,1,0.65,24,21.3,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR PIGEON 3/0,13,68,106,1024,,786,399,72,74,1,0.59,20.6,19,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR PIGEON 3/0,23,68,106,1024,,786,399,68,70,1,0.59,20.6,19,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR PIGEON 3/0,33,68,106,1024,,786,399,68,64,1,0.56,20.6,19,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR PARTRIDGE 266.8,13,56,112,800,,493,286,60,64,1,0.49,18.2,17.75,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR PARTRIDGE 266.8,23,56,112,800,,493,286,56,60,1,0.49,18.2,17.75,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR PARTRIDGE 266.8,33,56,112,800,,493,286,56,55,1,0.48,18.2,17.75,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR LINNET 336.4,13,51,112,713,,392,241,54,60,1,0.45,18,17.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR LINNET 336.4,23,51,112,713,,392,241,51,56,1,0.45,18,17.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR LINNET 336.4,33,51,112,713,,392,241,51,51,1,0.45,18,17.7,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR HAWK 477,13,44,111,599,,276,183,47,54,1,0.38,16,15.9,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR HAWK 477,23,44,111,599,,276,183,44,50,1,0.38,16,15.9,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TS3G,contaminacion,ACSR HAWK 477,33,44,111,599,,276,183,44,46,1,0.38,16,15.9,05 T0 02,184,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 1/0,13,78,78,2847,,634,413,90,112,25,16.88,19.3,17.6,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 1/0,23,78,78,2847,,634,413,78,105,25,16.88,19.3,17.6,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 1/0,33,78,78,2847,,455,296,78,111,25,16.88,15.7,11.4,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 3/0,13,78,78,2259,,399,287,90,123,25,16.88,13.6,10.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 3/0,23,78,78,2259,,399,287,78,115,25,16.88,13.6,10.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 3/0,33,78,78,2259,,286,206,78,122,25,16.88,8.8,6.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 250 kcmil,13,70,79,1824,,268,206,81,119,25,15.15,10.1,7.6,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 250 kcmil,23,70,79,1824,,268,206,70,112,25,15.15,10.1,7.6,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,Cu 250 kcmil,33,70,79,1824,,192,147,70,118,25,15.15,6.2,4.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 1/0,13,84,84,2850,,2087,755,97,89,25,18.18,13.3,13.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 1/0,23,84,84,2850,,2087,755,84,83,25,17.96,13.3,13.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 1/0,33,84,84,2850,,1497,542,84,88,25,18.18,13.3,13.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 3/0,13,82,82,2261,,1313,574,95,90,25,17.75,15.6,15.6,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 3/0,23,82,82,2261,,1313,574,82,84,25,17.75,15.6,15.6,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 3/0,33,82,82,2261,,942,412,82,89,25,17.75,15.6,13.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 266.8,13,83,83,1770,,825,422,96,95,25,17.96,16.3,12.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 266.8,23,83,83,1770,,825,422,83,89,25,17.96,16.3,12.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 266.8,33,83,83,1770,,592,303,83,94,25,17.96,11.3,8.1,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 336.4,13,80,83,1575,,654,359,92,94,25,17.32,13.5,10.2,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 336.4,23,80,83,1575,,654,359,80,88,25,17.32,13.5,10.2,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 336.4,33,80,83,1575,,469,257,80,93,25,17.32,9.2,6.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 477,13,69,81,1323,,462,278,80,85,25,14.93,12.5,8.9,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 477,23,69,81,1323,,462,278,69,79,25,14.93,12.5,8.9,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,AAC 477,33,69,81,1323,,331,199,69,84,25,14.93,8.5,5.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR RAVEN 1/0,13,109,109,2636,,1501,644,126,121,25,23.59,27.8,21.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR RAVEN 1/0,23,109,109,2636,,1501,644,109,113,25,23.59,27.8,21.3,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR RAVEN 1/0,33,109,109,2636,,1077,462,109,119,25,23.59,19.4,13.9,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR PIGEON 3/0,13,103,106,2091,,944,479,118,119,25,22.29,17.8,13.7,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR PIGEON 3/0,23,103,106,2091,,944,479,103,111,25,22.29,17.8,13.7,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR PIGEON 3/0,33,103,106,2091,,677,343,103,118,25,22.29,12.1,8.7,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR PARTRIDGE 266.8,13,82,112,1634,,592,343,95,101,25,17.75,14.3,10.4,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR PARTRIDGE 266.8,23,82,112,1634,,592,343,82,94,25,17.75,14.3,10.4,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR PARTRIDGE 266.8,33,82,112,1634,,424,246,82,100,25,17.75,9.6,6.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR LINNET 336.4,13,75,112,1455,,470,289,86,94,25,16.23,13.5,9.4,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR LINNET 336.4,23,75,112,1455,,470,289,75,88,25,16.23,13.5,9.4,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR LINNET 336.4,33,75,112,1455,,337,207,75,93,25,16.23,9.1,5.8,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR HAWK 477,13,65,111,1223,,332,220,75,86,25,14.07,13,8.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR HAWK 477,23,65,111,1223,,332,220,65,81,25,14.07,13,8.5,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3N,normal,ACSR HAWK 477,33,65,111,1223,,238,158,65,85,25,14.07,8.5,5.1,05 T0 09,210,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 1/0,13,78,78,2847,,634,413,83,112,25,16.88,19.3,17.6,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 1/0,23,78,78,2847,,634,413,78,105,25,16.88,19.3,17.6,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 1/0,33,78,78,2847,,455,296,78,111,25,16.88,15.7,11.4,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 3/0,13,78,78,2259,,399,287,83,123,25,16.88,13.6,10.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 3/0,23,78,78,2259,,399,287,78,115,25,16.88,13.6,10.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 3/0,33,78,78,2259,,286,206,78,122,25,16.88,8.8,6.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 250 kcmil,13,72,79,1824,,268,206,76,123,25,15.58,10.1,7.6,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 250 kcmil,23,72,79,1824,,268,206,72,115,25,15.58,10.1,7.6,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,Cu 250 kcmil,33,72,79,1824,,192,147,72,122,25,15.58,6.2,4.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 1/0,13,84,84,2850,,2087,755,89,89,25,18.18,13.3,13.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 1/0,23,84,84,2850,,2087,755,84,83,25,17.96,13.3,13.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 1/0,33,84,84,2850,,1497,542,84,88,25,18.18,13.3,13.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 3/0,13,82,82,2261,,1313,574,87,90,25,17.75,15.6,15.6,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 3/0,23,82,82,2261,,1313,574,82,84,25,17.75,15.6,15.6,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 3/0,33,82,82,2261,,942,412,82,89,25,17.75,15.6,13.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 266.8,13,83,83,1770,,825,422,88,95,25,17.96,16.3,12.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 266.8,23,83,83,1770,,825,422,83,89,25,17.96,16.3,12.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 266.8,33,83,83,1770,,592,303,83,94,25,17.96,11.3,8.1,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 336.4,13,81,83,1575,,654,359,86,95,25,17.53,13.5,10.2,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 336.4,23,81,83,1575,,654,359,81,89,25,17.53,13.5,10.2,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 336.4,33,81,83,1575,,469,257,81,94,25,17.53,9.2,6.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 477,13,70,81,1323,,462,278,74,86,25,15.15,12.5,8.9,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 477,23,70,81,1323,,462,278,70,80,25,15.15,12.5,8.9,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,AAC 477,33,70,81,1323,,331,199,70,85,25,15.15,8.5,5.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR RAVEN 1/0,13,109,109,2636,,1501,644,116,121,25,23.59,27.8,21.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR RAVEN 1/0,23,109,109,2636,,1501,644,109,113,25,23.59,27.8,21.3,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR RAVEN 1/0,33,109,109,2636,,1077,462,109,119,25,23.59,19.4,13.9,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR PIGEON 3/0,13,105,106,2091,,944,479,111,122,25,22.73,17.8,13.7,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR PIGEON 3/0,23,105,106,2091,,944,479,105,114,25,22.73,17.8,13.7,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR PIGEON 3/0,33,105,106,2091,,677,343,105,121,25,22.73,12.1,8.7,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR PARTRIDGE 266.8,13,85,112,1634,,592,343,90,104,25,18.4,14.3,10.4,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR PARTRIDGE 266.8,23,85,112,1634,,592,343,85,97,25,18.4,14.3,10.4,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR PARTRIDGE 266.8,33,85,112,1634,,424,246,85,103,25,18.4,9.6,6.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR LINNET 336.4,13,77,112,1455,,470,289,82,97,25,16.67,13.5,9.4,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR LINNET 336.4,23,77,112,1455,,470,289,77,91,25,16.67,13.5,9.4,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR LINNET 336.4,33,77,112,1455,,337,207,77,96,25,16.67,9.1,5.8,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR HAWK 477,13,65,111,1223,,332,220,69,86,25,14.07,13,8.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR HAWK 477,23,65,111,1223,,332,220,65,81,25,14.07,13,8.5,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3G,normal,ACSR HAWK 477,33,65,111,1223,,238,158,65,85,25,14.07,8.5,5.1,05 T0 09,211,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 1/0,13,78,78,2093,,1210,788,90,100,25,16.88,19,19,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 1/0,23,78,78,2093,,1210,788,78,94,25,16.88,19,19,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 1/0,33,78,78,2093,,1210,788,78,85,25,16.88,19,19,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 3/0,13,63,78,1659,,761,547,73,87,25,13.64,34.6,30,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 3/0,23,63,78,1659,,761,547,63,81,25,13.64,34.6,30,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 3/0,33,63,78,1659,,761,547,63,74,25,13.64,34.6,30,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 250 kcmil,13,53,79,1341,,511,392,61,78,25,11.47,29.4,26,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 250 kcmil,23,53,79,1341,,511,392,53,73,25,11.47,29.4,26,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,Cu 250 kcmil,33,53,79,1341,,511,392,53,67,25,11.47,29.4,26,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 1/0,13,82,84,2094,,3981,1440,94,83,25,17.75,25,23.7,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 1/0,23,82,84,2094,,3981,1440,82,78,25,16.88,25,23.7,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 1/0,33,82,84,2094,,3981,1440,82,71,25,15.37,25,23.7,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 3/0,13,66,82,1661,,2504,1095,77,69,25,14.29,46,44,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 3/0,23,66,82,1661,,2504,1095,66,65,25,14.07,46,44,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 3/0,33,66,82,1661,,2504,1095,66,59,25,12.77,46,44,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 266.8,13,55,83,1301,,1574,805,63,59,25,11.9,38.4,38.6,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 266.8,23,55,83,1301,,1574,805,55,55,25,11.9,38.4,38.6,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 266.8,33,55,83,1301,,1574,805,55,50,25,10.82,38.4,38.6,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 336.4,13,50,83,1158,,1248,684,57,54,25,10.82,36.6,38,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 336.4,23,50,83,1158,,1248,684,50,51,25,10.82,36.6,38,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 336.4,33,50,83,1158,,1248,684,50,46,25,9.96,36.6,38,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 477,13,43,81,972,,881,529,50,48,25,9.31,33.8,36,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 477,23,43,81,972,,881,529,43,45,25,9.31,33.8,36,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,AAC 477,33,43,81,972,,881,529,43,41,25,8.87,33.8,36,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR RAVEN 1/0,13,75,109,1937,,2863,1228,87,79,25,16.23,53,51,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR RAVEN 1/0,23,75,109,1937,,2863,1228,75,74,25,16.02,53,51,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR RAVEN 1/0,33,75,109,1937,,2863,1228,75,67,25,14.5,53,51,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR PIGEON 3/0,13,62,106,1536,,1800,913,72,67,25,13.42,43,42,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR PIGEON 3/0,23,62,106,1536,,1800,913,62,63,25,13.42,43,42,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR PIGEON 3/0,33,62,106,1536,,1800,913,62,57,25,12.34,43,42,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR PARTRIDGE 266.8,13,51,112,1200,,1129,654,59,58,25,11.04,37,38.3,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR PARTRIDGE 266.8,23,51,112,1200,,1129,654,51,54,25,11.04,37,38.3,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR PARTRIDGE 266.8,33,51,112,1200,,1129,654,51,49,25,10.61,37,38.3,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR LINNET 336.4,13,47,112,1070,,897,551,54,54,25,10.17,36.3,38.5,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR LINNET 336.4,23,47,112,1070,,897,551,47,50,25,10.17,36.3,38.5,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR LINNET 336.4,33,47,112,1070,,897,551,47,46,25,9.96,36.3,38.5,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR HAWK 477,13,40,111,899,,632,420,46,48,25,8.66,32.6,35.5,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR HAWK 477,23,40,111,899,,632,420,40,45,25,8.66,32.6,35.5,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3N,contaminacion,ACSR HAWK 477,33,40,111,899,,632,420,40,41,25,8.66,32.6,35.5,05 T0 09,212,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 1/0,13,78,78,2093,,1210,788,83,100,25,16.88,19,19,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 1/0,23,78,78,2093,,1210,788,78,94,25,16.88,19,19,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 1/0,33,78,78,2093,,1210,788,78,85,25,16.88,19,19,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 3/0,13,70,78,1659,,761,547,74,97,25,15.15,34.6,30,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 3/0,23,70,78,1659,,761,547,70,91,25,15.15,34.6,30,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 3/0,33,70,78,1659,,761,547,70,82,25,15.15,34.6,30,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 250 kcmil,13,59,79,1341,,511,392,63,87,25,12.77,29.4,26,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 250 kcmil,23,59,79,1341,,511,392,59,82,25,12.77,29.4,26,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,Cu 250 kcmil,33,59,79,1341,,511,392,59,74,25,12.77,29.4,26,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 1/0,13,84,84,2094,,3981,1440,89,86,25,18.18,25,23.7,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 1/0,23,84,84,2094,,3981,1440,84,80,25,17.32,25,23.7,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 1/0,33,84,84,2094,,3981,1440,84,73,25,15.8,25,23.7,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 3/0,13,73,82,1661,,2504,1095,77,76,25,15.8,46,44,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 3/0,23,73,82,1661,,2504,1095,72,71,25,15.37,46,44,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 3/0,33,73,82,1661,,2504,1095,72,64,25,13.85,46,44,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 266.8,13,60,83,1301,,1574,805,63,64,25,12.99,38.4,38.6,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 266.8,23,60,83,1301,,1574,805,60,60,25,12.99,38.4,38.6,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 266.8,33,60,83,1301,,1574,805,60,55,25,11.9,38.4,38.6,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 336.4,13,54,83,1158,,1248,684,58,59,25,11.69,36.6,38,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 336.4,23,54,83,1158,,1248,684,54,55,25,11.69,36.6,38,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 336.4,33,54,83,1158,,1248,684,54,50,25,10.82,36.6,38,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 477,13,47,81,972,,881,529,50,53,25,10.17,33.8,36,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 477,23,47,81,972,,881,529,47,50,25,10.17,33.8,36,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,AAC 477,33,47,81,972,,881,529,47,45,25,9.74,33.8,36,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR RAVEN 1/0,13,81,109,1937,,2863,1228,86,85,25,17.53,53,51,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR RAVEN 1/0,23,81,109,1937,,2863,1228,81,80,25,17.32,53,51,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR RAVEN 1/0,33,81,109,1937,,2863,1228,81,73,25,15.8,53,51,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR PIGEON 3/0,13,68,106,1536,,1800,913,72,73,25,14.72,43,42,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR PIGEON 3/0,23,68,106,1536,,1800,913,68,68,25,14.72,43,42,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR PIGEON 3/0,33,68,106,1536,,1800,913,68,62,25,13.42,43,42,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR PARTRIDGE 266.8,13,56,112,1200,,1129,654,60,63,25,12.12,37,38.3,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR PARTRIDGE 266.8,23,56,112,1200,,1129,654,56,59,25,12.12,37,38.3,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR PARTRIDGE 266.8,33,56,112,1200,,1129,654,56,54,25,11.69,37,38.3,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR LINNET 336.4,13,51,112,1070,,897,551,54,59,25,11.04,36.3,38.5,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR LINNET 336.4,23,51,112,1070,,897,551,51,55,25,11.04,36.3,38.5,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR LINNET 336.4,33,51,112,1070,,897,551,51,50,25,10.82,36.3,38.5,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR HAWK 477,13,44,111,899,,632,420,47,53,25,9.52,32.6,35.5,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR HAWK 477,23,44,111,899,,632,420,44,49,25,9.52,32.6,35.5,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+TD3G,contaminacion,ACSR HAWK 477,33,44,111,899,,632,420,44,45,25,9.52,32.6,35.5,05 T0 09,213,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 1/0,13,95,95,1898,2549,318,207,101,225,3.52,2.92,11.4,7.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 1/0,23,95,95,1898,2549,318,207,101,221,3.52,2.92,11.4,7.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 1/0,33,95,95,1898,2549,318,207,101,216,3.52,2.92,11.4,7.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 3/0,13,95,95,1506,2022,200,144,101,247,1.81,1.5,5.7,3,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 3/0,23,95,95,1506,2022,200,144,101,243,1.81,1.5,5.7,3,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 3/0,33,95,95,1506,2022,200,144,101,237,1.81,1.5,5.7,3,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 250 kcmil,13,85,85,1216,1633,134,103,91,241,1.4,1.04,3.1,1.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 250 kcmil,23,85,85,1216,1633,134,103,91,237,1.4,1.04,3.1,1.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,Cu 250 kcmil,33,85,85,1216,1633,134,103,91,231,1.4,1.04,3.1,1.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 1/0,13,105,105,1900,2551,1045,378,110,177,4.17,3.82,21.7,15,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 1/0,23,105,105,1900,2551,1045,378,110,173,4.17,3.82,21.7,15,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 1/0,33,105,105,1900,2551,1045,378,110,169,4.17,3.82,21.7,15,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 3/0,13,100,100,1507,2023,658,288,107,179,2.42,2.11,14.1,9.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 3/0,23,100,100,1507,2023,658,288,107,176,2.42,2.11,14.1,9.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 3/0,33,100,100,1507,2023,658,288,107,172,2.42,2.11,14.1,9.2,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 266.8,13,105,105,1180,1584,413,211,110,194,0.55,0.5,8.7,4.9,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 266.8,23,105,105,1180,1584,413,211,110,190,0.55,0.5,8.7,4.9,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 266.8,33,105,105,1180,1584,413,211,110,186,0.55,0.5,8.7,4.9,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 336.4,13,100,100,1050,1410,328,180,106,191,0.24,0.21,7,3.7,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 336.4,23,100,100,1050,1410,328,180,106,187,0.24,0.21,7,3.7,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 336.4,33,100,100,1050,1410,328,180,106,183,0.24,0.21,7,3.7,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 477,13,85,85,882,1184,231,139,92,173,0.22,0.16,5.6,2.8,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 477,23,85,85,882,1184,231,139,92,170,0.22,0.16,5.6,2.8,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,AAC 477,33,85,85,882,1184,231,139,92,166,0.22,0.16,5.6,2.8,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR RAVEN 1/0,13,135,135,1757,2360,752,323,140,236,1.18,1.39,15,9.1,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR RAVEN 1/0,23,135,135,1757,2360,752,323,140,231,1.18,1.39,15,9.1,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR RAVEN 1/0,33,135,135,1757,2360,752,323,140,226,1.18,1.39,15,9.1,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR PIGEON 3/0,13,125,125,1394,1871,473,240,131,234,0.41,0.45,9.3,5,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR PIGEON 3/0,23,125,125,1394,1871,473,240,131,229,0.41,0.45,9.3,5,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR PIGEON 3/0,33,125,125,1394,1871,473,240,131,224,0.41,0.45,9.3,5,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR PARTRIDGE 266.8,13,100,100,1089,1463,296,172,108,202,0.39,0.34,6.6,3.5,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR PARTRIDGE 266.8,23,100,100,1089,1463,296,172,108,199,0.39,0.34,6.6,3.5,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR PARTRIDGE 266.8,33,100,100,1089,1463,296,172,108,194,0.39,0.34,6.6,3.5,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR LINNET 336.4,13,95,95,970,1303,236,145,98,191,0.13,0.11,6.1,2.9,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR LINNET 336.4,23,95,95,970,1303,236,145,98,187,0.13,0.11,6.1,2.9,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR LINNET 336.4,33,95,95,970,1303,236,145,98,183,0.13,0.11,6.1,2.9,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR HAWK 477,13,80,80,815,1095,166,110,85,174,0.15,0.1,4.7,2.1,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR HAWK 477,23,80,80,815,1095,166,110,85,171,0.15,0.1,4.7,2.1,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,normal,ACSR HAWK 477,33,80,80,815,1095,166,110,85,167,0.15,0.1,4.7,2.1,05 P0 02,241,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 1/0,13,78,78,1395,1872,712,464,97,193,1.11,0.76,18,18,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 1/0,23,78,78,1395,1872,712,464,97,190,1.11,0.76,18,18,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 1/0,33,78,78,1395,1872,712,464,97,185,1.11,0.76,18,18,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 3/0,13,68,78,1106,1485,448,322,85,182,1,0.59,18,14.5,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 3/0,23,68,78,1106,1485,448,322,85,178,1,0.59,18,14.5,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 3/0,33,68,78,1106,1485,448,322,85,174,1,0.59,18,14.5,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 250 kcmil,13,57,79,894,1200,301,231,71,162,1,0.5,15.4,12.9,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 250 kcmil,23,57,79,894,1200,301,231,71,159,1,0.5,15.4,12.9,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,Cu 250 kcmil,33,57,79,894,1200,301,231,71,156,1,0.5,15.4,12.9,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 1/0,13,84,84,1396,1874,2344,848,105,162,1.01,0.74,10,10,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 1/0,23,84,84,1396,1874,2344,848,105,159,1.01,0.74,10,10,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 1/0,33,84,84,1396,1874,2344,848,105,155,1.01,0.74,10,10,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 3/0,13,71,82,1107,1487,1474,645,89,141,1,0.62,26.7,24.2,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 3/0,23,71,82,1107,1487,1474,645,89,138,1,0.62,26.7,24.2,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 3/0,33,71,82,1107,1487,1474,645,89,135,1,0.62,26.7,24.2,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 266.8,13,58,83,867,1164,927,474,72,117,1,0.51,23.3,22.7,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 266.8,23,58,83,867,1164,927,474,72,115,1,0.51,23.3,22.7,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 266.8,33,58,83,867,1164,927,474,72,113,1,0.51,23.3,22.7,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 336.4,13,52,83,772,1036,735,403,65,108,1,0.45,22.3,22.2,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 336.4,23,52,83,772,1036,735,403,65,106,1,0.45,22.3,22.2,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 336.4,33,52,83,772,1036,735,403,65,104,1,0.45,22.3,22.2,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 477,13,45,81,648,870,518,312,56,96,1,0.39,21.7,22.3,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 477,23,45,81,648,870,518,312,56,94,1,0.39,21.7,22.3,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,AAC 477,33,45,81,648,870,518,312,56,92,1,0.39,21.7,22.3,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR RAVEN 1/0,13,81,109,1291,1734,1685,723,102,162,1,0.71,30.7,27,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR RAVEN 1/0,23,81,109,1291,1734,1685,723,102,159,1,0.71,30.7,27,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR RAVEN 1/0,33,81,109,1291,1734,1685,723,102,155,1,0.71,30.7,27,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR PIGEON 3/0,13,67,106,1024,1375,1060,538,83,137,1,0.58,25.6,23.7,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR PIGEON 3/0,23,67,106,1024,1375,1060,538,83,134,1,0.58,25.6,23.7,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR PIGEON 3/0,33,67,106,1024,1375,1060,538,83,131,1,0.58,25.6,23.7,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR PARTRIDGE 266.8,13,54,112,800,1075,664,385,67,115,1,0.47,23,23,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR PARTRIDGE 266.8,23,54,112,800,1075,664,385,67,113,1,0.47,23,23,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR PARTRIDGE 266.8,33,54,112,800,1075,664,385,67,110,1,0.47,23,23,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR LINNET 336.4,13,49,112,713,957,528,324,61,106,1,0.43,22.5,22.5,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR LINNET 336.4,23,49,112,713,957,528,324,61,104,1,0.43,22.5,22.5,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR LINNET 336.4,33,49,112,713,957,528,324,61,102,1,0.43,22.5,22.5,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR HAWK 477,13,42,111,599,804,372,247,52,95,1,0.37,21,21,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR HAWK 477,23,42,111,599,804,372,247,52,93,1,0.37,21,21,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PS3N,contaminacion,ACSR HAWK 477,33,42,111,599,804,372,247,52,91,1,0.37,21,21,05 P0 02,242,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 1/0,13,95,95,2847,2549,846,551,101,222,25,20.56,19.3,19.3,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 1/0,23,95,95,2847,2549,846,551,101,218,25,20.56,19.3,19.3,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 1/0,33,95,95,2847,2549,846,551,101,213,25,20.56,19.3,19.3,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 3/0,13,95,95,2259,2022,532,383,101,244,25,20.56,14,14,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 3/0,23,95,95,2259,2022,532,383,101,240,25,20.56,14,14,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 3/0,33,95,95,2259,2022,532,383,101,234,25,20.56,14,14,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 250 kcmil,13,85,85,1824,1633,357,274,91,238,25,18.4,17.2,13,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 250 kcmil,23,85,85,1824,1633,357,274,91,234,25,18.4,17.2,13,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,Cu 250 kcmil,33,85,85,1824,1633,357,274,91,228,25,18.4,17.2,13,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 1/0,13,105,105,2850,2551,2783,1007,110,174,25,22.73,35.8,30,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 1/0,23,105,105,2850,2551,2783,1007,110,171,25,22.73,35.8,30,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 1/0,33,105,105,2850,2551,2783,1007,110,167,25,22.73,35.8,30,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 3/0,13,100,100,2261,2023,1750,766,107,177,25,21.64,36.3,32.4,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 3/0,23,100,100,2261,2023,1750,766,107,174,25,21.64,36.3,32.4,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 3/0,33,100,100,2261,2023,1750,766,107,170,25,21.64,36.3,32.4,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 266.8,13,105,105,1770,1584,1100,563,110,191,25,22.73,27.6,21.2,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 266.8,23,105,105,1770,1584,1100,563,110,188,25,22.73,27.6,21.2,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 266.8,33,105,105,1770,1584,1100,563,110,183,25,22.73,27.6,21.2,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 336.4,13,100,100,1575,1410,873,478,106,188,25,21.64,23.2,17.6,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 336.4,23,100,100,1575,1410,873,478,106,185,25,21.64,23.2,17.6,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 336.4,33,100,100,1575,1410,873,478,106,180,25,21.64,23.2,17.6,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 477,13,85,85,1323,1184,616,370,92,171,25,18.4,19.9,15.1,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 477,23,85,85,1323,1184,616,370,92,168,25,18.4,19.9,15.1,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,AAC 477,33,85,85,1323,1184,616,370,92,164,25,18.4,19.9,15.1,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR RAVEN 1/0,13,135,135,2636,2360,2001,859,140,233,25,29.22,45,35.3,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR RAVEN 1/0,23,135,135,2636,2360,2001,859,140,228,25,29.22,45,35.3,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR RAVEN 1/0,33,135,135,2636,2360,2001,859,140,223,25,29.22,45,35.3,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR PIGEON 3/0,13,125,125,2091,1871,1258,638,131,231,25,27.05,30,23,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR PIGEON 3/0,23,125,125,2091,1871,1258,638,131,226,25,27.05,30,23,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR PIGEON 3/0,33,125,125,2091,1871,1258,638,131,221,25,27.05,30,23,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR PARTRIDGE 266.8,13,100,100,1634,1463,789,457,108,200,25,21.64,23,17.4,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR PARTRIDGE 266.8,23,100,100,1634,1463,789,457,108,196,25,21.64,23,17.4,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR PARTRIDGE 266.8,33,100,100,1634,1463,789,457,108,191,25,21.64,23,17.4,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR LINNET 336.4,13,95,95,1455,1303,627,385,98,188,25,20.56,22.4,17.1,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR LINNET 336.4,23,95,95,1455,1303,627,385,98,185,25,20.56,22.4,17.1,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR LINNET 336.4,33,95,95,1455,1303,627,385,98,180,25,20.56,22.4,17.1,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR HAWK 477,13,80,80,1223,1095,442,293,85,171,25,17.32,19.3,14.8,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR HAWK 477,23,80,80,1223,1095,442,293,85,168,25,17.32,19.3,14.8,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,normal,ACSR HAWK 477,33,80,80,1223,1095,442,293,85,164,25,17.32,19.3,14.8,05 P0 05,256,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 1/0,13,78,78,2093,1872,1631,1062,97,190,25,16.88,18,18,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 1/0,23,78,78,2093,1872,1631,1062,97,187,25,16.88,18,18,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 1/0,33,78,78,2093,1872,1631,1062,97,183,25,16.88,18,18,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 3/0,13,68,78,1659,1485,1026,738,85,179,25,14.72,41.5,36.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 3/0,23,68,78,1659,1485,1026,738,85,176,25,14.72,41.5,36.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 3/0,33,68,78,1659,1485,1026,738,85,172,25,14.72,41.5,36.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 250 kcmil,13,57,79,1341,1200,688,528,71,160,25,12.34,36,32.1,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 250 kcmil,23,57,79,1341,1200,688,528,71,157,25,12.34,36,32.1,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,Cu 250 kcmil,33,57,79,1341,1200,688,528,71,153,25,12.34,36,32.1,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 1/0,13,84,84,2094,1874,5366,1941,105,159,25,18.18,10,10,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 1/0,23,84,84,2094,1874,5366,1941,105,156,25,18.18,10,10,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 1/0,33,84,84,2094,1874,5366,1941,105,153,25,18.18,10,10,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 3/0,13,71,82,1661,1487,3375,1476,89,139,25,15.37,47.5,47.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 3/0,23,71,82,1661,1487,3375,1476,89,136,25,15.37,47.5,47.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 3/0,33,71,82,1661,1487,3375,1476,89,133,25,15.37,47.5,47.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 266.8,13,58,83,1301,1164,2122,1085,72,116,25,12.55,46.9,46.7,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 266.8,23,58,83,1301,1164,2122,1085,72,114,25,12.55,46.9,46.7,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 266.8,33,58,83,1301,1164,2122,1085,72,111,25,12.55,46.9,46.7,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 336.4,13,52,83,1158,1036,1682,922,65,107,25,11.25,43.1,43.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 336.4,23,52,83,1158,1036,1682,922,65,105,25,11.25,43.1,43.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 336.4,33,52,83,1158,1036,1682,922,65,102,25,11.25,43.1,43.5,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 477,13,45,81,972,870,1187,713,56,95,25,9.74,40.4,42.4,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 477,23,45,81,972,870,1187,713,56,93,25,9.74,40.4,42.4,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,AAC 477,33,45,81,972,870,1187,713,56,91,25,9.74,40.4,42.4,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR RAVEN 1/0,13,81,109,1937,1734,3858,1656,102,160,25,17.53,69.7,66.6,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR RAVEN 1/0,23,81,109,1937,1734,3858,1656,102,157,25,17.53,69.7,66.6,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR RAVEN 1/0,33,81,109,1937,1734,3858,1656,102,153,25,17.53,69.7,66.6,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR PIGEON 3/0,13,67,106,1536,1375,2426,1231,83,135,25,14.5,53.3,51.9,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR PIGEON 3/0,23,67,106,1536,1375,2426,1231,83,132,25,14.5,53.3,51.9,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR PIGEON 3/0,33,67,106,1536,1375,2426,1231,83,129,25,14.5,53.3,51.9,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR PARTRIDGE 266.8,13,54,112,1200,1075,1521,881,67,113,25,11.69,45.1,46.3,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR PARTRIDGE 266.8,23,54,112,1200,1075,1521,881,67,111,25,11.69,45.1,46.3,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR PARTRIDGE 266.8,33,54,112,1200,1075,1521,881,67,109,25,11.69,45.1,46.3,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR LINNET 336.4,13,49,112,1070,957,1209,743,61,105,25,10.61,43.2,45.3,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR LINNET 336.4,23,49,112,1070,957,1209,743,61,103,25,10.61,43.2,45.3,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR LINNET 336.4,33,49,112,1070,957,1209,743,61,101,25,10.61,43.2,45.3,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR HAWK 477,13,42,111,899,804,852,566,52,94,25,9.09,40.1,43,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR HAWK 477,23,42,111,899,804,852,566,52,92,25,9.09,40.1,43,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+PD3N,contaminacion,ACSR HAWK 477,33,42,111,899,804,852,566,52,90,25,9.09,40.1,43,05 P0 05,257,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 1/0,13,95,95,1898,2549,318,207,101,225,3.52,2.92,11.4,7.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 1/0,23,95,95,1898,2549,318,207,101,221,3.52,2.92,11.4,7.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 1/0,33,95,95,1898,2549,318,207,101,216,3.52,2.92,11.4,7.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 3/0,13,95,95,1506,2022,200,144,101,247,1.81,1.5,5.7,3,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 3/0,23,95,95,1506,2022,200,144,101,243,1.81,1.5,5.7,3,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 3/0,33,95,95,1506,2022,200,144,101,237,1.81,1.5,5.7,3,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 250 kcmil,13,85,85,1216,1633,134,103,91,241,1.4,1.04,3.1,1.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 250 kcmil,23,85,85,1216,1633,134,103,91,237,1.4,1.04,3.1,1.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,Cu 250 kcmil,33,85,85,1216,1633,134,103,91,231,1.4,1.04,3.1,1.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 1/0,13,105,105,1900,2551,1045,378,110,177,4.17,3.82,21.7,15,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 1/0,23,105,105,1900,2551,1045,378,110,173,4.17,3.82,21.7,15,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 1/0,33,105,105,1900,2551,1045,378,110,169,4.17,3.82,21.7,15,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 3/0,13,100,100,1507,2023,658,288,107,179,2.42,2.11,14.1,9.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 3/0,23,100,100,1507,2023,658,288,107,176,2.42,2.11,14.1,9.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 3/0,33,100,100,1507,2023,658,288,107,172,2.42,2.11,14.1,9.2,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 266.8,13,105,105,1180,1584,413,211,110,194,0.55,0.5,8.7,4.9,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 266.8,23,105,105,1180,1584,413,211,110,190,0.55,0.5,8.7,4.9,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 266.8,33,105,105,1180,1584,413,211,110,186,0.55,0.5,8.7,4.9,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 336.4,13,100,100,1050,1410,328,180,106,191,0.24,0.21,7,3.7,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 336.4,23,100,100,1050,1410,328,180,106,187,0.24,0.21,7,3.7,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 336.4,33,100,100,1050,1410,328,180,106,183,0.24,0.21,7,3.7,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 477,13,85,85,882,1184,231,139,92,173,0.22,0.16,5.6,2.8,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 477,23,85,85,882,1184,231,139,92,170,0.22,0.16,5.6,2.8,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,AAC 477,33,85,85,882,1184,231,139,92,166,0.22,0.16,5.6,2.8,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR RAVEN 1/0,13,135,135,1757,2360,752,323,140,236,1.18,1.39,15,9.1,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR RAVEN 1/0,23,135,135,1757,2360,752,323,140,231,1.18,1.39,15,9.1,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR RAVEN 1/0,33,135,135,1757,2360,752,323,140,226,1.18,1.39,15,9.1,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR PIGEON 3/0,13,125,125,1394,1871,473,240,131,234,0.41,0.45,9.3,5,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR PIGEON 3/0,23,125,125,1394,1871,473,240,131,229,0.41,0.45,9.3,5,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR PIGEON 3/0,33,125,125,1394,1871,473,240,131,224,0.41,0.45,9.3,5,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR PARTRIDGE 266.8,13,100,100,1089,1463,296,172,108,202,0.39,0.34,6.6,3.5,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR PARTRIDGE 266.8,23,100,100,1089,1463,296,172,108,199,0.39,0.34,6.6,3.5,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR PARTRIDGE 266.8,33,100,100,1089,1463,296,172,108,194,0.39,0.34,6.6,3.5,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR LINNET 336.4,13,95,95,970,1303,236,145,98,191,0.13,0.11,6.1,2.9,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR LINNET 336.4,23,95,95,970,1303,236,145,98,187,0.13,0.11,6.1,2.9,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR LINNET 336.4,33,95,95,970,1303,236,145,98,183,0.13,0.11,6.1,2.9,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR HAWK 477,13,80,80,815,1095,166,110,85,174,0.15,0.1,4.7,2.1,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR HAWK 477,23,80,80,815,1095,166,110,85,171,0.15,0.1,4.7,2.1,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+R/PS3N,segun tabla,ACSR HAWK 477,33,80,80,815,1095,166,110,85,167,0.15,0.1,4.7,2.1,05 R0 02,273,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 1/0,13,78,78,1898,,309,201,101,121,3.71,2.52,6.8,4,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 1/0,23,78,78,1898,,309,201,90,114,3.71,2.52,6.8,4,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 1/0,33,78,78,1898,,165,107,78,108,3.71,2.52,3.5,1.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 3/0,13,77,78,1506,,195,140,99,131,1.96,1.32,5,3,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 3/0,23,77,78,1506,,195,140,89,124,1.96,1.32,5,3,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 3/0,33,77,78,1506,,104,75,77,117,1.96,1.28,1.2,0,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 250 kcmil,13,67,79,1216,,131,100,86,123,1.67,0.98,3.5,2,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 250 kcmil,23,67,79,1216,,131,100,77,116,1.67,0.98,3.5,2,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,Cu 250 kcmil,33,67,79,1216,,70,53,67,110,1.67,0.77,0.1,0,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 1/0,13,84,84,1900,,1018,368,108,96,4.96,3.63,13.3,12.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 1/0,23,84,84,1900,,1018,368,97,90,4.96,3.63,13.3,12.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 1/0,33,84,84,1900,,543,196,84,86,4.96,3.63,8.5,5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 3/0,13,82,82,1507,,640,280,106,97,2.95,2.11,11.5,8,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 3/0,23,82,82,1507,,640,280,95,91,2.95,2.11,11.5,8,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 3/0,33,82,82,1507,,341,149,82,87,2.95,2.11,5.3,2.7,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 266.8,13,80,83,1180,,403,206,103,99,1.42,0.99,7.4,4.6,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 266.8,23,80,83,1180,,403,206,92,93,1.42,0.99,7.4,4.6,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 266.8,33,80,83,1180,,215,110,80,89,1.42,0.99,3.1,1.1,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 336.4,13,74,83,1050,,319,175,96,94,1.21,0.78,6.5,4,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 336.4,23,74,83,1050,,319,175,85,88,1.21,0.78,6.5,4,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 336.4,33,74,83,1050,,170,93,74,84,1.21,0.78,2.5,0.7,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 477,13,67,81,882,,225,135,86,89,1,0.58,5.3,3.1,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 477,23,67,81,882,,225,135,77,84,1,0.58,5.3,3.1,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,AAC 477,33,67,81,882,,120,72,67,79,1,0.58,1.8,0.2,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR RAVEN 1/0,13,109,109,1757,,732,314,141,130,1.71,1.63,12,8,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR RAVEN 1/0,23,109,109,1757,,732,314,126,123,1.71,1.63,12,8,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR RAVEN 1/0,33,109,109,1757,,390,168,109,117,1.71,1.63,5.4,2.2,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR PIGEON 3/0,13,88,106,1394,,460,233,114,110,1.67,1.28,8.7,5.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR PIGEON 3/0,23,88,106,1394,,460,233,102,104,1.67,1.28,8.7,5.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR PIGEON 3/0,33,88,106,1394,,245,125,88,98,1.67,1.28,3.7,1.4,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR PARTRIDGE 266.8,13,77,112,1089,,289,167,99,101,1.13,0.76,6.4,3.8,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR PARTRIDGE 266.8,23,77,112,1089,,289,167,89,96,1.13,0.76,6.4,3.8,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR PARTRIDGE 266.8,33,77,112,1089,,154,89,77,91,1.13,0.76,2.3,0.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR LINNET 336.4,13,71,112,970,,229,141,92,96,1,0.62,5.5,3.2,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR LINNET 336.4,23,71,112,970,,229,141,82,91,1,0.62,5.5,3.2,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR LINNET 336.4,33,71,112,970,,122,75,71,86,1,0.62,1.8,0.1,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR HAWK 477,13,62,111,815,,162,107,80,88,1,0.54,4.5,2.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR HAWK 477,23,62,111,815,,162,107,72,83,1,0.54,4.5,2.5,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VS3N,normal,ACSR HAWK 477,33,62,111,815,,86,57,62,79,1,0.5,1.1,0,05 V0 02,409,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 1/0,13,78,78,2847,,701,456,101,119,25,16.88,19.3,19.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 1/0,23,78,78,2847,,701,456,90,112,25,16.88,19.3,19.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 1/0,33,78,78,2847,,433,282,78,106,25,16.88,14.7,10.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 3/0,13,77,78,2259,,441,317,99,129,25,16.67,16.1,12.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 3/0,23,77,78,2259,,441,317,89,122,25,16.67,16.1,12.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 3/0,33,77,78,2259,,272,196,77,115,25,16.67,8.7,6,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 250 kcmil,13,67,79,1824,,296,227,86,121,25,14.5,12.8,9.6,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 250 kcmil,23,67,79,1824,,296,227,77,114,25,14.5,12.8,9.6,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,Cu 250 kcmil,33,67,79,1824,,183,140,67,108,25,14.5,6.5,4.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 1/0,13,84,84,2850,,2306,834,108,94,25,18.18,13.3,13.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 1/0,23,84,84,2850,,2306,834,97,89,25,18.18,13.3,13.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 1/0,33,84,84,2850,,1425,515,84,84,25,18.18,13.3,13.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 3/0,13,82,82,2261,,1451,635,106,96,25,17.75,15.5,15.5,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 3/0,23,82,82,2261,,1451,635,95,90,25,17.75,15.5,15.5,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 3/0,33,82,82,2261,,896,392,82,85,25,17.75,15.5,12.5,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 266.8,13,80,83,1770,,912,466,103,97,25,17.32,18.9,14.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 266.8,23,80,83,1770,,912,466,92,92,25,17.32,18.9,14.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 266.8,33,80,83,1770,,563,288,80,87,25,17.32,11,7.8,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 336.4,13,74,83,1575,,723,396,96,92,25,16.02,16.8,12.8,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 336.4,23,74,83,1575,,723,396,85,87,25,16.02,16.8,12.8,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 336.4,33,74,83,1575,,447,245,74,83,25,16.02,9.8,6.8,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 477,13,67,81,1323,,510,307,86,87,25,14.5,14.6,10.8,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 477,23,67,81,1323,,510,307,77,82,25,14.5,14.6,10.8,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,AAC 477,33,67,81,1323,,315,189,67,78,25,14.5,8.3,5.6,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR RAVEN 1/0,13,109,109,2636,,1658,712,141,128,25,23.59,27.8,24,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR RAVEN 1/0,23,109,109,2636,,1658,712,126,121,25,23.59,27.8,24,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR RAVEN 1/0,33,109,109,2636,,1024,440,109,115,25,23.59,17.8,12.8,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR PIGEON 3/0,13,88,106,2091,,1043,529,114,108,25,19.05,22.1,17.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR PIGEON 3/0,23,88,106,2091,,1043,529,102,102,25,19.05,22.1,17.3,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR PIGEON 3/0,33,88,106,2091,,644,327,88,97,25,19.05,13,9.4,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR PARTRIDGE 266.8,13,77,112,1634,,654,379,99,100,25,16.67,17.1,13.1,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR PARTRIDGE 266.8,23,77,112,1634,,654,379,89,94,25,16.67,17.1,13.1,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR PARTRIDGE 266.8,33,77,112,1634,,404,234,77,89,25,16.67,9.8,6.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR LINNET 336.4,13,71,112,1455,,520,319,92,95,25,15.37,15.5,11.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR LINNET 336.4,23,71,112,1455,,520,319,82,90,25,15.37,15.5,11.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR LINNET 336.4,33,71,112,1455,,321,197,71,85,25,15.37,8.8,6,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR HAWK 477,13,62,111,1223,,366,243,80,87,25,13.42,14.2,10.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VD3N,normal,ACSR HAWK 477,23,62,111,1223,,366,243,72,82,25,13.42,14.2,10.7,05 V0 02,410,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 1/0,13,76,78,1395,,165,107,99,106,1,0.66,3.5,1.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 1/0,23,76,78,1395,,165,107,88,100,1,0.66,3.5,1.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 1/0,33,76,78,1395,,165,107,76,92,1,0.66,3.5,1.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 3/0,13,62,78,1106,,104,75,80,92,1,0.54,2.2,0.8,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 3/0,23,62,78,1106,,104,75,71,87,1,0.54,2.2,0.8,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 3/0,33,62,78,1106,,104,75,62,80,1,0.54,2.2,0.8,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 250 kcmil,13,51,79,894,,70,53,65,80,1,0.45,1.4,0.2,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 250 kcmil,23,51,79,894,,70,53,58,76,1,0.45,1.4,0.2,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,Cu 250 kcmil,33,51,79,894,,70,53,51,70,1,0.45,1.4,0.2,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 1/0,13,83,84,1396,,543,196,108,91,1,0.72,7.5,4.7,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 1/0,23,83,84,1396,,543,196,96,86,1,0.72,7.5,4.7,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 1/0,33,83,84,1396,,543,196,83,80,1,0.7,7.5,4.7,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 3/0,13,68,82,1107,,341,149,87,76,1,0.59,5.8,3.8,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 3/0,23,68,82,1107,,341,149,78,72,1,0.59,5.8,3.8,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 3/0,33,68,82,1107,,341,149,68,66,1,0.58,5.8,3.8,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 266.8,13,54,83,867,,215,110,70,63,1,0.47,5.1,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 266.8,23,54,83,867,,215,110,63,59,1,0.47,5.1,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 266.8,33,54,83,867,,215,110,54,55,1,0.47,5.1,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 336.4,13,49,83,772,,170,93,63,58,1,0.43,4.9,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 336.4,23,49,83,772,,170,93,57,54,1,0.43,4.9,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 336.4,33,49,83,772,,170,93,49,50,1,0.43,4.9,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 477,13,42,81,648,,120,72,54,51,1,0.37,4.5,3.1,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 477,23,42,81,648,,120,72,48,48,1,0.37,4.5,3.1,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,AAC 477,33,42,81,648,,120,72,42,44,1,0.37,4.5,3.1,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR RAVEN 1/0,13,77,109,1291,,390,168,100,87,1,0.67,6.4,4.1,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR RAVEN 1/0,23,77,109,1291,,390,168,89,82,1,0.67,6.4,4.1,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR RAVEN 1/0,33,77,109,1291,,390,168,77,76,1,0.66,6.4,4.1,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR PIGEON 3/0,13,63,106,1024,,245,125,81,73,1,0.55,5.4,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR PIGEON 3/0,23,63,106,1024,,245,125,72,69,1,0.55,5.4,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR PIGEON 3/0,33,63,106,1024,,245,125,63,64,1,0.55,5.4,3.5,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR PARTRIDGE 266.8,13,51,112,800,,154,89,65,61,1,0.45,4.8,3.2,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR PARTRIDGE 266.8,23,51,112,800,,154,89,58,58,1,0.45,4.8,3.2,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR PARTRIDGE 266.8,33,51,112,800,,154,89,51,53,1,0.45,4.8,3.2,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR LINNET 336.4,13,45,112,713,,122,75,59,56,1,0.39,4.3,2.9,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR LINNET 336.4,23,45,112,713,,122,75,52,53,1,0.39,4.3,2.9,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR LINNET 336.4,33,45,112,713,,122,75,45,49,1,0.39,4.3,2.9,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR HAWK 477,13,38,111,599,,86,57,49,49,1,0.33,3.7,2.3,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR HAWK 477,23,38,111,599,,86,57,44,46,1,0.33,3.7,2.3,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VS3N,contaminacion,ACSR HAWK 477,33,38,111,599,,86,57,38,43,1,0.33,3.7,2.3,05 V0 02,411,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 1/0,13,76,78,2093,,495,322,99,104,25,16.45,16,12.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 1/0,23,76,78,2093,,495,322,88,98,25,16.45,16,12.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 1/0,33,76,78,2093,,495,322,76,91,25,16.45,16,12.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 3/0,13,62,78,1659,,311,224,80,91,25,13.42,13.7,10.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 3/0,23,62,78,1659,,311,224,71,85,25,13.42,13.7,10.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 3/0,33,62,78,1659,,311,224,62,79,25,13.42,13.7,10.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 250 kcmil,13,51,79,1341,,209,160,65,79,25,11.04,12,9.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 250 kcmil,23,51,79,1341,,209,160,58,75,25,11.04,12,9.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,Cu 250 kcmil,33,51,79,1341,,209,160,51,69,25,11.04,12,9.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 1/0,13,83,84,2094,,1628,589,108,90,25,17.96,13.5,13.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 1/0,23,83,84,2094,,1628,589,96,85,25,17.96,13.5,13.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 1/0,33,83,84,2094,,1628,589,83,78,25,16.88,13.5,13.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 3/0,13,68,82,1661,,1024,448,87,75,25,14.72,20,17.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 3/0,23,68,82,1661,,1024,448,78,71,25,14.72,20,17.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 3/0,33,68,82,1661,,1024,448,68,65,25,14.07,20,17.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 266.8,13,54,83,1301,,644,329,70,62,25,11.69,17.6,16.9,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 266.8,23,54,83,1301,,644,329,63,58,25,11.69,17.6,16.9,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 266.8,33,54,83,1301,,644,329,54,54,25,11.69,17.6,16.9,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 336.4,13,49,83,1158,,510,280,63,57,25,10.61,17.4,17.2,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 336.4,23,49,83,1158,,510,280,57,54,25,10.61,17.4,17.2,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 336.4,33,49,83,1158,,510,280,49,49,25,10.61,17.4,17.2,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 477,13,42,81,972,,360,216,54,50,25,9.09,17,17,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 477,23,42,81,972,,360,216,48,47,25,9.09,17,17,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,AAC 477,33,42,81,972,,360,216,42,44,25,9.09,17,17,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR RAVEN 1/0,13,77,109,1937,,1171,502,100,86,25,16.67,22,19.3,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR RAVEN 1/0,23,77,109,1937,,1171,502,89,81,25,16.67,22,19.3,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR RAVEN 1/0,33,77,109,1937,,1171,502,77,75,25,16.23,22,19.3,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR PIGEON 3/0,13,63,106,1536,,736,373,81,72,25,13.64,19,17.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR PIGEON 3/0,23,63,106,1536,,736,373,72,68,25,13.64,19,17.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR PIGEON 3/0,33,63,106,1536,,736,373,63,63,25,13.64,19,17.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR PARTRIDGE 266.8,13,51,112,1200,,461,267,65,60,25,11.04,17.8,17.3,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR PARTRIDGE 266.8,23,51,112,1200,,461,267,58,57,25,11.04,17.8,17.3,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR PARTRIDGE 266.8,33,51,112,1200,,461,267,51,52,25,11.04,17.8,17.3,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR LINNET 336.4,13,45,112,1070,,367,225,59,55,25,9.74,16.9,16.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR LINNET 336.4,23,45,112,1070,,367,225,52,52,25,9.74,16.9,16.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR LINNET 336.4,33,45,112,1070,,367,225,45,48,25,9.74,16.9,16.5,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR HAWK 477,13,38,111,899,,259,172,49,48,25,8.22,15.8,15.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR HAWK 477,23,38,111,899,,259,172,44,46,25,8.22,15.8,15.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
+VD3N,contaminacion,ACSR HAWK 477,33,38,111,899,,259,172,38,42,25,8.22,15.8,15.8,05 V0 02,412,extraida_texto_pendiente_auditoria_visual
