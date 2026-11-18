@@ -214,6 +214,35 @@ def mostrar_corridas_cfe(puntos):
         mostrar_verificacion_integrada(
             tabla,puntos_calculo,conductor[1],hielo_mm=float(hielo),
         )
+        with st.expander("Comparación multivano — guías deslizantes ideales", expanded=False):
+            st.caption(
+                "Solucionador BVP de sección continua con remates extremos y "
+                "guías sin fricción intermedias. No equivale a espiga fija, "
+                "no optimiza nuevamente H50 y no acredita capacidad ENEE."
+            )
+            if st.button("Resolver sección continua ideal (50, 16 y 0 °C)",
+                         key="ejecutar_multivano_cfe_ideal"):
+                try:
+                    from Analisis_mecanico_conductores.tension_tendido.comparar_multivano_deslizante_cfe import (
+                        calcular_comparacion_multivano_final,
+                    )
+                    fila_final=resumen.loc[resumen["Condición"].astype(str).str.startswith("Final")]
+                    h50=float(fila_final["H_50_kN"].iloc[0])
+                    with st.spinner("Resolviendo continuidad de cinco vanos por BVP..."):
+                        comparacion=calcular_comparacion_multivano_final(
+                            puntos_calculo,fin,h50,
+                            temperaturas_C=(50.,16.,0.),
+                            Cd=1.,rho_kg_m3=float(rho),
+                        )
+                    st.dataframe(comparacion,hide_index=True,use_container_width=True)
+                    st.download_button(
+                        "Descargar comparación multivano ideal",
+                        comparacion.to_csv(index=False).encode("utf-8-sig"),
+                        "comparacion_multivano_ideal.csv","text/csv",
+                        key="descarga_multivano_ideal_cfe",
+                    )
+                except (ValueError,TypeError,KeyError,ArithmeticError) as exc:
+                    st.error("La sección ideal no se pudo resolver: "+str(exc))
         tabla_libramientos=None
         perfiles_terreno=None
         if elevaciones is not None:
