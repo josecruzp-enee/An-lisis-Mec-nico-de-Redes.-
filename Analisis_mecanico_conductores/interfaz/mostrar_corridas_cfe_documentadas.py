@@ -175,7 +175,7 @@ def mostrar_corridas_cfe(puntos):
             Cd=1.,rho_kg_m3=float(rho),
             incluir_ensayo_viento_16C=True,
         )
-        st.subheader("Referencias final e inicial acopladas (modelo experimental)")
+        st.subheader("Referencias inicial y final — modelo multivano experimental")
         if float(viento_reducido)==0. and float(hielo)==0.:
             st.warning(
                 "Viento reducido e hielo ingresados como cero: estas condiciones "
@@ -183,6 +183,11 @@ def mostrar_corridas_cfe(puntos):
                 "tablas CFE 07 FT. La comparación con P tabulado no valida el diseño."
             )
         st.dataframe(resumen,hide_index=True,use_container_width=True)
+        st.warning(
+            "El acoplamiento inicial/final iguala la tensión extrema bajo el "
+            "mismo modelo de tendido continuo y fijación. NO constituye una "
+            "ley de creep o deformación permanente ni valida SAGSEC/ENEE."
+        )
         st.subheader("Tendido continuo y fijación por vano")
         st.caption(
             "Etapa 1: sección continua con deslizamiento ideal a 50 °C. "
@@ -192,6 +197,11 @@ def mostrar_corridas_cfe(puntos):
         columnas=["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
         longitudes=tabla[columnas].drop_duplicates(["Condición","Vano"])
         st.dataframe(longitudes,hide_index=True,use_container_width=True)
+        st.caption(
+            "H a 50 °C mostrado en el resumen es el parámetro de entrada "
+            "para generar las longitudes de referencia. Las componentes H "
+            "por vano y las tensiones reales del tendido se presentan en las tablas."
+        )
         st.caption(
             "El claro regla de la tabla resumen NO interviene en las ecuaciones "
             "de estas corridas. Para vanos desnivelados su interpretación "
