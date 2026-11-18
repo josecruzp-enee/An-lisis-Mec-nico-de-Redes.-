@@ -104,7 +104,7 @@ def _evaluador(xyz, propiedades, condicion, Cd, rho, longitudes_fijadas=None):
 def calcular_parametro_cfe_desde_limites(
     xyz, propiedades: PropiedadesConductorCFE, hipotesis,
     *, condicion="Inicial", H_min_kN=0.01, H_max_kN=None,
-    Cd=1.2, rho_kg_m3=1.225, densidad_hielo_kg_m3=900.,
+    Cd=1.2, rho_kg_m3=1.225, densidad_hielo_kg_m3=913.,
 ):
     """Halla máximo P50 admisible por TODAS las hipótesis y vanos fijos.
 
@@ -216,7 +216,7 @@ def calcular_tablas_inicial_final(
     referencia_final: EstadoReferenciaCFE,
     temperaturas_C, *,
     estados_climaticos=(), Cd=1.2, rho_kg_m3=1.225,
-    densidad_hielo_kg_m3=900., longitudes_fijadas=None,
+    densidad_hielo_kg_m3=913., longitudes_fijadas=None,
 ):
     """Genera ambas tablas por vano; también admite estados viento/hielo.
 
