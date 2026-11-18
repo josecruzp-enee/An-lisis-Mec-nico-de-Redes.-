@@ -354,6 +354,33 @@ def ejecutar_corridas_cfe_por_vano(
         )
         longitudes_fijadas[condicion]=lon
         residuales_continuidad[condicion]=residual
+    # Los limites se verifican de NUEVO tras redistribuir material:
+    # la factibilidad del modelo de amarres fijos anterior no se hereda.
+    for condicion,casos,referencia in (
+        ("Inicial",ini,referencia_inicial),
+        ("Final",fin,referencia_final),
+    ):
+        evaluador=_evaluador(
+            xyz,propiedades,condicion,Cd,rho_kg_m3,
+            longitudes_fijadas=longitudes_fijadas[condicion],
+        )
+        for caso in casos:
+            hs,ts,_,residuales,_=evaluador.evaluar_estado_con_hielo(
+                referencia["H_50_kN"],caso.temperatura_C,
+                caso.viento_kmh/3.6,caso.hielo_mm,900.,
+            )
+            uso_t=max(ts)/caso.limite_tension_kN
+            uso_h=(max(hs)/caso.limite_horizontal_kN
+                   if caso.limite_horizontal_kN is not None else 0.)
+            if max(uso_t,uso_h)>1.+1e-6:
+                raise ValueError(
+                    "El tendido continuo seguido de fijacion incumple "
+                    f"{caso.nombre}: utilizacion={max(uso_t,uso_h):.4f}. "
+                    "La referencia optimizada para amarres fijos no es "
+                    "factible tras redistribucion de longitudes."
+                )
+            if max(abs(float(r)) for r in residuales)>1e-7:
+                raise ValueError("Compatibilidad fuera de tolerancia tras fijacion")
     tabla=calcular_tablas_inicial_final(
         puntos,propiedades,
         EstadoReferenciaCFE(referencia_inicial["parametro_P_m"],CFE_FUENTE),
@@ -376,8 +403,8 @@ def ejecutar_corridas_cfe_por_vano(
         residuales_continuidad["Inicial"],residuales_continuidad["Final"]]
     resumen["Desnivel máximo entre apoyos (m)"]=desnivel_max_m
     resumen["Advertencia"]=(
-        "Claros reales: motor de amarres fijos por vano. "
-        "Claro regla: solo informativo, no usado en el cálculo. "
-        "Referencia inicial derivada del extremo final; sin creep validado."
+        "Tendido continuo de guias ideales a 50 C, seguido de longitudes "
+        "individuales fijadas para cambios de estado. "
+        "Claro regla: informativo. Sin creep validado."
     )
     return resumen,tabla
