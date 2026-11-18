@@ -30,7 +30,7 @@ class EvaluadorVanosAmarrados:
 
     def __init__(self, puntos_xyz_m, peso_kN_m, diametro_m, EA_kN,
                  alpha_por_C, temperatura_tendido_C, Cd, rho_kg_m3,
-                 longitudes_naturales_referencia_m=None):
+                 longitudes_naturales_referencia_m=None, modelo_presion_cfe=False):
         self.xyz=np.asarray(puntos_xyz_m,dtype=float)
         self.peso=finito(peso_kN_m,"peso",0,True)
         self.diametro=finito(diametro_m,"diámetro",0,True)
@@ -39,6 +39,7 @@ class EvaluadorVanosAmarrados:
         self.temperatura_tendido=finito(temperatura_tendido_C,"temperatura de tendido")
         self.cd=finito(Cd,"Cd",0,True)
         self.rho=finito(rho_kg_m3,"densidad aire",0,True)
+        self.modelo_presion_cfe=bool(modelo_presion_cfe)
         if self.xyz.ndim != 2 or self.xyz.shape[1] != 3 or len(self.xyz)<2:
             raise ValueError("Se necesitan dos o más amarres XYZ")
         if not np.isfinite(self.xyz).all():
@@ -74,7 +75,8 @@ class EvaluadorVanosAmarrados:
         t=finito(temperatura_C,"temperatura")
         v=finito(velocidad_ms,"velocidad",0)
         cargas,viento=calcular_cargas_transversales_por_vano(
-            self.xyz,self.peso,self.diametro,v,self.cd,self.rho
+            self.xyz,self.peso,self.diametro,v,self.cd,self.rho,
+            modelo_presion_cfe=self.modelo_presion_cfe,
         )
         h_vanos=[]
         tensiones=[]
@@ -115,6 +117,7 @@ class EvaluadorVanosAmarrados:
         cargas,viento=calcular_cargas_transversales_por_vano(
             self.xyz,self.peso+extra,self.diametro+2*espesor/1000,
             velocidad_ms,self.cd,self.rho,
+            modelo_presion_cfe=self.modelo_presion_cfe,
         )
         q0=np.array([0.,0.,-self.peso])
         hs=[]; tensiones=[]; cables=[]; residuales=[]
