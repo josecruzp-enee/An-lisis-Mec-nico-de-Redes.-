@@ -149,8 +149,21 @@ def obtener_referencia_inicial_desde_extremo(
     Se iguala la tensión máxima de la condición extrema -10 °C, después
     de distribuir y fijar las longitudes naturales de cada condición.
     Esta igualdad de referencia no es una ley constitutiva de creep.
+    En esta transferencia se ensaya alpha_final con EA_inicial; fuera
+    de esta funcion se conserva alpha_inicial para la tabla inicial.
     """
     from functools import lru_cache
+    from dataclasses import replace
+    # AJUSTE DELIBERADO (2026-11-18): solo durante el acoplamiento
+    # extremo final -> referencia inicial se usa alpha FINAL junto con
+    # EA INICIAL. El alpha INICIAL original se conserva para generar y
+    # verificar TODAS las tablas de tendido y los estados iniciales.
+    # Ensayo contra CFE 07 FT 10-14: mejora P inicial en RAVEN, PIGEON,
+    # PARTRIDGE y HAWK. Es una calibracion experimental, NO una ecuacion
+    # de SAGSEC demostrada por CFE 07 FT 02. No modificar la rama final.
+    propiedades_transferencia = replace(
+        propiedades, alpha_inicial_por_C=propiedades.alpha_final_por_C,
+    )
     extremo=next(
         (h for h in hipotesis_final
          if h.temperatura_C == -10. and "reducido" in h.nombre.lower()),
@@ -175,7 +188,9 @@ def obtener_referencia_inicial_desde_extremo(
         longs,continuidad=_longitudes_de_tendido_continuo(
             puntos,xyz,ficha_inicial,float(h),Cd=Cd,rho_kg_m3=rho_kg_m3,
         )
-        ev=_evaluador(xyz,propiedades,"Inicial",Cd,rho_kg_m3,
+        # Solo esta resolucion extrema emplea alpha final en la rama
+        # inicial; al emitir tablas se vuelve al alpha inicial CFE.
+        ev=_evaluador(xyz,propiedades_transferencia,"Inicial",Cd,rho_kg_m3,
                       longitudes_fijadas=longs,
                       modelo_presion_cfe=modelo_presion_cfe)
         _,tensiones,_,residuales,_=ev.evaluar_estado_con_hielo(
