@@ -43,6 +43,25 @@ class TestArquitecturaModular(unittest.TestCase):
         self.assertTrue((M2 / "motor.py").is_file())
         self.assertTrue((ROOT / "motor_general.py").is_file())
 
+    def test_calculos_globales_sin_adaptadores_ni_estructuras(self):
+        # Los algoritmos globales se conservan; no se permite repoblar
+        # la carpeta con copias o adaptadores de los módulos.
+        eliminados = (
+            "analisis_retenidas_red", "resistencia_postes",
+            "retenidas_xyz", "solicitaciones_poste", "verificacion_poste",
+            "auditoria_cargas", "envolventes_3d", "catenaria",
+            "cambio_estado", "cable_no_lineal", "suspension_deslizante",
+            "barrido_no_lineal_3d", "diagnostico_tension_acsr",
+            "resumen_calidad_bvp", "validacion_mecanica",
+        )
+        for nombre in eliminados:
+            with self.subTest(nombre=nombre):
+                self.assertFalse((ROOT / "calculos" / f"{nombre}.py").exists())
+        for nombre in ("modelo_red", "ensamblador_global",
+                       "hipotesis_red", "barrido_global"):
+            with self.subTest(nombre=nombre):
+                self.assertTrue((ROOT / "calculos" / f"{nombre}.py").is_file())
+
     def test_catalogo_compartido_identico(self):
         from comun.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as comun
         from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as modulo1

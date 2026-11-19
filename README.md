@@ -30,7 +30,7 @@ tools/         Auditoría estática reproducible
 
 - **Módulo 1 — Conductores:** catenaria 3D, cambios de estado, vanos individuales después del amarre, hipótesis CFE, controles y memorias PDF. No es una certificación ni una ley predictiva validada de creep.
 - **Módulo 2 — Estructuras:** las rutinas históricas de geometría, cargas, apoyos, postes, retenidas y cimentación están en `Analisis_mecanico_estructuras/calculos/`. El motor inicial calcula fuerzas preliminares; debe emitir **NO VERIFICABLE** donde falten capacidades resistentes documentadas. No constituye una verificación estructural integral.
-- **Red global:** algoritmos para conectividad, catenarias de cable y equilibrio en `calculos/`. Algunos son prototipos de investigación y no están certificados para diseño.
+- **Red global:** `calculos/` conserva únicamente `modelo_red.py`, `ensamblador_global.py`, `hipotesis_red.py` y `barrido_global.py` (además de `__init__.py`). Son prototipos de conectividad y equilibrio, no certificados para diseño. Los cálculos propios de conductores y estructuras están dentro de sus módulos.
 
 ## Ejecución
 
