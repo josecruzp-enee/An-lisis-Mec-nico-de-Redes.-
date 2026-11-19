@@ -39,5 +39,28 @@ class TestCompatibilidadModulosDepurados(unittest.TestCase):
                         self.assertIs(getattr(puente, simbolo), getattr(original, simbolo))
 
 
+class TestCompatibilidadOtrasRutas(unittest.TestCase):
+    def test_importaciones_de_entradas_y_salidas(self):
+        pares = (
+            ("analisis.entradas.catalogos", "entradas.catalogos"),
+            ("analisis.entradas.norma_postes", "entradas.norma_postes"),
+            ("analisis.entradas.validacion_entrada", "entradas.validacion_entrada"),
+            ("analisis.exportacion_excel", "salidas.exportacion_excel"),
+        )
+        for ruta_antigua, ruta_canónica in pares:
+            with self.subTest(ruta=ruta_antigua):
+                antigua = importlib.import_module(ruta_antigua)
+                canonica = importlib.import_module(ruta_canónica)
+                propios = [
+                    (nombre, valor) for nombre, valor in vars(canonica).items()
+                    if not nombre.startswith("_")
+                    and (getattr(valor, "__module__", None) == canonica.__name__
+                         or not callable(valor))
+                ]
+                self.assertTrue(propios, ruta_antigua)
+                for nombre, valor in propios:
+                    self.assertIs(getattr(antigua, nombre), valor)
+
+
 if __name__ == "__main__":
     unittest.main()
