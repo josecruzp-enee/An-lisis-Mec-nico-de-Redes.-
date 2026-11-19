@@ -5,8 +5,8 @@ Fuente primaria: `Manual_lineas.pdf` (CFE, construcción de instalaciones aérea
 
 ## Catálogos incorporados
 
-- `entradas/catalogos/cfe_limitantes_estructuras_120kmh.csv`: **662 filas** documentales de 17 combinaciones estructura/ambiente; 13 conductores y clases 13/23/33 kV; columnas separadas de poste, cable, perno, perno punta poste donde aplica, cruceta con/sin hielo, piso, fases, deflexión y desnivel. Secciones 05 T0 02 (PDF 181–184), 05 T0 09 (210–213), 05 P0 02 (241–242), 05 P0 05 (256–257), 05 R0 02 (273), 05 V0 02 (409–412).
-- `entradas/catalogos/cfe_limitantes_estructuras_H_120kmh.csv`: **27 filas** HS3G y HA3G, con tensiones, claros medio horizontal y vertical y parámetros CFE; sección 05 H0 02 (PDF 496–497).
+- `Analisis_mecanico_conductores/entradas/catalogos/cfe_limitantes_estructuras_120kmh.csv`: **662 filas** documentales de 17 combinaciones estructura/ambiente; 13 conductores y clases 13/23/33 kV; columnas separadas de poste, cable, perno, perno punta poste donde aplica, cruceta con/sin hielo, piso, fases, deflexión y desnivel. Secciones 05 T0 02 (PDF 181–184), 05 T0 09 (210–213), 05 P0 02 (241–242), 05 P0 05 (256–257), 05 R0 02 (273), 05 V0 02 (409–412).
+- `Analisis_mecanico_conductores/entradas/catalogos/cfe_limitantes_estructuras_H_120kmh.csv`: **27 filas** HS3G y HA3G, con tensiones, claros medio horizontal y vertical y parámetros CFE; sección 05 H0 02 (PDF 496–497).
 
 **Advertencias de extracción:**
 1. No está publicada en la página 410 una fila VD3N normal, HAWK, 33 kV; se deja ausente.

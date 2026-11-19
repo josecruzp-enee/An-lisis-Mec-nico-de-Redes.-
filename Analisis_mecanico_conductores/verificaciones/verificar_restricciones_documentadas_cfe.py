@@ -13,7 +13,7 @@ import csv
 import math
 from pathlib import Path
 
-CATALOGO = Path(__file__).resolve().parents[2] / "entradas/catalogos/cfe_limitantes_estructuras_120kmh.csv"
+CATALOGO = Path(__file__).resolve().parents[2] / "Analisis_mecanico_conductores/entradas/catalogos/cfe_limitantes_estructuras_120kmh.csv"
 PORCENTAJE_RTS = {
     "final_16C_sin_viento": .20,
     "final_0C_sin_viento": .25,
@@ -155,7 +155,7 @@ def verificar_vertical_superficie(cota_conductor_minima_m,
 
 
 # Las estructuras H tienen tabla independiente y no son equiparables a TS.
-CATALOGO_H = Path(__file__).resolve().parents[2] / "entradas/catalogos/cfe_limitantes_estructuras_H_120kmh.csv"
+CATALOGO_H = Path(__file__).resolve().parents[2] / "Analisis_mecanico_conductores/entradas/catalogos/cfe_limitantes_estructuras_H_120kmh.csv"
 
 def verificar_estructura_H(estructura, conductor, claro_medio_horizontal_m,
                           claro_vertical_m, *, catalogo=None):
