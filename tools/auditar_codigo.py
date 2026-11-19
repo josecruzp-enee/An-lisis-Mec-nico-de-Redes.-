@@ -150,6 +150,34 @@ def auditoria():
         and p.relative_to(ROOT).parts[0] in CARPETAS_FUNCIONALES
         and p.name != "__init__.py"
     ]
+    def alcanzables(raices):
+        alcanzados = set(raices)
+        cola = list(raices)
+        while cola:
+            for importado in adyacencia.get(cola.pop(), ()):
+                destino = por_modulo.get(importado)
+                if destino is not None:
+                    nombre = destino.relative_to(ROOT).as_posix()
+                    if nombre not in alcanzados:
+                        alcanzados.add(nombre)
+                        cola.append(nombre)
+        return alcanzados
+
+    # Diferenciar el motor verdaderamente requerido por la aplicación
+    # de módulos a los que solo acceden pruebas automáticas.
+    ejecucion = alcanzables({"main.py", "app.py"})
+    pruebas = alcanzables({
+        p.relative_to(ROOT).as_posix() for p in archivos
+        if p.relative_to(ROOT).as_posix().startswith("tests/")
+        or "/pruebas/" in p.relative_to(ROOT).as_posix()
+    })
+    modulos_reales = {
+        p.relative_to(ROOT).as_posix() for p in archivos
+        if p.relative_to(ROOT).parts[0] in CARPETAS_FUNCIONALES
+        and p.name != "__init__.py"
+    }
+    solo_pruebas = sorted((pruebas - ejecucion) & modulos_reales)
+    sin_ejecucion = sorted(modulos_reales - ejecucion)
     exactos = [v for v in digest.values() if len(v) > 1]
     similitud = [v for v in defs.values() if len({x[0] for x in v}) > 1
                  and max(x[2] for x in v) >= 10]
@@ -169,6 +197,13 @@ def auditoria():
     print("Módulos fuera de toda ruta desde UI y pruebas:", len(aislados))
     for p in aislados:
         print("AISLADO", p)
+    print("Módulos productivos alcanzables desde Streamlit:", len(ejecucion & modulos_reales))
+    print("Módulos productivos utilizados solo por pruebas:", len(solo_pruebas))
+    for p in solo_pruebas:
+        print("SOLO_PRUEBAS", p)
+    print("Módulos no alcanzables desde Streamlit:", len(sin_ejecucion))
+    for p in sin_ejecucion:
+        print("FUERA_APP", p)
     print("Grupos de funciones equivalentes en módulos diferentes:", len(similitud))
     for grupo in similitud[:100]:
         print("FUNCION_DUPLICADA", grupo)
