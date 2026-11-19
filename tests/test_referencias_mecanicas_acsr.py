@@ -2,8 +2,8 @@
 import unittest
 import math
 
-from entradas.catalogo_viakon_acsr import ficha_viakon_acsr
-from entradas.referencias_mecanicas_acsr import (
+from comun.catalogo_acsr_viakon import ficha_viakon_acsr
+from Analisis_mecanico_conductores.conductores.referencias_mecanicas_acsr_nexans import (
     referencia_mecanica_nexans, NEXANS_ACSR_FINAL,
 )
 
