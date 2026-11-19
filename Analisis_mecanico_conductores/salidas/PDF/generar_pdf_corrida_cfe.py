@@ -173,6 +173,12 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
 
     proyecto, clima = proyecto or {}, clima or {}
     fuente = str(fuente_material)
+    residuo = float(tabla["Residual (m)"].abs().max())
+    tension = float(tabla["T máx. (kN)"].max())
+    flecha = float(tabla["Flecha (m)"].max())
+    fila_tmax = tabla.loc[tabla["T máx. (kN)"].idxmax()]
+    fila_fmax = tabla.loc[tabla["Flecha (m)"].idxmax()]
+    numero_vanos = int(tabla["Vano"].nunique())
     # Se usan únicamente magnitudes YA calculadas. Se comprueban las
     # hipótesis CFE por sección una sola vez y se reutilizan más adelante.
     control = None
@@ -384,12 +390,6 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 "la longitud natural de cada vano es común.", nota,
             )
 
-    residuo = float(tabla["Residual (m)"].abs().max())
-    tension = float(tabla["T máx. (kN)"].max())
-    flecha = float(tabla["Flecha (m)"].max())
-    fila_tmax = tabla.loc[tabla["T máx. (kN)"].idxmax()]
-    fila_fmax = tabla.loc[tabla["Flecha (m)"].idxmax()]
-    numero_vanos = int(tabla["Vano"].nunique())
     # Estas magnitudes son envolventes de TODAS las filas, no solamente H1-H5.
     # La hipótesis gobernante por utilización es un indicador distinto.
     titulo("Valores críticos identificados")
@@ -699,7 +699,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     # Anexos de trazabilidad: primero esfuerzos por caso y material fijado.
     if puntos_apoyos is not None:
         historia.append(PageBreak())
-        titulo("Anexo C — Resultantes vectoriales por apoyo y caso")
+        titulo("Anexo A — Resultantes vectoriales por apoyo y caso")
         filas_f=[["Apoyo","Caso","Fx (kN)","Fy (kN)","Fz (kN)","|F| (kN)"]]
         for _,r in fuerzas.iterrows():
             filas_f.append([r["Apoyo"],r["Hipótesis"],
@@ -710,7 +710,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
               "Las sumas vectoriales se realizan por apoyo y por caso; "
               "no se suman máximos independientes de diferentes casos.",nota)
 
-    titulo("Anexo D — Referencias longitudinales por vano")
+    titulo("Anexo B — Referencias longitudinales por vano")
     if "Longitud natural fijada (m)" in tabla:
         titulo("Longitudes naturales de referencia fijadas por vano")
         campos=["Sección","Condición","Vano","Luz (m)","Longitud natural fijada (m)"] if por_secciones else ["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
@@ -723,7 +723,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 _fmt(fila["Longitud natural fijada (m)"],6),
             ])
         datos_tabla(filas,([.6] if por_secciones else [])+[1,1.7,1,1.3],compacto=True)
-    titulo("Anexo E — Comparación térmica por vano")
+    titulo("Anexo C — Comparación térmica por vano")
     # Se extraen exclusivamente resultados ya existentes, sin recalcular.
     termicos = tabla[
         (tabla["Hipótesis"] == "Tabla térmica") &
@@ -753,7 +753,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     for indice, estado in enumerate(("Inicial", "Final")):
         if indice:
             historia.append(PageBreak())
-        titulo("Anexo " + ("F" if indice == 0 else "G") +
+        titulo("Anexo " + ("D" if indice == 0 else "E") +
                " - Resultados completos, condición " + estado.lower())
         subtabla = tabla[tabla["Condición"] == estado]
         if subtabla.empty:
