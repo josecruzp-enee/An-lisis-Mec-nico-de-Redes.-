@@ -33,10 +33,11 @@ Las rutas antiguas se mantienen deliberadamente si son importadas por interfaces
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v
 python -m unittest discover -s Analisis_mecanico_conductores/pruebas -p 'test_*.py' -v
-python -m compileall -q Analisis_mecanico_conductores calculos entradas main.py
+python -m compileall -q Analisis_mecanico_conductores analisis calculos entradas salidas main.py
+python tools/auditar_codigo.py
 ```
 
-El workflow de GitHub Actions ejecuta esas comprobaciones en `main` y en las solicitudes de cambio.
+El workflow de GitHub Actions ejecuta esas comprobaciones en `main` y en las solicitudes de cambio. Además informa importaciones y variables sin uso con Ruff; los archivos de compatibilidad pueden reexportar símbolos deliberadamente.
 
 ## Límites actuales
 

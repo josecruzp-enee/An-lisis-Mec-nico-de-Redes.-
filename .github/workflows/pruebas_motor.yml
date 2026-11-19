@@ -6,6 +6,7 @@ on:
     paths:
       - 'Analisis_mecanico_conductores/**'
       - 'calculos/**'
+      - 'analisis/**'
       - 'entradas/**'
       - 'tests/**'
       - 'tools/**'
@@ -18,6 +19,7 @@ on:
     paths:
       - 'Analisis_mecanico_conductores/**'
       - 'calculos/**'
+      - 'analisis/**'
       - 'entradas/**'
       - 'tests/**'
       - 'main.py'
