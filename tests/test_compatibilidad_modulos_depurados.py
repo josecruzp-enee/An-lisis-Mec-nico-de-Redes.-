@@ -1,65 +1,37 @@
-"""Regresión de rutas históricas tras consolidar copias exactas.
+"""Control de integridad de implementaciones canónicas tras la depuración.
 
-El motor conserva una única implementación, pero los imports públicos
-deben continuar entregando las mismas funciones y clases.
+Las rutas históricas sin consumidores fueron retiradas. La prueba
+confirma que permanecen las fuentes necesarias para los cálculos.
 """
-import importlib
+from importlib import import_module
 import unittest
 
 
-MODULOS = (
+CALCULOS = (
     "cargas_tramo", "cimentacion", "decision_soporte",
     "equilibrio_poste", "geometria", "mecanica",
     "momento_poste", "perfil", "retenidas", "unidades", "viento",
 )
 
 
-class TestCompatibilidadModulosDepurados(unittest.TestCase):
-    def test_importaciones_historicas_conservan_funciones(self):
-        for nombre in MODULOS:
+class TestModulosCanonicos(unittest.TestCase):
+    def test_implementaciones_estructurales_presentes(self):
+        for nombre in CALCULOS:
             with self.subTest(modulo=nombre):
-                original = importlib.import_module(f"analisis.calculos.{nombre}")
-                puente = importlib.import_module(f"calculos.{nombre}")
-                nombres = [
-                    n for n, valor in vars(original).items()
-                    if not n.startswith("_") and getattr(valor, "__module__", "")
-                    == original.__name__
+                modulo = import_module(f"analisis.calculos.{nombre}")
+                elementos = [
+                    valor for valor in vars(modulo).values()
+                    if getattr(valor, "__module__", None) == modulo.__name__
                 ]
-                self.assertTrue(nombres, f"Sin elementos propios: {nombre}")
-                for simbolo in nombres:
-                    self.assertIs(getattr(puente, simbolo), getattr(original, simbolo))
+                self.assertTrue(elementos)
 
-    def test_simbolos_privados_tambien_accesibles(self):
-        for nombre in MODULOS:
+    def test_entradas_y_salidas_canonicas(self):
+        for nombre in (
+            "entradas.catalogos", "entradas.norma_postes",
+            "entradas.validacion_entrada", "salidas.exportacion_excel",
+        ):
             with self.subTest(modulo=nombre):
-                original = importlib.import_module(f"analisis.calculos.{nombre}")
-                puente = importlib.import_module(f"calculos.{nombre}")
-                for simbolo in vars(original):
-                    if simbolo.startswith("_") and not simbolo.startswith("__"):
-                        self.assertIs(getattr(puente, simbolo), getattr(original, simbolo))
-
-
-class TestCompatibilidadOtrasRutas(unittest.TestCase):
-    def test_importaciones_de_entradas_y_salidas(self):
-        pares = (
-            ("analisis.entradas.catalogos", "entradas.catalogos"),
-            ("analisis.entradas.norma_postes", "entradas.norma_postes"),
-            ("analisis.entradas.validacion_entrada", "entradas.validacion_entrada"),
-            ("analisis.exportacion_excel", "salidas.exportacion_excel"),
-        )
-        for ruta_antigua, ruta_canónica in pares:
-            with self.subTest(ruta=ruta_antigua):
-                antigua = importlib.import_module(ruta_antigua)
-                canonica = importlib.import_module(ruta_canónica)
-                propios = [
-                    (nombre, valor) for nombre, valor in vars(canonica).items()
-                    if not nombre.startswith("_")
-                    and (getattr(valor, "__module__", None) == canonica.__name__
-                         or not callable(valor))
-                ]
-                self.assertTrue(propios, ruta_antigua)
-                for nombre, valor in propios:
-                    self.assertIs(getattr(antigua, nombre), valor)
+                self.assertIsNotNone(import_module(nombre))
 
 
 if __name__ == "__main__":
