@@ -8,6 +8,7 @@ on:
       - 'calculos/**'
       - 'entradas/**'
       - 'tests/**'
+      - 'tools/**'
       - 'main.py'
       - 'app.py'
       - 'salidas/**'
@@ -23,6 +24,7 @@ on:
       - 'app.py'
       - 'salidas/**'
       - 'requirements.txt'
+      - 'tools/**'
       - '.github/workflows/pruebas_motor.yml'
   workflow_dispatch:
 
@@ -43,5 +45,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_*.py' -v
           python -m unittest discover -s Analisis_mecanico_conductores/pruebas -p 'test_*.py' -v
+      - name: Auditoría estructural de todo el código Python
+        run: python tools/auditar_codigo.py
       - name: Compilación sintáctica
         run: python -m compileall -q Analisis_mecanico_conductores calculos entradas main.py
