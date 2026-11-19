@@ -44,6 +44,9 @@ MAPA_COLUMNAS = {
     # Identificación
     "PUNTO": "Punto",
     "FIJACION": "Fijacion",
+    "REMATE": "Remate",
+    "TIPO DE CONEXION": "Remate",
+    "TIPO CONEXION": "Remate",
 
     # Coordenadas UTM
     "X": "X",
@@ -175,6 +178,7 @@ def leer_puntos_excel(archivo) -> pd.DataFrame:
         Altura_Poste_m
         Empotramiento_m
         Altura_Amarre_m
+        Remate (SI/NO, REMATE/PASO; extremos obligatorios)
 
     Coordenadas y longitudes expresadas en metros.
     """

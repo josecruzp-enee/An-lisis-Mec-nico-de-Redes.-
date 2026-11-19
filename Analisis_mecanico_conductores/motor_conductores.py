@@ -11,7 +11,6 @@ Se supone creep adicional cero. No se afirma modelar la evolución real.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -83,6 +82,55 @@ def _diagnosticar(resumen: pd.DataFrame, tabla: pd.DataFrame, *, presion_cfe: bo
     )
 
 
+
+def dividir_secciones_por_remates(puntos: pd.DataFrame):
+    """Separa secciones mecánicas: remate en los dos extremos de cada una.
+
+    La columna Remate acepta SI/NO, REMATE/PASO y booleanos. Si se omite,
+    se supone únicamente remate en el primer y último apoyo (compatibilidad
+    con estudios de una sola sección). Los remates interiores son explícitos.
+    Un poste compartido aparece en ambas secciones, sin transferencia de
+    longitud de conductor entre ellas.
+    """
+    if not isinstance(puntos, pd.DataFrame) or len(puntos) < 2:
+        raise ValueError("La línea requiere dos o más apoyos")
+    if "Punto" not in puntos:
+        raise ValueError("Falta la columna Punto")
+    if puntos["Punto"].duplicated().any():
+        raise ValueError("Identificadores de apoyos duplicados")
+    if "Remate" in puntos:
+        import pandas as pd
+        estados = []
+        for i, value in enumerate(puntos["Remate"]):
+            if pd.isna(value) or str(value).strip() == "":
+                if i in (0, len(puntos)-1):
+                    estados.append(True)
+                    continue
+                raise ValueError(
+                    f"Remate sin declarar en {puntos.iloc[i]['Punto']}; "
+                    "usar SI o NO"
+                )
+            valor = str(value).strip().upper()
+            if valor in ("SI", "SÍ", "REMATE", "ANCLAJE", "TRUE", "1", "1.0"):
+                estados.append(True)
+            elif valor in ("NO", "PASO", "SUSPENSION", "SUSPENSIÓN",
+                           "FALSE", "0", "0.0"):
+                estados.append(False)
+            else:
+                raise ValueError(
+                    f"Remate inválido en {puntos.iloc[i]['Punto']}: {value!r}"
+                )
+        if not estados[0] or not estados[-1]:
+            raise ValueError("El primer y último apoyo deben ser remates")
+    else:
+        estados = [True] + [False] * (len(puntos)-2) + [True]
+    cortes = [i for i, remate in enumerate(estados) if remate]
+    return [
+        (f"S{indice + 1}", puntos.iloc[inicio:fin + 1].copy().reset_index(drop=True))
+        for indice, (inicio, fin) in enumerate(zip(cortes[:-1], cortes[1:]))
+    ]
+
+
 def ejecutar_motor_conductores(
     puntos,
     ficha_inicial,
@@ -109,25 +157,44 @@ def ejecutar_motor_conductores(
             "El motor único CFE exige presiones tabuladas por claro; "
             "las evaluaciones generales se reservan a ensayos separados"
         )
-    resumen, tabla = ejecutar_corridas_cfe_por_vano(
-        puntos, ficha_inicial, ficha_final,
-        viento_max_kmh=viento_max_kmh,
-        viento_reducido_kmh=viento_reducido_kmh,
-        hielo_mm=hielo_mm,
-        temperaturas_C=temperaturas_C,
-        Cd=Cd, rho_kg_m3=rho_kg_m3,
-        incluir_ensayo_viento_16C=incluir_ensayo_viento_16C,
-        densidad_hielo_kg_m3=densidad_hielo_kg_m3,
-        modelo_presion_cfe=True,
-        longitud_comun_sin_creep=True,
+    resumenes, tablas = [], []
+    secciones = dividir_secciones_por_remates(puntos)
+    for seccion, puntos_seccion in secciones:
+        # Cada sección se instala ENTRE SUS PROPIOS remates; no existe
+        # deslizamiento de material a través de un remate intermedio.
+        try:
+            resumen, tabla = ejecutar_corridas_cfe_por_vano(
+                puntos_seccion, ficha_inicial, ficha_final,
+                viento_max_kmh=viento_max_kmh,
+                viento_reducido_kmh=viento_reducido_kmh,
+                hielo_mm=hielo_mm,
+                temperaturas_C=temperaturas_C,
+                Cd=Cd, rho_kg_m3=rho_kg_m3,
+                incluir_ensayo_viento_16C=incluir_ensayo_viento_16C,
+                densidad_hielo_kg_m3=densidad_hielo_kg_m3,
+                modelo_presion_cfe=True,
+                longitud_comun_sin_creep=True,
+            )
+        except (ValueError, ArithmeticError) as exc:
+            raise ValueError(
+                f"{seccion} ({puntos_seccion.iloc[0]['Punto']} → "
+                f"{puntos_seccion.iloc[-1]['Punto']}): {exc}"
+            ) from exc
+        diagnostico = _diagnosticar(resumen, tabla, presion_cfe=True)
+        resumen = resumen.copy()
+        tabla = tabla.copy()
+        resumen["Sección"] = seccion
+        tabla["Sección"] = seccion
+        resumen["Remate inicial"] = str(puntos_seccion.iloc[0]["Punto"])
+        resumen["Remate final"] = str(puntos_seccion.iloc[-1]["Punto"])
+        resumen["Motor Módulo 1"] = "Motor único — cinco restricciones CFE"
+        resumen["Evolución material validada"] = diagnostico.creep_constitutivo_validado
+        resumen["Creep adicional"] = 0.0
+        resumen["Compatibilidad longitudinal inicial/final"] = "Igualdad exacta de L0 por vano a 50 C"
+        resumen["Estado de consistencia material"] = diagnostico.estado
+        resumenes.append(resumen)
+        tablas.append(tabla)
+    return (
+        pd.concat(resumenes, ignore_index=True),
+        pd.concat(tablas, ignore_index=True),
     )
-    diagnostico = _diagnosticar(resumen, tabla, presion_cfe=True)
-    # Diagnóstico añadido sin modificar los resultados ni las ecuaciones
-    # calculadas por la ruta CFE existente.
-    resumen = resumen.copy()
-    resumen["Motor Módulo 1"] = "Motor único — cinco restricciones CFE"
-    resumen["Evolución material validada"] = diagnostico.creep_constitutivo_validado
-    resumen["Creep adicional"] = 0.0
-    resumen["Compatibilidad longitudinal inicial/final"] = "Igualdad exacta de L0 por vano a 50 C"
-    resumen["Estado de consistencia material"] = diagnostico.estado
-    return resumen, tabla

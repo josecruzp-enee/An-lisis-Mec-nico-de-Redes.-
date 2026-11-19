@@ -237,3 +237,22 @@ Los casos de CFE están entre las regresiones de `tests/`; los ensayos específi
 5. Reportar como preliminares las evaluaciones de topografía muestreada y de la red global fuera de su dominio físico completo.
 
 **Regla de mantenimiento:** preservar ecuaciones y propiedades documentadas; modificar modelos solo con fundamento físico y regresiones de comparación. Refactorizar nombres, archivos o rutas no constituye por sí mismo una mejora mecánica.
+
+
+### Remates intermedios y secciones de tendido
+
+El Excel principal admite la columna `Remate` con valores `SI`/`NO`
+(o `REMATE`/`PASO`). Sin columna se considera una única sección
+entre primer y último apoyo, compatible con proyectos anteriores.
+Si existe la columna, no se aceptan remates intermedios vacíos: deben
+especificarse explícitamente. Los extremos siempre son remates.
+
+Ejemplo P1-P2-P3-P4-P5-P6 con P3 remate:
+`P1(SI), P2(NO), P3(SI), P4(NO), P5(NO), P6(SI)`.
+El motor identifica `S1=P1..P3` y `S2=P3..P6`, calcula una referencia
+de tendido para **cada sección** y evalúa luego los vanos fijados
+individualmente con las cinco hipótesis CFE y creep adicional cero.
+La misma estructura física P3 es frontera de ambas secciones, pero no
+transfiere longitud natural entre ellas. La memoria PDF agrupa las
+secciones sin mezclar su tensión de tendido. Todavía no se certifica
+la capacidad estructural del poste ni sus retenidas.
