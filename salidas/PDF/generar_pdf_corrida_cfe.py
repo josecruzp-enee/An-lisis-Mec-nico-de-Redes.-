@@ -22,7 +22,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, LongTable, TableStyle, PageBreak,
-    Image, KeepTogether,
+    Image, KeepTogether, Table,
 )
 
 COLUMNAS = (
@@ -53,7 +53,7 @@ def _estilos():
     e.add(ParagraphStyle(
         name="SubM1", parent=e["Heading2"], fontName="Helvetica-Bold",
         fontSize=12, leading=15, textColor=colors.black,
-        spaceBefore=4*mm, spaceAfter=2*mm,
+        spaceBefore=4*mm, spaceAfter=2*mm, keepWithNext=1,
     ))
     e.add(ParagraphStyle(
         name="NormalM1", parent=e["Normal"], fontSize=8.5, leading=12,
@@ -364,7 +364,8 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
           "las hipótesis del motor. No se atribuye una ley de creep no modelada "
           "ni se presentan límites de postes o retenidas como verificados.", nota)
 
-    titulo("Curvas de comportamiento térmico")
+    # Las dos curvas se colocan juntas, evitando páginas casi vacías.
+    # La fuente de datos sigue siendo la misma tabla calculada por el motor.
     graficos = []
     for campo, titulo_g, unidad in [
         ("H (kN)", "Tensión horizontal vs. temperatura", "H (kN)"),
@@ -372,13 +373,33 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     ]:
         png, vano = _grafico(tabla, campo, titulo_g, unidad)
         if png is not None:
-            graficos.append(png)
-            historia.append(Image(png, width=182*mm, height=51*mm))
+            graficos.append((png, campo))
     if graficos:
+        imagenes = [Image(png, width=115*mm, height=38*mm)
+                    for png, _ in graficos]
+        if len(imagenes) == 2:
+            composicion = Table([[imagenes[0], imagenes[1]]],
+                                colWidths=[ancho/2, ancho/2],
+                                hAlign="LEFT")
+            composicion.setStyle(TableStyle([
+                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("LEFTPADDING", (0,0), (-1,-1), 1),
+                ("RIGHTPADDING", (0,0), (-1,-1), 1),
+                ("TOPPADDING", (0,0), (-1,-1), 1),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+            ]))
+            historia.append(KeepTogether([
+                _p("Curvas de comportamiento térmico", sub),
+                composicion,
+            ]))
+        else:
+            titulo("Curvas de comportamiento térmico")
+            historia.extend(imagenes)
         linea("Las curvas representan el primer vano de la corrida y "
               "solamente las hipótesis térmicas sin viento ni hielo. "
               "Todos los vanos y escenarios se incluyen en los anexos.", nota)
     else:
+        titulo("Curvas de comportamiento térmico")
         linea("No hay suficientes puntos de temperatura para dibujar curvas.", nota)
 
     # Control explícito de las CINCO hipótesis documentadas CFE.
