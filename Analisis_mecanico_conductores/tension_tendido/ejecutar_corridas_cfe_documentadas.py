@@ -5,8 +5,9 @@ NO se usan los valores P, tensiones ni flechas de tablas ENEE como entrada.
 Los límites porcentuales se aplican a tensión MÁXIMA del conductor
 (apoyos), no a un valor de referencia H.
 
-La referencia final se dimensiona por hipótesis explícitas; la inicial
-se acopla a la tensión del estado final a -10 °C siguiendo CFE 07 FT 01.
+La ruta histórica acopla las tensiones extremas entre condiciones.
+La ruta operativa SIN CREEP fija una única longitud natural por vano a 50 °C
+para las dos fichas de propiedades CFE y comprueba los cinco límites.
 No se predice creep ni se afirma equivalencia exacta con SAGSEC.
 """
 from __future__ import annotations
@@ -281,7 +282,7 @@ def _longitudes_de_tendido_continuo(puntos, xyz, ficha, H_50_kN,
 
 def _ajustar_referencia_final_multivano(puntos,xyz,ficha,propiedades,
                                         hipotesis,referencia,*,Cd,rho_kg_m3,densidad_hielo_kg_m3,
-                                        modelo_presion_cfe=False):
+                                        modelo_presion_cfe=False,hipotesis_inicial=None):
     """Reoptimiza H50 sobre tendido continuo y vanos fijados, no vanos aislados.
 
     El valor anterior sirve solo de semilla. Busca una raiz de utilizacion
@@ -296,8 +297,14 @@ def _ajustar_referencia_final_multivano(puntos,xyz,ficha,propiedades,
                       longitudes_fijadas=longitudes,
                       modelo_presion_cfe=modelo_presion_cfe)
         detalles=[]
-        for caso in hipotesis:
-            hs,ts,_,residuales,_=ev.evaluar_estado_con_hielo(
+        evaluaciones=[(ev,caso) for caso in hipotesis]
+        if hipotesis_inicial:
+            ev_ini=_evaluador(xyz,propiedades,"Inicial",Cd,rho_kg_m3,
+                longitudes_fijadas=longitudes,
+                modelo_presion_cfe=modelo_presion_cfe)
+            evaluaciones.extend((ev_ini,caso) for caso in hipotesis_inicial)
+        for evaluador,caso in evaluaciones:
+            hs,ts,_,residuales,_=evaluador.evaluar_estado_con_hielo(
                 float(H),caso.temperatura_C,caso.viento_kmh/3.6,
                 caso.hielo_mm,densidad_hielo_kg_m3)
             uso_t=max(map(float,ts))/caso.limite_tension_kN
@@ -368,6 +375,7 @@ def ejecutar_corridas_cfe_por_vano(
     Cd=1.0, rho_kg_m3=1.225, incluir_ensayo_viento_16C=False,
     densidad_hielo_kg_m3=DENSIDAD_HIELO_ENSAYO_KG_M3,
     modelo_presion_cfe=False,
+    longitud_comun_sin_creep=False,
 ):
     """Calcula condiciones de referencia y tablas por vano real.
 
@@ -414,15 +422,27 @@ def ejecutar_corridas_cfe_por_vano(
         Cd=Cd,rho_kg_m3=rho_kg_m3,
         densidad_hielo_kg_m3=densidad_hielo_kg_m3,
         modelo_presion_cfe=modelo_presion_cfe,
+        hipotesis_inicial=ini if longitud_comun_sin_creep else None,
     )
-    referencia_inicial, longitudes_inicial, residual_inicial = obtener_referencia_inicial_desde_extremo(
-        xyz,propiedades,referencia_final,fin,
-        puntos=puntos,ficha_inicial=ficha_inicial,
-        longitudes_final=longitudes_final,
-        Cd=Cd,rho_kg_m3=rho_kg_m3,
-        densidad_hielo_kg_m3=densidad_hielo_kg_m3,
-        modelo_presion_cfe=modelo_presion_cfe,
-    )
+    if longitud_comun_sin_creep:
+        # Una misma cantidad de material descargado por vano a 50 °C.
+        # El cambio de E modifica las tensiones, NO la cantidad de material.
+        longitudes_inicial=list(longitudes_final)
+        residual_inicial=residual_final
+        referencia_inicial=dict(referencia_final)
+        referencia_inicial.update({
+            "condicion":"Inicial",
+            "metodo":"Misma longitud natural por vano a 50 C; creep = 0",
+        })
+    else:
+        referencia_inicial, longitudes_inicial, residual_inicial = obtener_referencia_inicial_desde_extremo(
+            xyz,propiedades,referencia_final,fin,
+            puntos=puntos,ficha_inicial=ficha_inicial,
+            longitudes_final=longitudes_final,
+            Cd=Cd,rho_kg_m3=rho_kg_m3,
+            densidad_hielo_kg_m3=densidad_hielo_kg_m3,
+            modelo_presion_cfe=modelo_presion_cfe,
+        )
     # Verificar además el límite propio del estado inicial a 0 °C:
     # el acoplamiento con el extremo final no da permiso para superarlo.
     evaluador_inicial = _evaluador(
@@ -506,10 +526,9 @@ def ejecutar_corridas_cfe_por_vano(
         longitudes_fijadas=longitudes_fijadas,
         modelo_presion_cfe=modelo_presion_cfe,
     )
-    # Diagnostico del acoplamiento REAL publicado, no solo del optimizador.
-    # El ajuste experimental utiliza alpha_final para buscar la referencia
-    # inicial, mientras las tablas iniciales usan alpha_inicial. Por eso
-    # pueden diferir las tensiones extremas de las tablas emitidas.
+    # Diagnostico de tensiones extremas: con longitud comun y E distintos
+    # NO se exige su igualdad; la diferencia es un resultado, no un residuo
+    # de compatibilidad material.
     extremo_final=next(h for h in fin if h.temperatura_C == -10. and "reducido" in h.nombre.lower())
     t_extremos={}
     for condicion in ("Inicial","Final"):
@@ -528,9 +547,13 @@ def ejecutar_corridas_cfe_por_vano(
     tolerancia_acoplamiento_kN=max(1e-5,1e-6*t_extremos["Final"])
     acoplamiento_publicado_cumple=diferencia_publicada<=tolerancia_acoplamiento_kN
     resumen=pd.DataFrame([
-        {"Condición":"Inicial — vinculada por tensión extrema final",
+        {"Condición":("Inicial — misma longitud natural (creep = 0)"
+                     if longitud_comun_sin_creep else
+                     "Inicial — vinculada por tensión extrema final"),
          "Hipótesis aplicadas":"; ".join(h.nombre for h in ini),**referencia_inicial},
-        {"Condición":"Final — referencia climática (sin creep validado)",
+        {"Condición":("Final — misma longitud natural (creep = 0)"
+                     if longitud_comun_sin_creep else
+                     "Final — referencia climática (sin creep validado)"),
          "Hipótesis aplicadas":"; ".join(h.nombre for h in fin),**referencia_final},
     ])
     resumen["Tensión extrema real inicial H4 (kN)"]=[t_extremos["Inicial"]]*2
@@ -548,7 +571,9 @@ def ejecutar_corridas_cfe_por_vano(
     resumen["Deformación aparente inicial→final máxima |ΔL0/L0|"]=[
         float(max(abs(v) for v in deformaciones_aparentes))]*2
     resumen["Modelo de deformación permanente"]=[
-        "NO suministrado: referencias acopladas por tensión, no por creep"
+        ("Creep adicional = 0 (hipótesis explícita); misma longitud natural por vano"
+         if longitud_comun_sin_creep else
+         "NO suministrado: referencias acopladas por tensión, no por creep")
     ]*2
     resumen["Longitud natural total fijada (m)"]=[
         sum(longitudes_fijadas["Inicial"]),sum(longitudes_fijadas["Final"])]
@@ -556,8 +581,11 @@ def ejecutar_corridas_cfe_por_vano(
         residuales_continuidad["Inicial"],residuales_continuidad["Final"]]
     resumen["Desnivel máximo entre apoyos (m)"]=desnivel_max_m
     resumen["Advertencia"]=(
-        "Tendido continuo de guias ideales a 50 C, seguido de longitudes "
-        "individuales fijadas para cambios de estado. "
-        "Claro regla: informativo. Sin creep validado."
+        "Tendido continuo ideal a 50 C, fijacion por vano. "
+        + ("Longitud natural igual inicial/final, creep adicional = 0. "
+           "Las propiedades efectivas distintas no constituyen una ley de creep. "
+           if longitud_comun_sin_creep else
+           "Referencias acopladas por tension extrema, creep sin validar. ")
+        + "Claro regla: informativo."
     )
     return resumen,tabla

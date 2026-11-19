@@ -187,10 +187,11 @@ def mostrar_corridas_cfe(puntos):
                 "tablas CFE 07 FT. La comparación con P tabulado no valida el diseño."
             )
         st.dataframe(resumen,hide_index=True,use_container_width=True)
-        st.warning(
-            "El acoplamiento inicial/final iguala la tensión extrema bajo el "
-            "mismo modelo de tendido continuo y fijación. NO constituye una "
-            "ley de creep o deformación permanente ni valida SAGSEC/ENEE."
+        st.info(
+            "Condiciones inicial/final con una misma longitud natural por vano "
+            "a 50 °C y creep adicional = 0. Se conservan E y α originales "
+            "de CFE. Las tensiones extremas pueden diferir: su igualdad "
+            "no se impone artificialmente."
         )
         st.subheader("Tendido continuo y fijación por vano")
         st.caption(
@@ -325,10 +326,11 @@ def mostrar_corridas_cfe(puntos):
         if elevaciones is not None:
             elevaciones.cerrar()
         st.warning(
-            "ESTADO DEL MÉTODO: la referencia FINAL se dimensiona con restricciones "
-            "y la INICIAL se vincula a la tensión extrema final (-10°C). "
-            "No se ha validado un modelo constitutivo de creep ni su equivalencia "
-            "con SAGSEC. Las comprobaciones de estructuras CFE NO sustituyen ENEE."
+            "ESTADO DEL MÉTODO: longitud natural de referencia común por vano "
+            "a 50 °C, sin creep adicional. Las cinco restricciones CFE se verifican "
+            "con E y α propios de cada condición. No constituye predicción "
+            "de deformación permanente ni equivalencia SAGSEC. "
+            "Las comprobaciones estructurales CFE NO sustituyen ENEE."
         )
     except (ValueError,KeyError,TypeError,OverflowError,ArithmeticError) as exc:
         st.error(f"No se pudo resolver el caso: {exc}")

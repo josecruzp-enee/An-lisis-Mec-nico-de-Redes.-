@@ -199,12 +199,14 @@ compatibilidad, cinco hipótesis y tablas.
   ejecución, no motores matemáticos alternativos.
 - Todos los estados de **cada condición** (inicial/final) conservan sus
   longitudes naturales fijadas por vano durante el barrido climático.
-- Las condiciones **inicial y final** se obtienen con fichas y
-  longitudes naturales diferentes. El código **no ha validado una ley de
-  evolución constitutiva de creep** que una ambas condiciones. El motor
-  registra expresamente esa limitación y comprueba residuales por vano;
-  **no declara consistencia material integral** únicamente porque una
-  tensión extrema coincida.
+- La ruta ordinaria usa **una misma longitud natural de referencia por vano**
+  en las condiciones inicial y final a 50 °C: **creep adicional = 0**.
+  En cada condición se conservan sus E y α originales CFE, se verifican
+  las cinco hipótesis y se comprueba la compatibilidad con cada vano fijo.
+  **No se fuerza la igualdad de tensiones extremas** ni se afirma modelar
+  la evolución real del creep del ACSR. La antigua ruta de comparación
+  por acoplamiento extremo permanece accesible en llamadas directas,
+  pero no forma parte del motor único operativo.
 - El BVP no lineal, la regulación general, el tendido inverso y el
   ensamblador global permanecen disponibles como implementaciones
   internas para sus pruebas y futura integración, **sin alterar ecuaciones**.

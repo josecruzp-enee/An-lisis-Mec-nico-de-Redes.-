@@ -4,9 +4,9 @@ Las cinco hipótesis CFE son restricciones del MISMO cálculo de conductor,
 no cinco motores. Se reutilizan las implementaciones matemáticas existentes;
 esta capa no modifica la catenaria, las propiedades ni los solvers.
 
-IMPORTANTE: inicial/final se calculan con fichas y longitudes naturales
-distintas; sin ley de creep documentada no se certifica su vinculación
-constitutiva. El diagnóstico se devuelve explícito, nunca se oculta.
+IMPORTANTE: inicial/final se calculan con las propiedades originales
+CFE pero usan una UNICA longitud natural de referencia por vano a 50 C.
+Se supone creep adicional cero. No se afirma modelar la evolución real.
 """
 from __future__ import annotations
 
@@ -77,8 +77,8 @@ def _diagnosticar(resumen: pd.DataFrame, tabla: pd.DataFrame, *, presion_cfe: bo
         deformacion_aparente_maxima=aparente,
         creep_constitutivo_validado=False,
         estado=(
-            "Compatibilidad por vano verificada; evolución inicial/final "
-            "NO validada por ley constitutiva de creep"
+            "Longitud natural inicial/final comun por vano a 50 C; "
+            "creep adicional = 0; la evolucion constitutiva real no se modela"
         ),
     )
 
@@ -119,6 +119,7 @@ def ejecutar_motor_conductores(
         incluir_ensayo_viento_16C=incluir_ensayo_viento_16C,
         densidad_hielo_kg_m3=densidad_hielo_kg_m3,
         modelo_presion_cfe=True,
+        longitud_comun_sin_creep=True,
     )
     diagnostico = _diagnosticar(resumen, tabla, presion_cfe=True)
     # Diagnóstico añadido sin modificar los resultados ni las ecuaciones
@@ -126,5 +127,7 @@ def ejecutar_motor_conductores(
     resumen = resumen.copy()
     resumen["Motor Módulo 1"] = "Motor único — cinco restricciones CFE"
     resumen["Evolución material validada"] = diagnostico.creep_constitutivo_validado
+    resumen["Creep adicional"] = 0.0
+    resumen["Compatibilidad longitudinal inicial/final"] = "Igualdad exacta de L0 por vano a 50 C"
     resumen["Estado de consistencia material"] = diagnostico.estado
     return resumen, tabla
