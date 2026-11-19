@@ -22,7 +22,7 @@ from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import re
 from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import longitud_natural
 from Analisis_mecanico_conductores.catenaria.resolver_cable_tridimensional_bvp import resolver_cable_no_lineal
 from Analisis_mecanico_conductores.tension_tendido.resolver_seccion_deslizante_ideal import resolver_seccion_deslizante
-from .validacion_mecanica import finito, vector3
+from comun.validacion_mecanica import finito, vector3
 
 
 @dataclass

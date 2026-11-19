@@ -1,7 +1,7 @@
 """El resumen de calidad no oculta fallos ni mezcla casos."""
 import unittest
 import pandas as pd
-from calculos.resumen_calidad_bvp import resumen_calidad_bvp
+from Analisis_mecanico_conductores.verificaciones.resumir_calidad_numerica_bvp import resumen_calidad_bvp
 
 
 class CalidadBVPTest(unittest.TestCase):

@@ -6,7 +6,7 @@ Los resultados son solicitaciones, no aprobación de estructuras.
 """
 from __future__ import annotations
 import pandas as pd
-from calculos.validacion_mecanica import finito
+from comun.validacion_mecanica import finito
 
 COLUMNAS_MATERIALES=(
     "Conductor","Peso_kN_m","Diametro_m","EA_kN","Alpha_por_C",

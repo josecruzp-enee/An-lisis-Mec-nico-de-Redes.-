@@ -13,7 +13,7 @@ from __future__ import annotations
 import pandas as pd
 
 from .ensamblador_global import resolver_equilibrio_global
-from .validacion_mecanica import finito
+from comun.validacion_mecanica import finito
 
 
 def _lista(valores,nombre,positivo=False):

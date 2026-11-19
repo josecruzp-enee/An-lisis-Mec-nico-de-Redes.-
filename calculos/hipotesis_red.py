@@ -15,9 +15,9 @@ import numpy as np
 import pandas as pd
 
 from .ensamblador_global import resolver_equilibrio_global
-from .barrido_no_lineal_3d import _extremo_minimo
+from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_bvp_3d import _extremo_minimo
 from .modelo_red import RedMecanica
-from .validacion_mecanica import finito
+from comun.validacion_mecanica import finito
 
 
 COLUMNAS_HIPOTESIS=("Hipotesis","Temperatura_C","Viento_ms","Azimut_deg")

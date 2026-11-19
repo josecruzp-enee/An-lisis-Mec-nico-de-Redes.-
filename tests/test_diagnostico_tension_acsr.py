@@ -2,7 +2,7 @@
 import unittest
 import pandas as pd
 
-from calculos.diagnostico_tension_acsr import (
+from Analisis_mecanico_conductores.verificaciones.comparar_tension_con_rotura_acsr import (
     diagnosticar_tensiones, resumen_tensiones,
 )
 
