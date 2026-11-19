@@ -3,7 +3,7 @@
 Ejecutar desde la raíz: python -m ayuda.ejemplo_barrido_3d
 No utilizar los parámetros termomecánicos ficticios en construcción.
 """
-from calculos.barrido_3d import ejecutar_barrido_3d
+from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_catenaria_3d import ejecutar_barrido_3d
 
 
 def ejemplo():
