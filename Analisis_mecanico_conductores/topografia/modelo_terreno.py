@@ -7,7 +7,7 @@ La fuente topográfica es independiente del motor termoelástico.
 from __future__ import annotations
 
 from io import BytesIO
-from math import asinh, cos, floor, log, pi, radians, tan
+from math import asinh, cos, floor, pi, radians, tan
 import numpy as np
 
 from pyproj import Transformer

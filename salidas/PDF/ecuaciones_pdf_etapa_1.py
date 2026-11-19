@@ -6,7 +6,7 @@ from io import BytesIO
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
-from reportlab.platypus import Image, KeepTogether, Spacer
+from reportlab.platypus import Image, Spacer
 
 
 # Las expresiones reproducen la formulación implementada en los módulos

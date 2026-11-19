@@ -19,7 +19,6 @@ hipótesis mecánicas; geometría real puede evaluarse por vano independizado.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import pi
 import numpy as np
 import pandas as pd
 from scipy.optimize import brentq

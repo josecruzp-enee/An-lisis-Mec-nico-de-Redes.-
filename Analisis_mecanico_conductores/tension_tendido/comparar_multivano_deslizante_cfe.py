@@ -5,7 +5,6 @@ La referencia final H50 procede del optimizador de la corrida por vano.
 Las guías deslizantes no equivalen a suspensión ENEE sin identificar herrajes.
 """
 from __future__ import annotations
-import math
 import numpy as np
 import pandas as pd
 

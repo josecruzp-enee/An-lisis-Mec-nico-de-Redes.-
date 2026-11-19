@@ -16,7 +16,6 @@ que las acciones, documentados por el proyectista.
 """
 from __future__ import annotations
 
-import math
 import pandas as pd
 import numpy as np
 

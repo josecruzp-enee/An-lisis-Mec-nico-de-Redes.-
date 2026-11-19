@@ -16,7 +16,6 @@ No se atribuyen resistencias a cables, dispositivos ni suelos.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import math
 
 import numpy as np
 from scipy.optimize import lsq_linear

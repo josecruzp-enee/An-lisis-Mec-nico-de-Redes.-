@@ -10,7 +10,6 @@ rigidez y pretensión ni verificación de anclajes / cimentación.
 from __future__ import annotations
 
 from collections import defaultdict
-import math
 
 import numpy as np
 import pandas as pd

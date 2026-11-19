@@ -13,7 +13,6 @@ NO representa todavía toda la red físicamente y NO aprueba estructuras.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import math
 
 import numpy as np
 from scipy.optimize import least_squares

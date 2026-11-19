@@ -9,8 +9,6 @@ conexiones ANCLAJE/FIJA y apoyos FIJO/MOVIL con rigidez traslacional.
 """
 from __future__ import annotations
 
-from dataclasses import replace
-import math
 
 import pandas as pd
 

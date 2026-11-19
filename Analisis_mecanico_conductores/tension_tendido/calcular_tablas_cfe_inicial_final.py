@@ -16,7 +16,6 @@ cálculo final en vez de inventar elongación permanente.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isfinite
 
 import numpy as np
 import pandas as pd
