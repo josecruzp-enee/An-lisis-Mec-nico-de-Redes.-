@@ -51,6 +51,34 @@ class FuerzasApoyoCFETest(unittest.TestCase):
         grafico=grafico_red_y_fuerzas(self.puntos,detalle,suma)
         self.assertTrue(grafico.getvalue().startswith(bytes([137,80,78,71])))
 
+
+    def test_pdf_integrado_incluye_red_y_esfuerzos(self):
+        from io import BytesIO
+        from pypdf import PdfReader
+        from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import (
+            generar_pdf_corrida_cfe,
+        )
+        from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
+        xyz,_=_geometria(self.puntos)
+        datos=generar_pdf_corrida_cfe(
+            resumen=self.resumen,tabla=self.tabla,
+            conductor="1/0 RAVEN",fuente_material="CFE 07 FT 01",
+            clima=self.clima,
+            propiedades_inicial=self.props["Inicial"],
+            propiedades_final=self.props["Final"],
+            geometria_xyz=xyz,puntos_apoyos=self.puntos,
+        )
+        self.assertTrue(datos.startswith(b"%PDF"))
+        lector=PdfReader(BytesIO(datos))
+        texto=" ".join(page.extract_text() or "" for page in lector.pages)
+        self.assertIn("Red completa",texto)
+        self.assertIn("Envolvente por apoyo",texto)
+        self.assertIn("Fx (kN)",texto)
+        self.assertIn("Fy (kN)",texto)
+        self.assertIn("Fz (kN)",texto)
+        self.assertIn("S1",texto)
+        self.assertIn("S2",texto)
+
     def test_fuerzas_requieren_tensiones_reproducibles(self):
         tabla=self.tabla.copy()
         tabla.loc[0,"T máx. (kN)"]+=.1
