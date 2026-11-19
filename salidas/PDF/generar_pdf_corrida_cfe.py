@@ -342,7 +342,11 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         ]:
             def v(prop):
                 dato = prop.get(key)
-                return _fmt(float(dato)*escala, 6) if dato is not None else "No informado"
+                if dato is None:
+                    return "No informado"
+                if key == "alpha_por_C":
+                    return f"{float(dato):.5e}"
+                return _fmt(float(dato)*escala, 6)
             mecanica.append([etiqueta, v(propiedades_inicial), v(propiedades_final), unidad])
         datos_tabla(mecanica, [2, 1.5, 1.5, 1])
     else:
