@@ -2,6 +2,6 @@
 
 No añadir algoritmos aquí. Este archivo existe para consumidores históricos.
 """
-from Analisis_mecanico_conductores.geometria.calcular_vanos_y_vano_regulador import (
+from Analisis_mecanico_conductores.geometria.resumir_vanos import (
     resumen_geometrico,
 )
