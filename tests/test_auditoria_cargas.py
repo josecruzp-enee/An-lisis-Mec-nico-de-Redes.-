@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 
 from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_catenaria_3d import ejecutar_barrido_3d
-from calculos.auditoria_cargas import auditar_reacciones_por_vano, COMPONENTES
+from Analisis_mecanico_conductores.verificaciones.auditoria_cargas import auditar_reacciones_por_vano, COMPONENTES
 
 
 def estudiar():

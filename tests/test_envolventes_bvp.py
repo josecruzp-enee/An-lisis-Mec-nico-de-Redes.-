@@ -1,7 +1,7 @@
 """Las envolventes preservan caso y unidad para el nuevo BVP."""
 import unittest
 import pandas as pd
-from calculos.envolventes_3d import envolventes_vanos
+from Analisis_mecanico_conductores.verificaciones.envolventes_3d import envolventes_vanos
 
 
 class EnvolventesBVPTest(unittest.TestCase):

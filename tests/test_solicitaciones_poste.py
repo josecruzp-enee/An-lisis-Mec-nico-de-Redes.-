@@ -8,7 +8,7 @@ import pandas as pd
 from Analisis_mecanico_estructuras.calculos.solicitaciones_poste import (
     geometria_fuste, viento_fuste, combinar_solicitaciones_postes,
 )
-from calculos.envolventes_3d import mayores_por_apoyo, envolventes_apoyos
+from Analisis_mecanico_conductores.verificaciones.envolventes_3d import mayores_por_apoyo, envolventes_apoyos
 
 
 class TestVientoEnPoste(unittest.TestCase):

@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_bvp_3d import ejecutar_barrido_no_lineal_3d
-from calculos.auditoria_cargas import auditar_reacciones_por_vano
+from Analisis_mecanico_conductores.verificaciones.auditoria_cargas import auditar_reacciones_por_vano
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 
 
