@@ -576,7 +576,7 @@ def main() -> None:
                 archivo_compartido=archivo,puntos_compartidos=df,
             )
         if proyecto["modo_tension"].startswith("Calcular"):
-            from Analisis_mecanico_conductores.geometria.calcular_vanos_y_vano_regulador import resumen_geometrico
+            from Analisis_mecanico_conductores.geometria.resumir_vanos import resumen_geometrico
             geo = resumen_geometrico(df)
             st.subheader("Geometría de vanos independientes")
             c1,c2=st.columns(2)

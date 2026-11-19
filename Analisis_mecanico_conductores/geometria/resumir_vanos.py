@@ -1,4 +1,4 @@
-"""Geometría convencional de regulación para Excel ordinario de puntos.
+"""Resumen geométrico de vanos independientes para Excel ordinario de puntos.
 
 Esta función no requiere hojas auxiliares ni valores mecánicos. Una
 secuencia de puntos se trata como una sección de tendido propuesta para
@@ -10,12 +10,11 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import vano_regulador
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import validar_puntos
 
 
 def resumen_geometrico(puntos: pd.DataFrame):
-    """Regresa tabla por tramo, luz de regulación y condiciones de altura."""
+    """Devuelve luces por tramo, azimut y disponibilidad de cotas."""
     validar_puntos(puntos)
     xyz=puntos[["X","Y"]].to_numpy(dtype=float)
     d=np.diff(xyz,axis=0)
@@ -63,7 +62,6 @@ def resumen_geometrico(puntos: pd.DataFrame):
         nivelado=False
     return {
         "tramos":tramo,
-        "vano_regulador_m":vano_regulador(luces),
         "longitud_total_m":float(luces.sum()),
         "n_vanos":len(luces),
         "cotas":elevacion,
@@ -72,8 +70,7 @@ def resumen_geometrico(puntos: pd.DataFrame):
         "desniveles_conocidos":z_completa,
         "requiere_3d":bool(z_completa and np.any(np.abs(desniveles)>1e-5)),
         "hipotesis_geometrica":(
-            "Vano regulador convencional solo orientativo; el análisis "
-            "usa catenarias individuales en 3D y suma de longitudes "
-            "naturales. No identifica automáticamente remates intermedios."
+            "Se calculan vanos independientes; no se infieren remates "
+            "intermedios ni se calcula un claro equivalente."
         ),
     }

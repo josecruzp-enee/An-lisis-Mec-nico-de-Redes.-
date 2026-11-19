@@ -13,7 +13,7 @@ proyecto. No incluye dimensionamiento de postes, retenidas ni cimentaciones.
 | Carpeta | Archivo | Responsabilidad |
 | --- | --- | --- |
 | `validaciones/` | `validar_datos_fisicos.py` | Asegurar unidades, números finitos y puntos válidos |
-| `geometria/` | `calcular_vanos_y_vano_regulador.py` | Obtener luces, azimuts y vano ideal según Checa |
+| `geometria/` | `resumir_vanos.py` | Obtener luces y azimuts por vano independiente |
 | `conductores/` | `catalogo_acsr_viakon.py` | Ficha nominal ACSR con fuente del fabricante |
 | `conductores/` | `referencias_mecanicas_acsr_nexans.py` | EA y dilatación **comparativos**, no certificados Viakon |
 | `catenaria/` | `resolver_catenaria_exacta.py` | Catenaria bajo carga constante, longitudes y tracciones |
