@@ -7,7 +7,7 @@ import unittest
 from io import BytesIO
 import pandas as pd
 
-from entradas.interfaz_red_global import _plantilla_calculo
+from Analisis_mecanico_conductores.interfaz.mostrar_red_global import _plantilla_calculo
 from entradas.importar_red import leer_red_excel
 from entradas.importar_hipotesis_red import leer_materiales_excel, leer_estados_excel
 from calculos.hipotesis_red import calcular_hipotesis_red

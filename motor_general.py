@@ -41,3 +41,14 @@ def plantilla_regulacion(*args, **kwargs):
 def generar_memoria_pdf(*args, **kwargs):
     from Analisis_mecanico_conductores.salidas.PDF import generar_memoria_pdf as generar
     return generar(*args, **kwargs)
+
+# Operaciones del Módulo 2 expuestas solo desde el coordinador.
+# La interfaz del Módulo 1 no importa internamente el Módulo 2.
+from Analisis_mecanico_estructuras.calculos.solicitaciones_poste import combinar_solicitaciones_postes
+from Analisis_mecanico_estructuras.calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
+from Analisis_mecanico_estructuras.calculos.resistencia_postes import (
+    cribar_resistencia_postes, resumen_resistencia_postes, COLUMNAS_CAPACIDADES,
+)
+from Analisis_mecanico_estructuras.calculos.analisis_retenidas_red import (
+    leer_configuraciones_retenidas, evaluar_retenidas_en_barrido,
+)

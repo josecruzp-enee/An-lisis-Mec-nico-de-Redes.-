@@ -2,7 +2,7 @@
 from io import BytesIO
 import unittest
 
-from entradas.interfaz_red_global import _plantilla
+from Analisis_mecanico_conductores.interfaz.mostrar_red_global import _plantilla
 from entradas.importar_red import leer_red_excel
 
 

@@ -1,7 +1,7 @@
 """Integración de entrada Excel con el barrido espacial."""
 import unittest
 import pandas as pd
-from entradas.interfaz_barrido_3d import _vanos_desde_excel, _numeros
+from Analisis_mecanico_conductores.interfaz.mostrar_barrido_3d import _vanos_desde_excel, _numeros
 
 
 class TestInterfaz3D(unittest.TestCase):

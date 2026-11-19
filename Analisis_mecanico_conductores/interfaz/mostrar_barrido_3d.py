@@ -11,19 +11,16 @@ import pandas as pd
 import streamlit as st
 
 from entradas.io_excel import leer_puntos_excel
-from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR
-from entradas.tabla_catalogo_acsr import tabla_catalogo_acsr
-from entradas.referencias_mecanicas_acsr import referencia_mecanica_nexans
+from comun.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
+from Analisis_mecanico_conductores.conductores.mostrar_tabla_catalogo_acsr import tabla_catalogo_acsr
+from Analisis_mecanico_conductores.conductores.referencias_mecanicas_acsr_nexans import referencia_mecanica_nexans
 from Analisis_mecanico_conductores.verificaciones.comparar_tension_con_rotura_acsr import diagnosticar_tensiones, resumen_tensiones
 from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_bvp_3d import ejecutar_barrido_no_lineal_3d
 from Analisis_mecanico_conductores.verificaciones.auditoria_cargas import auditar_reacciones_por_vano
 from Analisis_mecanico_conductores.verificaciones.resumir_calidad_numerica_bvp import resumen_calidad_bvp
-from Analisis_mecanico_estructuras.calculos.solicitaciones_poste import combinar_solicitaciones_postes
-from Analisis_mecanico_estructuras.calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
-from Analisis_mecanico_estructuras.calculos.resistencia_postes import (
+from motor_general import (
+    combinar_solicitaciones_postes, calcular_secciones_poste, secciones_gobernantes,
     cribar_resistencia_postes, resumen_resistencia_postes, COLUMNAS_CAPACIDADES,
-)
-from Analisis_mecanico_estructuras.calculos.analisis_retenidas_red import (
     leer_configuraciones_retenidas, evaluar_retenidas_en_barrido,
 )
 from Analisis_mecanico_conductores.verificaciones.envolventes_3d import (

@@ -518,7 +518,7 @@ def main() -> None:
             st.error(f"Datos de geometría inválidos: {exc}")
         return
     if modo == "Red completa — conectividad":
-        from entradas.interfaz_red_global import mostrar_modelo_red
+        from Analisis_mecanico_conductores.interfaz.mostrar_red_global import mostrar_modelo_red
         st.title("Modelo mecánico de una red completa")
         mostrar_modelo_red()
         return
@@ -571,7 +571,7 @@ def main() -> None:
                   "resuelve cada vano tras fijación."),
         )
         if habilitar_bvp:
-            from entradas.interfaz_barrido_3d import mostrar_barrido_3d
+            from Analisis_mecanico_conductores.interfaz.mostrar_barrido_3d import mostrar_barrido_3d
             mostrar_barrido_3d(
                 archivo_compartido=archivo,puntos_compartidos=df,
             )
