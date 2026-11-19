@@ -1,3 +1,7 @@
+"""Suite consolidada: se conservan todos los casos originales."""
+
+
+# === Casos conservados de tests/test_modulo1_pdf_cfe.py ===
 """Regresión módulo 1: memoria CFE y reproducción termoelástica documentada."""
 import unittest
 from io import BytesIO
@@ -102,5 +106,199 @@ class ModuloUnoPdfYCatenaria(unittest.TestCase):
             )
 
 
-if __name__=="__main__":
-    unittest.main()
+# === Casos conservados de tests/test_pdf_perfiles_cfe.py ===
+"""Pruebas de perfiles: geometría exacta y matriz CFE en la memoria PDF."""
+import unittest
+from io import BytesIO
+
+import pandas as pd
+from pypdf import PdfReader
+
+from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
+    seleccionar_propiedades_cfe_07_ft_01,
+)
+from Analisis_mecanico_conductores.tension_tendido.calcular_tablas_cfe_inicial_final import (
+    PropiedadesConductorCFE, EstadoReferenciaCFE, calcular_tablas_inicial_final,
+)
+from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
+from Analisis_mecanico_conductores.salidas.PDF.graficos_catenarias_cfe import graficar_perfiles_cfe
+from Analisis_mecanico_conductores.salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
+from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+
+
+class PerfilesCFE(unittest.TestCase):
+    def setUp(self):
+        self.ini, self.fin = seleccionar_propiedades_cfe_07_ft_01("RAVEN")
+        p=self.ini
+        self.prop=PropiedadesConductorCFE(
+            peso_kN_m=p["peso_kN_m"],diametro_m=p["diametro_m"],
+            EA_inicial_kN=p["EA_kN"],EA_final_kN=self.fin["EA_kN"],
+            alpha_inicial_por_C=p["alpha_por_C"],
+            alpha_final_por_C=self.fin["alpha_por_C"],
+            ruptura_kN=p["ruptura_kN"],fuente="CFE 07 FT 01",
+        )
+        self.puntos=pd.DataFrame({
+            "Punto":["P1","P2","P3"],"X":[0.,50.,115.],"Y":[0.,0.,10.],
+            "Altitud":[100.,100.,103.],"Altura_Amarre_m":[9.5,9.5,9.5],
+        })
+        self.xyz,_=_geometria(self.puntos)
+        self.tabla=calcular_tablas_inicial_final(
+            self.puntos,self.prop,
+            EstadoReferenciaCFE(760.,"CFE"),EstadoReferenciaCFE(660.,"CFE"),
+            [0.,16.,20.,50.],
+            estados_climaticos=[
+                ("CFE viento reducido + hielo",-10.,0.,6.),
+                ("CFE viento máximo",0.,120.,0.),
+            ],Cd=1.0,
+        )
+        self.clima={
+            "viento_max_kmh":120.,"viento_reducido_kmh":0.,
+            "hielo_mm":6.,"rho_kg_m3":1.225,"Cd":1.,
+        }
+    def test_curvas_reconstruyen_dos_vanos(self):
+        salidas=graficar_perfiles_cfe(self.tabla,self.xyz,
+                      {"Inicial":self.ini,"Final":self.fin},self.clima)
+        self.assertEqual(len(salidas),2)
+        for nombre,buf in salidas:
+            self.assertTrue(buf.getvalue().startswith(bytes((137,80,78,71))))
+    def test_control_cinco_hipotesis(self):
+        c=verificar_cinco_hipotesis(
+            self.tabla,ruptura_kN=self.ini["ruptura_kN"],
+            nombre_conductor="RAVEN",
+            viento_max_kmh=120.,viento_reducido_kmh=0.,hielo_mm=6.,
+        )
+        self.assertEqual(len(c),5)
+        self.assertNotIn("SIN EVALUAR",set(c["Estado"]))
+    def test_pdf_perfiles_y_cumplimiento(self):
+        resumen=pd.DataFrame([
+            {"Condición":"Inicial", "H_50_kN":760*self.ini["peso_kN_m"],
+             "parametro_P_m":760., "hipotesis_gobernante":"Referencia",
+             "relacion_critica":.9},
+            {"Condición":"Final","H_50_kN":660*self.fin["peso_kN_m"],
+             "parametro_P_m":660., "hipotesis_gobernante":"Referencia",
+             "relacion_critica":.95},
+        ])
+        pdf=generar_pdf_corrida_cfe(
+            resumen=resumen,tabla=self.tabla,conductor="1/0 RAVEN",
+            fuente_material="CFE 07 FT 01",clima=self.clima,
+            propiedades_inicial=self.ini,propiedades_final=self.fin,
+            geometria_xyz=self.xyz,
+        )
+        lector=PdfReader(BytesIO(pdf))
+        texto=" ".join(page.extract_text() or "" for page in lector.pages)
+        self.assertGreaterEqual(len(lector.pages),5)
+        self.assertIn("cinco hipótesis",texto.lower())
+        self.assertIn("Perfil de catenarias",texto)
+        self.assertIn("P1",texto)
+        self.assertIn("P2",texto)
+
+
+# === Casos conservados de tests/test_memoria_pdf_etapa1.py ===
+"""Pruebas PDF: salida legible, trazabilidad y orquestación sin motor."""
+from io import BytesIO
+from types import SimpleNamespace
+import unittest
+
+import pandas as pd
+from pypdf import PdfReader
+
+from Analisis_mecanico_conductores.salidas.PDF import generar_memoria_pdf
+from Analisis_mecanico_conductores.salidas.PDF.coordinar_pdf import registrar_generador
+
+
+class MemoriaPDFTest(unittest.TestCase):
+    def setUp(self):
+        puntos=pd.DataFrame({
+            "Punto":["P1","P2"],"X":[0.,45.53],"Y":[0.,0.],
+            "Altitud":[0.,0.],"Altura_Amarre_m":[10.,10.],
+        })
+        hip=pd.DataFrame([{
+            "Hipótesis":"TCD prueba","Temperatura (°C)":15.,
+            "Viento (m/s)":0.,"H estado (kN)":3.5,
+            "T máxima sección (kN)":3.51,"Límite (kN)":4.75,
+            "Relación T/límite":.74,"Fuente límite":"Dato sintético",
+        }])
+        flechas=pd.DataFrame([{
+            "Hipótesis":"TCD prueba","Vano":"P1 → P2","Luz (m)":45.53,
+            "Flecha vertical (m)":.2,"T máxima vano (kN)":3.51,
+        }])
+        tendido=pd.DataFrame([
+            {"Temperatura (°C)":t,"Vano":"P1 → P2","H del estado (kN)":h,
+             "Flecha vertical (m)":f}
+            for t,h,f in [(10.,4.,.17),(20.,3.14,.22),(30.,2.4,.29)]
+        ])
+        detalle=pd.DataFrame([{
+            "Tipo de corrida":"Viento a T de referencia","Vano":"P1 → P2",
+            "Temperatura (°C)":20.,"Viento (km/h)":130.,
+            "H estado (kN)":5.,"T máxima vano (kN)":5.01,
+            "Flecha vertical (m)":.14,"Desviación lateral máxima (m)":.56,
+        }])
+        gobernantes=detalle.copy()
+        gobernantes.insert(0,"Condición gobernante","Máxima tensión")
+        self.datos={
+            "resultado":SimpleNamespace(
+                H_tendido_kN=3.1446,vano_regulador_m=45.53,
+                longitud_tramo_m=45.53,caso_gobernante="TCD prueba",
+                relacion_maxima=.74,cota_busqueda_activa=False,
+                modelo="Sección nivelada: H común",
+                hipotesis=hip,flechas=flechas,tabla_tendido=tendido,
+                barrido={"detalle":detalle,"gobernantes":gobernantes,
+                         "total_estados":2},
+            ),
+            "puntos":puntos,
+            "proyecto":{"nombre":"Proyecto de ensayo","lugar":"Honduras",
+                        "calibre":"2/0 ACSR","fecha":"2026-11-15"},
+            "propiedades":{"fuente":"ENEE Tabla 16","EA_kN":5012.77,
+                            "alpha_por_C":1.921e-5,"peso_kN_m":.002668},
+        }
+
+    def test_pdf_etapa1_incluye_resultados_y_anexos(self):
+        pdf=generar_memoria_pdf(etapas=[1],datos_por_etapa={1:self.datos})
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        lector=PdfReader(BytesIO(pdf))
+        self.assertGreaterEqual(len(lector.pages),2)
+        contenido=" ".join(p.extract_text() or "" for p in lector.pages)
+        for palabra in ("Proyecto de ensayo","3.1446",
+                        "Tabla de tendido","Barrido climático",
+                        "ENEE Tabla 16","No se emite dictamen"):
+            self.assertIn(palabra,contenido)
+
+    def test_indice_y_fuentes_tecnicas_en_memoria(self):
+        pdf=generar_memoria_pdf(etapas=[1],datos_por_etapa={1:self.datos})
+        lector=PdfReader(BytesIO(pdf))
+        texto_indice=lector.pages[1].extract_text() or ""
+        self.assertIn("ÍNDICE DE CONTENIDO",texto_indice)
+        self.assertIn("1. Resumen ejecutivo",texto_indice)
+        self.assertIn("3. Metodología y modelo mecánico",texto_indice)
+        texto=" ".join(p.extract_text() or "" for p in lector.pages)
+        self.assertIn("Nomenclatura y unidades",texto)
+        self.assertIn("Fuentes técnicas y trazabilidad",texto)
+        self.assertIn("Fuente del criterio: Dato sintético",texto)
+        self.assertIn("Referencia técnica",texto)
+        # El índice debe incluir al menos un número de página.
+        import re
+        self.assertRegex(texto_indice, r"[2-9]\s+1[.] Resumen ejecutivo")
+
+    def test_faltan_etapas_y_datos_no_se_omiten(self):
+        with self.assertRaisesRegex(ValueError,"etapa 2"):
+            generar_memoria_pdf(etapas=[1,2],datos_por_etapa={1:self.datos})
+        with self.assertRaisesRegex(ValueError,"Faltan datos"):
+            generar_memoria_pdf(etapas=[1],datos_por_etapa={})
+
+    def test_coordinador_puede_combinar_generadores_futuros(self):
+        from reportlab.pdfgen.canvas import Canvas
+        def etapa_99(**kwargs):
+            b=BytesIO()
+            c=Canvas(b)
+            c.drawString(50,750,"Etapa simulada 99")
+            c.save()
+            return b.getvalue()
+        registrar_generador(99,etapa_99)
+        uno=generar_memoria_pdf(etapas=[1],datos_por_etapa={1:self.datos})
+        ambos=generar_memoria_pdf(
+            etapas=[1,99],datos_por_etapa={1:self.datos,99:{}},
+        )
+        self.assertEqual(
+            len(PdfReader(BytesIO(ambos)).pages),
+            len(PdfReader(BytesIO(uno)).pages)+1,
+        )
