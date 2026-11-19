@@ -8,7 +8,6 @@ from __future__ import annotations
 from datetime import date
 from html import escape
 from io import BytesIO
-import math
 
 import numpy as np
 import pandas as pd
