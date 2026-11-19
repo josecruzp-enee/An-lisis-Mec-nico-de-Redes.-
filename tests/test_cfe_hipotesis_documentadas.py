@@ -222,5 +222,49 @@ class HipotesisCfeDocumentadas(unittest.TestCase):
             )
 
 
+    def test_diagnostico_acoplamiento_real_en_cinco_vanos(self):
+        """El residuo reportado debe coincidir con las tablas fisicas emitidas."""
+        import numpy as np
+        import pandas as pd
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
+            seleccionar_propiedades_cfe_07_ft_01, ejecutar_corridas_cfe_por_vano,
+        )
+        ini, fin = seleccionar_propiedades_cfe_07_ft_01("RAVEN")
+        puntos=pd.DataFrame({
+            "Punto":[f"P{i+1}" for i in range(6)],
+            "X":np.cumsum([0.,50.,65.,75.,120.,150.]),
+            "Y":[0.]*6,
+            "Altitud":[100.]*6,
+            "Altura_Amarre_m":[10.]*6,
+        })
+        resumen, tabla = ejecutar_corridas_cfe_por_vano(
+            puntos, ini, fin,
+            viento_max_kmh=120., viento_reducido_kmh=109.,
+            hielo_mm=6., temperaturas_C=[0.,20.,50.],
+            Cd=1., modelo_presion_cfe=True,
+        )
+        extremo=tabla[
+            (tabla["Temperatura (°C)"] == -10.)
+            & (tabla["Viento (km/h)"] == 109.)
+            & (tabla["Hielo (mm)"] == 6.)
+        ]
+        self.assertEqual(len(extremo),10)
+        max_ini=float(extremo[extremo["Condición"]=="Inicial"]["T máx. (kN)"].max())
+        max_fin=float(extremo[extremo["Condición"]=="Final"]["T máx. (kN)"].max())
+        error=abs(max_ini-max_fin)
+        self.assertAlmostEqual(
+            float(resumen.iloc[0]["Diferencia real de acoplamiento H4 (kN)"]),
+            error,delta=1e-9,
+        )
+        self.assertAlmostEqual(
+            float(resumen.iloc[0]["Diferencia real de acoplamiento H4 (%)"]),
+            100.*error/max_fin,delta=1e-8,
+        )
+        self.assertEqual(
+            bool(resumen.iloc[0]["Igualdad extrema publicada verificada"]),
+            error <= max(1e-5,1e-6*max_fin),
+        )
+        self.assertTrue((tabla["Residual (m)"].abs()<1e-7).all())
+
 if __name__=="__main__":
     unittest.main()
