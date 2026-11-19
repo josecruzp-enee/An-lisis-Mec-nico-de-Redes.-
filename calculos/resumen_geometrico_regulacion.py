@@ -1,4 +1,4 @@
-"""Compatibilidad de importación: implementación canónica en Analisis_mecanico_conductores.geometria.calcular_vanos_y_vano_regulador.
+"""Compatibilidad de importación: implementación canónica en Analisis_mecanico_conductores.geometria.resumir_vanos.
 
 No añadir algoritmos aquí. Este archivo existe para consumidores históricos.
 """
