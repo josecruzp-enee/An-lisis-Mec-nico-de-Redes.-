@@ -246,6 +246,22 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         "predicción de deformación permanente.", nota,
     )
 
+    # La igualdad del optimizador NO es necesariamente igualdad de la tabla
+    # emitida cuando el ajuste usa alpha_final y la tabla usa alpha_inicial.
+    if "Diferencia real de acoplamiento H4 (kN)" in resumen:
+        diagnostico=resumen.iloc[0]
+        diferencia=float(diagnostico["Diferencia real de acoplamiento H4 (kN)"])
+        porcentaje=float(diagnostico["Diferencia real de acoplamiento H4 (%)"])
+        cumple=bool(diagnostico["Igualdad extrema publicada verificada"])
+        linea(
+            "Auditoria del acoplamiento inicial/final H4: diferencia REAL "
+            f"entre tensiones extremas publicadas = {diferencia:.5f} kN "
+            f"({porcentaje:.2f} %). "
+            + ("Igualdad verificada." if cumple else
+               "Igualdad NO verificada; ajuste de alfa experimental."),
+            nota,
+        )
+
     residuo = float(tabla["Residual (m)"].abs().max())
     tension = float(tabla["T máx. (kN)"].max())
     flecha = float(tabla["Flecha (m)"].max())
