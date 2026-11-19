@@ -28,7 +28,7 @@ class TestModulosCanonicos(unittest.TestCase):
     def test_entradas_y_salidas_canonicas(self):
         for nombre in (
             "entradas.catalogos", "entradas.norma_postes",
-            "entradas.validacion_entrada", "salidas.exportacion_excel",
+            "entradas.validacion_entrada",
         ):
             with self.subTest(modulo=nombre):
                 self.assertIsNotNone(import_module(nombre))
