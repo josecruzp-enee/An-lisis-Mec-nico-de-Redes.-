@@ -115,6 +115,37 @@ def auditoria():
             # La ausencia de imports estáticos es una pista, NO una prueba.
             candidatos.append(rel)
 
+    # Recorrido de dependencias en cadena desde entradas reales y tests.
+    # Permite detectar módulos que solo se importan entre sí, sin consumidores.
+    adyacencia = defaultdict(set)
+    for fuente, destino in enlaces:
+        adyacencia[fuente].add(destino)
+    raices = {
+        p.relative_to(ROOT).as_posix() for p in archivos
+        if p.relative_to(ROOT).as_posix() in (
+            "main.py", "app.py", "mapa_proyecto.py"
+        ) or p.relative_to(ROOT).as_posix().startswith("tests/")
+        or "/pruebas/" in p.relative_to(ROOT).as_posix()
+        or p.relative_to(ROOT).as_posix().startswith("ayuda/")
+    }
+    visitados = set(raices)
+    pendientes = list(raices)
+    while pendientes:
+        actual = pendientes.pop()
+        for importado in adyacencia.get(actual, ()):
+            ruta = por_modulo.get(importado)
+            if ruta is None:
+                continue
+            nombre = ruta.relative_to(ROOT).as_posix()
+            if nombre not in visitados:
+                visitados.add(nombre)
+                pendientes.append(nombre)
+    aislados = [
+        p.relative_to(ROOT).as_posix() for p in archivos
+        if p.relative_to(ROOT).as_posix() not in visitados
+        and p.relative_to(ROOT).parts[0] in CARPETAS_FUNCIONALES
+        and p.name != "__init__.py"
+    ]
     exactos = [v for v in digest.values() if len(v) > 1]
     similitud = [v for v in defs.values() if len({x[0] for x in v}) > 1
                  and max(x[2] for x in v) >= 10]
@@ -130,6 +161,9 @@ def auditoria():
     print("Módulos funcionales sin importación estática entrante:", len(candidatos))
     for p in candidatos:
         print("SIN_REF_ESTATICA", p)
+    print("Módulos fuera de toda ruta desde UI y pruebas:", len(aislados))
+    for p in aislados:
+        print("AISLADO", p)
     print("Grupos de funciones equivalentes en módulos diferentes:", len(similitud))
     for grupo in similitud[:100]:
         print("FUNCION_DUPLICADA", grupo)
