@@ -99,7 +99,6 @@ def dividir_secciones_por_remates(puntos: pd.DataFrame):
     if puntos["Punto"].duplicated().any():
         raise ValueError("Identificadores de apoyos duplicados")
     if "Remate" in puntos:
-        import pandas as pd
         estados = []
         for i, value in enumerate(puntos["Remate"]):
             if pd.isna(value) or str(value).strip() == "":

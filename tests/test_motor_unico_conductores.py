@@ -39,7 +39,9 @@ class MotorUnicoConductoresTests(unittest.TestCase):
             return_value=(resumen, tabla),
         ) as solver:
             out_resumen, out_tabla = ejecutar_motor_conductores(
-                object(), {"fuente": "x"}, {"fuente": "y"},
+                pd.DataFrame({"Punto":["P1","P2"],"X":[0.,50.],
+                              "Y":[0.,0.]}),
+                {"fuente": "x"}, {"fuente": "y"},
                 viento_max_kmh=120, viento_reducido_kmh=109,
                 hielo_mm=6, temperaturas_C=[0, 16, 50],
             )
