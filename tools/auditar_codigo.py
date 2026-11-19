@@ -49,6 +49,7 @@ def auditoria():
     por_modulo = {modulo(p): p for p in archivos}
     refs = defaultdict(set)
     problemas = []
+    imports_inexistentes = []
     defs = defaultdict(list)
     digest = defaultdict(list)
     clases = defaultdict(int)
@@ -75,6 +76,9 @@ def auditoria():
                 posibles.extend(a.name for a in nodo.names)
             elif isinstance(nodo, ast.ImportFrom):
                 ruta = resolver(nodo.module, nodo.level, m, es_paquete)
+                if (ruta.split(".")[0] in CARPETAS_FUNCIONALES
+                        and ruta not in por_modulo):
+                    imports_inexistentes.append(f"{rel}:{nodo.lineno} -> {ruta}")
                 posibles.append(ruta)
                 posibles.extend(ruta + "." + a.name for a in nodo.names if a.name != "*")
             elif isinstance(nodo, ast.Call) and isinstance(nodo.func, ast.Name) and nodo.func.id in ("__import__", "import_module"):
@@ -156,6 +160,7 @@ def auditoria():
     print("Importaciones internas dirigidas:", len(enlaces))
     print("Archivos por paquete:", dict(sorted(clases.items())))
     print("Errores de sintaxis:", problemas or "Ninguno")
+    print("Imports internos inexistentes:", imports_inexistentes or "Ninguno")
     print("Copias byte a byte:", exactos or "Ninguna")
     print("Rutas de compatibilidad:", len(shims))
     print("Módulos funcionales sin importación estática entrante:", len(candidatos))
@@ -167,7 +172,7 @@ def auditoria():
     print("Grupos de funciones equivalentes en módulos diferentes:", len(similitud))
     for grupo in similitud[:100]:
         print("FUNCION_DUPLICADA", grupo)
-    return not problemas
+    return not problemas and not imports_inexistentes
 
 
 if __name__ == "__main__":
