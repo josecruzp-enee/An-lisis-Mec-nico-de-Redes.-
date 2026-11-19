@@ -16,7 +16,7 @@ from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee impo
     leer_catalogo_enee,seleccionar_conductor_enee,
 )
 from Analisis_mecanico_conductores.verificaciones.perfil_limites_tension_checa import construir_hipotesis_checa_acsr
-from Analisis_mecanico_conductores.tension_tendido.ejecutar_analisis_integral_de_conductores import ejecutar_analisis_integral
+from motor_general import ejecutar_modulo
 
 
 COLUMNAS=(
@@ -199,7 +199,7 @@ def mostrar_calculo_directo(puntos, calibre, *, Cd=1.2, rho=1.225, configuracion
             "Checa: límites dinámicos TCD/THF. Viento e hielo del barrido "
             "no constituyen verificaciones normativas."
         )
-    return ejecutar_analisis_integral(
+    return ejecutar_modulo("conductores",
         puntos,
         propiedades={
             "peso_kN_m":peso_kN_m,

@@ -541,7 +541,7 @@ def main() -> None:
     mostrar_resumen_proyecto(proyecto)
 
     if proyecto["modo_tension"].startswith("Calcular"):
-        from Analisis_mecanico_conductores.entradas.leer_datos_y_calcular_regulacion import plantilla_regulacion
+        from motor_general import plantilla_regulacion
         st.download_button(
             "Descargar plantilla para tensión y flechas automáticas (Excel)",
             plantilla_regulacion(),
@@ -576,7 +576,7 @@ def main() -> None:
                 archivo_compartido=archivo,puntos_compartidos=df,
             )
         if proyecto["modo_tension"].startswith("Calcular"):
-            from Analisis_mecanico_conductores.geometria.resumir_vanos import resumen_geometrico
+            from motor_general import resumen_geometrico
             geo = resumen_geometrico(df)
             st.subheader("Geometría de vanos independientes")
             c1,c2=st.columns(2)
@@ -605,7 +605,7 @@ def main() -> None:
                 mostrar_configuracion_barrido,mostrar_resultados_barrido,
             )
             configuracion_barrido=mostrar_configuracion_barrido()
-            from Analisis_mecanico_conductores.entradas.leer_datos_y_calcular_regulacion import ejecutar_regulacion_fase1
+            from motor_general import ejecutar_regulacion_fase1
             from io import BytesIO
             # Mantener compatibilidad con Excel antiguo de puntos:
             # si faltan Materiales/Hipotesis, completar directamente en UI.
@@ -666,7 +666,7 @@ def main() -> None:
             # El PDF consume el resultado ya calculado (sin ejecutar
             # ecuaciones adicionales). El coordinador también servirá
             # para incorporar y combinar las próximas etapas.
-            from salidas.PDF import generar_memoria_pdf
+            from motor_general import generar_memoria_pdf
             memoria = generar_memoria_pdf(
                 etapas=[1],
                 datos_por_etapa={1: {

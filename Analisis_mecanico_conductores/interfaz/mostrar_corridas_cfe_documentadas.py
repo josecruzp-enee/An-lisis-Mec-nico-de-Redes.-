@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import streamlit as st
+from motor_general import ejecutar_modulo
 
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import (
     leer_catalogo_enee, seleccionar_conductor_enee,
 )
 from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
-    ejecutar_corridas_cfe_por_vano,
+    # El cálculo se coordina desde motor_general.
     DENSIDAD_HIELO_ENSAYO_KG_M3,
     seleccionar_propiedades_cfe_07_ft_01,
 )
@@ -166,7 +167,7 @@ def mostrar_corridas_cfe(puntos):
             if ("Altura_Amarre_m" not in puntos_calculo or
                 puntos_calculo["Altura_Amarre_m"].isna().any()):
                 raise ValueError("Falta altura de amarre en uno o más apoyos")
-        resumen,tabla=ejecutar_corridas_cfe_por_vano(
+        resumen,tabla=ejecutar_modulo("cfe",
             puntos_calculo,ini,fin,
             viento_max_kmh=viento_max,
             viento_reducido_kmh=float(viento_reducido),
