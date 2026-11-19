@@ -9,7 +9,7 @@ import unittest
 import math
 import numpy as np
 
-from calculos.cable_no_lineal import resolver_cable_no_lineal
+from Analisis_mecanico_conductores.catenaria.resolver_cable_tridimensional_bvp import resolver_cable_no_lineal
 
 
 PARAMS=dict(
