@@ -62,3 +62,27 @@ class MotorUnicoConductoresTests(unittest.TestCase):
         diagnostico = _diagnosticar(resumen, tabla, presion_cfe=True)
         self.assertTrue(diagnostico.igualdad_extrema_reportada)
         self.assertFalse(diagnostico.creep_constitutivo_validado)
+
+
+class CompatibilidadFisicaSinCreep(unittest.TestCase):
+    def test_longitud_natural_inicial_final_identica_por_vano(self):
+        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
+            seleccionar_propiedades_cfe_07_ft_01,
+        )
+        inicial, final = seleccionar_propiedades_cfe_07_ft_01("RAVEN")
+        puntos = pd.DataFrame({
+            "Punto": ["P1", "P2"],
+            "X": [0., 50.], "Y": [0., 0.],
+            "Altitud": [100., 100.], "Altura_Amarre_m": [9.5, 9.5],
+        })
+        resumen, tabla = ejecutar_motor_conductores(
+            puntos, inicial, final,
+            viento_max_kmh=120., viento_reducido_kmh=109.,
+            hielo_mm=0., temperaturas_C=[0., 16., 50.],
+        )
+        naturales=tabla.groupby("Condición")["Longitud natural fijada (m)"].first()
+        self.assertAlmostEqual(float(naturales["Inicial"]),
+                               float(naturales["Final"]), places=10)
+        self.assertEqual(float(resumen["Creep adicional"].iloc[0]), 0.)
+        self.assertTrue((tabla["Residual (m)"].abs() < 1e-7).all())
+        self.assertGreater(float(tabla["T máx. (kN)"].min()), 0.)

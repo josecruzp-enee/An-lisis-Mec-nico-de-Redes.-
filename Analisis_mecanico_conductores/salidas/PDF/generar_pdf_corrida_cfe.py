@@ -238,11 +238,17 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         "durante el tendido continuo. No equivale a una componente H común "
         "en todos los vanos ni a la tensión de tracción de los apoyos.", nota,
     )
+    modo_sin_creep = (
+        "Creep adicional" in resumen.columns
+        and float(resumen.iloc[0]["Creep adicional"]) == 0.
+    )
     linea(
-        "Condiciones inicial/final acopladas por tensión extrema sobre "
-        "multivano fijado. No se dispone de una ley constitutiva de creep; "
-        "la diferencia entre longitudes naturales no constituye una "
-        "predicción de deformación permanente.", nota,
+        ("Se mantiene la misma longitud natural por vano a 50 C en ambas "
+         "condiciones: creep adicional = 0. Se conservan E y alfa CFE por "
+         "condición; no se fuerza igualdad de tensión extrema."
+         if modo_sin_creep else
+         "Condiciones inicial/final ajustadas por tensión extrema. "
+         "No se dispone de ley constitutiva de creep."), nota,
     )
 
     # El diagnóstico toma la diferencia real de los estados publicados,
@@ -253,12 +259,14 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         porcentaje=float(diagnostico["Diferencia real de acoplamiento H4 (%)"])
         cumple=bool(diagnostico["Igualdad extrema publicada verificada"])
         linea(
-            "Auditoria del acoplamiento inicial/final H4: diferencia REAL "
-            f"entre tensiones extremas publicadas = {diferencia:.5f} kN "
-            f"({porcentaje:.2f} %). "
-            + ("Igualdad verificada." if cumple else
-               "Igualdad NO verificada; ajuste de alfa experimental."),
-            nota,
+            ("Comparación de tensiones extremas H4 (NO es una condición "
+             "de igualdad): " if modo_sin_creep else
+             "Auditoría del antiguo acoplamiento H4: ")
+            + f"diferencia = {diferencia:.5f} kN ({porcentaje:.2f} %). "
+            + ("Las longitudes naturales son comunes por vano."
+               if modo_sin_creep else
+               "Igualdad verificada." if cumple else
+               "Igualdad no verificada."), nota,
         )
 
     residuo = float(tabla["Residual (m)"].abs().max())
@@ -580,9 +588,11 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     )
     linea(
         f"El mayor residuo de compatibilidad registrado es "
-        f"{residuo:.3e} m. La relación entre referencias inicial y "
-        "final responde al criterio de acoplamiento definido por el "
-        "motor; no demuestra una ley constitutiva de creep."
+        f"{residuo:.3e} m. "
+        + ("Inicial/final conservan la longitud natural por vano a 50 C "
+           "con creep adicional nulo; no se predice su evolución material."
+           if modo_sin_creep else
+           "La vinculación de referencias no demuestra una ley de creep.")
     )
     if propiedades_final and clima.get("viento_max_kmh") is not None:
         estado_control = list(control["Estado"])
