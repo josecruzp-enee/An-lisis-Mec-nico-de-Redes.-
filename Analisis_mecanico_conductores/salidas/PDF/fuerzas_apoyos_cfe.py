@@ -157,11 +157,19 @@ def grafico_red_y_fuerzas(puntos, detalle, sumas, *, hipotesis="H4"):
             ax.annotate("",xy=(xx[i]+fx[i]*factor,yy[i]+fy[i]*factor),
                         xytext=(xx[i],yy[i]),
                         arrowprops=dict(arrowstyle="-|>",color="#b91c1c",lw=2))
-    ax.set_title(f"Red completa — fuerzas del conductor sobre apoyos, {hipotesis} (CFE local)",fontsize=12)
+    for i,name in enumerate(n):
+        total=float(sub.loc[name,"F resultante (kN)"])
+        ax.annotate(f"|F|={total:.2f} kN",
+                    (xx[i], yy[i]), xytext=(5,-26),textcoords="offset points",
+                    fontsize=8,color="#7f1d1d",weight="bold",
+                    bbox=dict(facecolor="white",alpha=.87,edgecolor="none"))
+    ax.set_title(f"Red completa — reacciones de los cables, {hipotesis} (CFE local)",fontsize=12)
     ax.set_xlabel("Coordenada X (m)")
     ax.set_ylabel("Coordenada Y (m)")
+    # El esquema conserva escala X/Y; los datos vectoriales tienen
+    # rótulos propios para que las flechas pequeñas no se pierdan.
     ax.set_aspect("equal",adjustable="datalim")
-    ax.margins(.25)
+    ax.margins(.20)
     ax.grid(ls=":",alpha=.35)
     fig.tight_layout()
     b=BytesIO()

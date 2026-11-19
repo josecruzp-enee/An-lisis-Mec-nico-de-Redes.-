@@ -173,6 +173,38 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
 
     proyecto, clima = proyecto or {}, clima or {}
     fuente = str(fuente_material)
+    # Se usan únicamente magnitudes YA calculadas. Se comprueban las
+    # hipótesis CFE por sección una sola vez y se reutilizan más adelante.
+    control = None
+    if propiedades_final and clima.get("viento_max_kmh") is not None:
+        from Analisis_mecanico_conductores.salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
+        clave = str(conductor).split()[-1].upper()
+        controles = []
+        for nombre, tabla_grupo in (tabla.groupby("Sección", sort=False)
+                                    if por_secciones else [("S1", tabla)]):
+            cc = verificar_cinco_hipotesis(
+                tabla_grupo, ruptura_kN=float(propiedades_final["ruptura_kN"]),
+                nombre_conductor=clave,
+                viento_max_kmh=float(clima["viento_max_kmh"]),
+                viento_reducido_kmh=float(clima.get("viento_reducido_kmh", 0.)),
+                hielo_mm=float(clima.get("hielo_mm", 0.)),
+            )
+            cc.insert(0, "Sección", nombre)
+            controles.append(cc)
+        control = pd.concat(controles, ignore_index=True)
+    if control is None:
+        estado_ejecutivo = "CFE: sin evaluación documentada"
+    elif (control["Estado"] == "SIN EVALUAR").any():
+        estado_ejecutivo = "CFE: verificación incompleta"
+    elif (control["Estado"] == "NO CUMPLE").any():
+        estado_ejecutivo = "CFE: NO CUMPLE"
+    else:
+        caso_critico = control.loc[control["Utilización"].idxmax()]
+        estado_ejecutivo = (
+            f"CFE: CUMPLE H1-H5 en {control['Sección'].nunique()} sección(es); "
+            f"gobierna {caso_critico['Sección']} / {caso_critico['Código']} "
+            f"({_fmt(float(caso_critico['Utilización'])*100,1)} %)"
+        )
     estilos = _estilos()
     pagina = landscape(A4)
     margen = 15*mm
@@ -200,18 +232,40 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     historia.append(Spacer(1, 8*mm))
     historia.append(_p("MÓDULO 01 - ANÁLISIS MECÁNICO DE CONDUCTORES",
                       estilos["TituloM1"]))
-    linea("MEMORIA DE CÁLCULO INDEPENDIENTE")
-    titulo("Identificación de la corrida")
+    linea("RESUMEN EJECUTIVO · UNA SOLA LÍNEA / SECCIONES INDEPENDIENTES")
+    titulo("Resultado general de la línea")
+    linea(estado_ejecutivo)
+    datos_tabla([
+        ["Tensión máxima del conductor","Flecha máxima vertical",
+         "Vanos / secciones","Residual máximo"],
+        [_fmt(tension,3)+" kN",_fmt(flecha,3)+" m",
+         f"{numero_vanos} / {resumen['Sección'].nunique() if por_secciones else 1}",
+         _fmt(residuo)+" m"],
+    ],[1,1,1,1],compacto=True)
+    datos_tabla([
+        ["Resultado crítico","Vano","Condición / hipótesis","Temperatura"],
+        ["Tensión total máxima",str(fila_tmax["Vano"]),
+         str(fila_tmax["Condición"])+": "+str(fila_tmax["Hipótesis"]),
+         _fmt(fila_tmax["Temperatura (°C)"],0)+" °C"],
+        ["Flecha máxima",str(fila_fmax["Vano"]),
+         str(fila_fmax["Condición"])+": "+str(fila_fmax["Hipótesis"]),
+         _fmt(fila_fmax["Temperatura (°C)"],0)+" °C"],
+    ],[1.1,1,2.2,.7],compacto=True)
+    linea(
+        "ALCANCE: los límites de tensión CFE se verifican en este módulo. "
+        "No están verificadas las resistencias de postes, retenidas ni "
+        "libramientos; las fuerzas de apoyos corresponden solo a conductores.",
+        nota,
+    )
+    titulo("Datos generales")
     datos_tabla([
         ["Dato", "Información"],
         ["Proyecto", proyecto.get("nombre") or "No informado"],
-        ["Ubicación", proyecto.get("lugar") or "No informado"],
-        ["Responsable", proyecto.get("responsable") or "No informado"],
-        ["Fecha", proyecto.get("fecha") or date.today().isoformat()],
         ["Conductor", conductor],
+        ["Fecha", proyecto.get("fecha") or date.today().isoformat()],
+        ["Responsable", proyecto.get("responsable") or "No informado"],
+        ["Ubicación", proyecto.get("lugar") or "No informado"],
         ["Fuente de propiedades", fuente],
-        ["Geometría", f"{tabla['Vano'].nunique()} vano(s); " +
-         ", ".join(_fmt(x, 2) + " m" for x in sorted(tabla["Luz (m)"].unique()))],
     ], [1.2, 4.2])
 
     titulo("Condiciones climáticas de la corrida")
@@ -239,6 +293,49 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
               "Una sola memoria reúne el cálculo y su envolvente global; "
               "no se transfiere material entre secciones.", nota)
 
+    # Primera lectura gráfica: plano completo y esfuerzos por apoyo.
+    # Red completa: sumas de fuerzas en cada apoyo, con referencia a los
+    # dos extremos del cable y las secciones de tendido del mismo modelo.
+    if puntos_apoyos is not None:
+        if not (propiedades_inicial and propiedades_final):
+            raise ValueError("Faltan propiedades para obtener fuerzas de apoyos")
+        from Analisis_mecanico_conductores.salidas.PDF.fuerzas_apoyos_cfe import (
+            calcular_fuerzas_por_apoyo, grafico_red_y_fuerzas,
+        )
+        detalles, fuerzas, envolventes = calcular_fuerzas_por_apoyo(
+            tabla,puntos_apoyos,{"Inicial":propiedades_inicial,
+                                "Final":propiedades_final},clima,
+        )
+        historia.append(PageBreak())
+        titulo("Plano general de red y esfuerzos del conductor")
+        linea(
+            "Las flechas muestran componentes horizontales de las fuerzas "
+            "calculadas que ejercen los cables SOBRE cada apoyo en H4. "
+            "Cada vano conserva su propia tensión de tendido según su sección. "
+            "Las flechas están amplificadas para visualizar su dirección; "
+            "no representan desplazamientos de los postes.",nota,
+        )
+        figura_red=grafico_red_y_fuerzas(puntos_apoyos,detalles,fuerzas,
+                                         hipotesis="H4")
+        historia.append(Image(figura_red,width=245*mm,height=95*mm))
+        linea(
+            "ATENCIÓN: el viento CFE se evalúa transversalmente en cada vano "
+            "como envolvente local; las resultantes H4/H5 NO corresponden "
+            "necesariamente a un viento de azimut único sobre toda la red. "
+            "No incluyen peso ni viento del poste, cruceta o retenida.",nota,
+        )
+        titulo("Fuerzas críticas por apoyo (envolvente H1–H5)")
+        filas_env=[["Apoyo","Hipótesis","Fx (kN)","Fy (kN)","Fz (kN)",
+                    "|F| (kN)"]]
+        for _,r in envolventes.iterrows():
+            filas_env.append([
+                r["Apoyo"],r["Hipótesis"],
+                _fmt(r["Fx (kN)"],3),_fmt(r["Fy (kN)"],3),
+                _fmt(r["Fz (kN)"],3),_fmt(r["F resultante (kN)"],3),
+            ])
+        datos_tabla(filas_env,[1,1,1,1,1,1.1],compacto=True)
+    historia.append(PageBreak())
+    titulo("Resultados por sección y comprobación CFE")
     titulo("Referencias de tendido y criterio gobernante")
     rfilas = [[
         "Sección", "Condición", "H referencia 50 °C (kN)", "P referencia (m)",
@@ -310,47 +407,6 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     linea("La condición que produce la mayor tensión absoluta no tiene "
           "por qué coincidir con la hipótesis de mayor utilización: los "
           "límites admisibles son distintos.", nota)
-    # Se extraen exclusivamente resultados ya existentes, sin recalcular.
-    termicos = tabla[
-        (tabla["Hipótesis"] == "Tabla térmica") &
-        (tabla["Viento (km/h)"] == 0) &
-        (tabla["Hielo (mm)"] == 0) &
-        (tabla["Temperatura (°C)"].isin([20., 50.]))
-    ]
-    if not termicos.empty:
-        titulo("Comparación de tensiones y flechas por vano")
-        filas_termicas = [["Vano", "Estado", "Temp. °C",
-                           "T máxima (kN)", "H (kN)", "Flecha (m)"]]
-        for _, r in termicos.sort_values(
-                ["Vano", "Condición", "Temperatura (°C)"]).iterrows():
-            filas_termicas.append([
-                r["Vano"], r["Condición"],
-                _fmt(r["Temperatura (°C)"], 0),
-                _fmt(r["T máx. (kN)"], 4),
-                _fmt(r["H (kN)"], 4),
-                _fmt(r["Flecha (m)"], 4),
-            ])
-        datos_tabla(filas_termicas, [1.3, .9, .9, 1.2, 1.0, 1.1], compacto=True)
-        linea("Se incluyen las temperaturas disponibles de 20 y 50 °C. "
-              "Las restantes condiciones figuran en los anexos.", nota)
-    titulo("Resumen de resultados")
-    datos_tabla([
-        ["Estados calculados", "Tensión máxima (kN)",
-         "Flecha máxima (m)", "Máximo residual (m)"],
-        [str(len(tabla)), _fmt(tension, 4), _fmt(flecha, 4), _fmt(residuo)],
-    ], [1, 1, 1, 1])
-    if "Longitud natural fijada (m)" in tabla:
-        titulo("Tendido continuo - longitudes naturales por vano")
-        campos=["Sección","Condición","Vano","Luz (m)","Longitud natural fijada (m)"] if por_secciones else ["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
-        datos=tabla[campos].drop_duplicates(["Condición","Vano"])
-        filas=[(["Sección"] if por_secciones else []) + ["Condición","Vano","Luz (m)","L0 fijada (m)"]]
-        for _,fila in datos.iterrows():
-            filas.append(([fila["Sección"]] if por_secciones else []) + [
-                fila["Condición"],fila["Vano"],
-                _fmt(fila["Luz (m)"],2),
-                _fmt(fila["Longitud natural fijada (m)"],6),
-            ])
-        datos_tabla(filas,([.6] if por_secciones else [])+[1,1.7,1,1.3],compacto=True)
     historia.append(PageBreak())
 
     # Página 2: supuestos, ecuaciones y curvas sin estimaciones inventadas.
@@ -432,22 +488,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
 
     # Control explícito de las CINCO hipótesis documentadas CFE.
     # Si no existe una fila calculada, se informa SIN EVALUAR.
-    if propiedades_final and clima.get("viento_max_kmh") is not None:
-        from Analisis_mecanico_conductores.salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
-        clave = str(conductor).split()[-1].upper()
-        controles=[]
-        for nombre, tabla_grupo in (tabla.groupby("Sección", sort=False)
-                                    if por_secciones else [("S1", tabla)]):
-            control_seccion=verificar_cinco_hipotesis(
-                tabla_grupo, ruptura_kN=float(propiedades_final["ruptura_kN"]),
-                nombre_conductor=clave,
-                viento_max_kmh=float(clima["viento_max_kmh"]),
-                viento_reducido_kmh=float(clima.get("viento_reducido_kmh", 0.)),
-                hielo_mm=float(clima.get("hielo_mm", 0.)),
-            )
-            control_seccion.insert(0,"Sección",nombre)
-            controles.append(control_seccion)
-        control=pd.concat(controles, ignore_index=True)
+    if control is not None:
         historia.append(PageBreak())
         titulo("Control de las cinco hipótesis mecánicas CFE")
         linea("Se verifican dos magnitudes distintas: T total frente al "
@@ -558,57 +599,6 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 "Cotas y mínimos de naturaleza preliminar.", nota,
             )
 
-    # Red completa: sumas de fuerzas en cada apoyo, con referencia a los
-    # dos extremos del cable y las secciones de tendido del mismo modelo.
-    if puntos_apoyos is not None:
-        if not (propiedades_inicial and propiedades_final):
-            raise ValueError("Faltan propiedades para obtener fuerzas de apoyos")
-        from Analisis_mecanico_conductores.salidas.PDF.fuerzas_apoyos_cfe import (
-            calcular_fuerzas_por_apoyo, grafico_red_y_fuerzas,
-        )
-        detalles, fuerzas, envolventes = calcular_fuerzas_por_apoyo(
-            tabla,puntos_apoyos,{"Inicial":propiedades_inicial,
-                                "Final":propiedades_final},clima,
-        )
-        historia.append(PageBreak())
-        titulo("Red completa — geometría y esfuerzos vectoriales del conductor")
-        linea(
-            "Las flechas muestran componentes horizontales de las fuerzas "
-            "calculadas que ejercen los cables SOBRE cada apoyo en H4. "
-            "Cada vano conserva su propia tensión de tendido según su sección. "
-            "Las flechas están amplificadas para visualizar su dirección; "
-            "no representan desplazamientos de los postes.",nota,
-        )
-        figura_red=grafico_red_y_fuerzas(puntos_apoyos,detalles,fuerzas,
-                                         hipotesis="H4")
-        historia.append(Image(figura_red,width=245*mm,height=120*mm))
-        linea(
-            "ATENCIÓN: el viento CFE se evalúa transversalmente en cada vano "
-            "como envolvente local; las resultantes H4/H5 NO corresponden "
-            "necesariamente a un viento de azimut único sobre toda la red. "
-            "No incluyen peso ni viento del poste, cruceta o retenida.",nota,
-        )
-        titulo("Envolvente por apoyo — máxima resultante")
-        filas_env=[["Apoyo","Hipótesis","Fx (kN)","Fy (kN)","Fz (kN)",
-                    "|F| (kN)"]]
-        for _,r in envolventes.iterrows():
-            filas_env.append([
-                r["Apoyo"],r["Hipótesis"],
-                _fmt(r["Fx (kN)"],3),_fmt(r["Fy (kN)"],3),
-                _fmt(r["Fz (kN)"],3),_fmt(r["F resultante (kN)"],3),
-            ])
-        datos_tabla(filas_env,[1,1,1,1,1,1.1],compacto=True)
-        titulo("Resultantes por apoyo y cinco hipótesis CFE")
-        filas_f=[["Apoyo","Caso","Fx (kN)","Fy (kN)","Fz (kN)","|F| (kN)"]]
-        for _,r in fuerzas.iterrows():
-            filas_f.append([r["Apoyo"],r["Hipótesis"],
-                            _fmt(r["Fx (kN)"],3),_fmt(r["Fy (kN)"],3),
-                            _fmt(r["Fz (kN)"],3),_fmt(r["F resultante (kN)"],3)])
-        datos_tabla(filas_f,[1,1,1,1,1,1.1],compacto=True)
-        linea("Convención: ejes globales X/Y del Excel, Z positivo hacia arriba. "
-              "Las sumas vectoriales se realizan por apoyo y por caso; "
-              "no se suman máximos independientes de diferentes casos.",nota)
-
     # Láminas de catenaria EXACTA por vano: H ya calculada, misma carga
     # del motor. Contrasta flecha/desplazamiento con la tabla antes de dibujar.
     if geometria_xyz is not None:
@@ -706,11 +696,64 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     )
     historia.append(PageBreak())
 
+    # Anexos de trazabilidad: primero esfuerzos por caso y material fijado.
+    if puntos_apoyos is not None:
+        historia.append(PageBreak())
+        titulo("Anexo C — Resultantes vectoriales por apoyo y caso")
+        filas_f=[["Apoyo","Caso","Fx (kN)","Fy (kN)","Fz (kN)","|F| (kN)"]]
+        for _,r in fuerzas.iterrows():
+            filas_f.append([r["Apoyo"],r["Hipótesis"],
+                            _fmt(r["Fx (kN)"],3),_fmt(r["Fy (kN)"],3),
+                            _fmt(r["Fz (kN)"],3),_fmt(r["F resultante (kN)"],3)])
+        datos_tabla(filas_f,[1,1,1,1,1,1.1],compacto=True)
+        linea("Convención: ejes globales X/Y del Excel, Z positivo hacia arriba. "
+              "Las sumas vectoriales se realizan por apoyo y por caso; "
+              "no se suman máximos independientes de diferentes casos.",nota)
+
+    titulo("Anexo D — Referencias longitudinales por vano")
+    if "Longitud natural fijada (m)" in tabla:
+        titulo("Longitudes naturales de referencia fijadas por vano")
+        campos=["Sección","Condición","Vano","Luz (m)","Longitud natural fijada (m)"] if por_secciones else ["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
+        datos=tabla[campos].drop_duplicates(["Condición","Vano"])
+        filas=[(["Sección"] if por_secciones else []) + ["Condición","Vano","Luz (m)","L0 fijada (m)"]]
+        for _,fila in datos.iterrows():
+            filas.append(([fila["Sección"]] if por_secciones else []) + [
+                fila["Condición"],fila["Vano"],
+                _fmt(fila["Luz (m)"],2),
+                _fmt(fila["Longitud natural fijada (m)"],6),
+            ])
+        datos_tabla(filas,([.6] if por_secciones else [])+[1,1.7,1,1.3],compacto=True)
+    titulo("Anexo E — Comparación térmica por vano")
+    # Se extraen exclusivamente resultados ya existentes, sin recalcular.
+    termicos = tabla[
+        (tabla["Hipótesis"] == "Tabla térmica") &
+        (tabla["Viento (km/h)"] == 0) &
+        (tabla["Hielo (mm)"] == 0) &
+        (tabla["Temperatura (°C)"].isin([20., 50.]))
+    ]
+    if not termicos.empty:
+        titulo("Comparación de tensiones y flechas por vano")
+        filas_termicas = [["Vano", "Estado", "Temp. °C",
+                           "T máxima (kN)", "H (kN)", "Flecha (m)"]]
+        for _, r in termicos.sort_values(
+                ["Vano", "Condición", "Temperatura (°C)"]).iterrows():
+            filas_termicas.append([
+                r["Vano"], r["Condición"],
+                _fmt(r["Temperatura (°C)"], 0),
+                _fmt(r["T máx. (kN)"], 4),
+                _fmt(r["H (kN)"], 4),
+                _fmt(r["Flecha (m)"], 4),
+            ])
+        datos_tabla(filas_termicas, [1.3, .9, .9, 1.2, 1.0, 1.1], compacto=True)
+        linea("Se incluyen las temperaturas disponibles de 20 y 50 °C. "
+              "Las restantes condiciones figuran en los anexos.", nota)
+    historia.append(PageBreak())
+
     # Anexos separados por estado, para evitar una página final de una sola fila.
     for indice, estado in enumerate(("Inicial", "Final")):
         if indice:
             historia.append(PageBreak())
-        titulo("Anexo " + ("A" if indice == 0 else "B") +
+        titulo("Anexo " + ("F" if indice == 0 else "G") +
                " - Resultados completos, condición " + estado.lower())
         subtabla = tabla[tabla["Condición"] == estado]
         if subtabla.empty:

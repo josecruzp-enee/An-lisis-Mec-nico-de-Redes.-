@@ -98,6 +98,32 @@ class ModuloUnoPdfYCatenaria(unittest.TestCase):
         self.assertGreater(len(PdfReader(BytesIO(pdf)).pages),0)
         pd.testing.assert_frame_equal(tabla,original)
 
+    def test_resumen_ejecutivo_antes_de_anexos(self):
+        resumen=pd.DataFrame([
+            {"Condición":"Inicial","H_50_kN":2.,"parametro_P_m":800.,
+             "hipotesis_gobernante":"Caso A","relacion_critica":.95},
+            {"Condición":"Final","H_50_kN":2.,"parametro_P_m":800.,
+             "hipotesis_gobernante":"Caso B","relacion_critica":.95},
+        ])
+        rows=[]
+        for condicion in ("Inicial","Final"):
+            for temp in (0.,16.,20.,50.):
+                rows.append({"Condición":condicion,"Hipótesis":"Tabla térmica",
+                             "Temperatura (°C)":temp,"Viento (km/h)":0.,
+                             "Hielo (mm)":0.,"Vano":"A → B","Luz (m)":50.,
+                             "P a 50 °C (m)":800.,"H (kN)":2.,
+                             "T máx. (kN)":2.01,"Flecha (m)":.3,
+                             "Lateral (m)":0.,"Residual (m)":1e-9})
+        resultado=generar_pdf_corrida_cfe(
+            resumen=resumen,tabla=pd.DataFrame(rows),
+            conductor="1/0 RAVEN",fuente_material="CFE",
+        )
+        txt=[" ".join(page.extract_text() or "" for page in PdfReader(BytesIO(resultado)).pages)]
+        self.assertIn("RESUMEN EJECUTIVO",txt[0])
+        self.assertIn("Resultado general de la línea",txt[0])
+        self.assertLess(txt[0].index("Resultado general de la línea"),
+                        txt[0].index("Datos generales"))
+
     def test_pdf_rechaza_casos_sin_resultados(self):
         with self.assertRaises(ValueError):
             generar_pdf_corrida_cfe(
