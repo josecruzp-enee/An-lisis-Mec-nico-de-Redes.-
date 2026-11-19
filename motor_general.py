@@ -13,7 +13,7 @@ def ejecutar_modulo(nombre: str, *args, **kwargs):
     elif nombre == "conductores":
         from Analisis_mecanico_conductores.tension_tendido.ejecutar_analisis_integral_de_conductores import ejecutar_analisis_integral as ejecutar
     elif nombre == "cfe":
-        from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import ejecutar_corridas_cfe_por_vano as ejecutar
+        from Analisis_mecanico_conductores.motor_conductores import ejecutar_motor_conductores as ejecutar
     else:
         raise ValueError(f"Módulo desconocido: {nombre!r}")
     return ejecutar(*args, **kwargs)

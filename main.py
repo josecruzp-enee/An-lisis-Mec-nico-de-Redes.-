@@ -697,41 +697,12 @@ def main() -> None:
     else:
         st.info("Cargá el Excel de puntos para iniciar el análisis mecánico CFE.")
 
-    st.divider()
-    st.subheader("Herramientas complementarias")
     st.caption(
-        "Estas operaciones se activan solo si se necesitan; no son "
-        "cuatro motores físicos equivalentes ni sustituyen el flujo "
-        "principal CFE. Conservan sus validaciones y resultados."
+        "El cálculo ordinario usa un solo motor con las cinco hipótesis CFE. "
+        "Las formulaciones históricas, BVP y red global permanecen en el "
+        "repositorio para diagnóstico y validación; no se mezclan "
+        "automáticamente en la corrida principal."
     )
-
-    if st.checkbox(
-        "Regulación general y barrido BVP 3D",
-        key="flujo_unico_regulacion",
-        help="Utiliza el mismo Excel de puntos del análisis principal.",
-    ):
-        if archivo is None:
-            st.info("Para la regulación general, cargá primero el Excel de puntos.")
-        else:
-            _mostrar_regulacion_complementaria(archivo)
-
-    if st.checkbox(
-        "Tendido inverso de un vano (herramienta especializada)",
-        key="flujo_unico_inverso",
-    ):
-        from Analisis_mecanico_conductores.interfaz.mostrar_tendido_inverso_un_vano import (
-            mostrar_tendido_inverso,
-        )
-        mostrar_tendido_inverso()
-
-    if st.checkbox(
-        "Conectividad y equilibrio de red (modelo parcial)",
-        key="flujo_unico_red",
-    ):
-        from Analisis_mecanico_conductores.interfaz.mostrar_red_global import (
-            mostrar_modelo_red,
-        )
-        mostrar_modelo_red()
 
 
 if __name__ == "__main__":

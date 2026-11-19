@@ -185,23 +185,32 @@ Streamlit: app.py -> main.py
 - Las propiedades de catalogación ACSR se comparten con `comun/`. El archivo `validaciones/validar_datos_fisicos.py` reexporta validadores compartidos para compatibilidad; **no crea otra física**.
 - El historial del código se conserva en Git. No borrar funciones de referencia, rutas no usadas en la pantalla principal o ensayos por el solo hecho de no tener consumidor directo en `main.py`.
 
-### Flujo de usuario unificado (interfaz)
+### Motor único operativo del Módulo 1
 
-`main.py::main` presenta **una sola pantalla de trabajo**, con un Excel de puntos
-compartido para la ruta principal CFE y la regulación general. La ruta
-principal sigue `leer_puntos_excel → mostrar_corridas_cfe →
-motor_general.ejecutar_modulo("cfe") → ejecutar_corridas_cfe_por_vano`.
+La ruta principal tiene **un único coordinador**:
+`motor_general.ejecutar_modulo("cfe")` →
+`Analisis_mecanico_conductores/motor_conductores.py::ejecutar_motor_conductores` →
+`ejecutar_corridas_cfe_por_vano` → evaluadores, catenaria,
+compatibilidad, cinco hipótesis y tablas.
 
-La regulación general y el barrido BVP, el tendido inverso univano y el
-modelo de red están disponibles como **herramientas complementarias optativas**
-en la misma pantalla; ya no se presentan como cuatro modos mutuamente
-excluyentes en un selector lateral. El tendido inverso y la red mantienen
-sus propias plantillas Excel porque requieren conexiones o hipótesis
-específicas que no necesariamente están presentes en la hoja de puntos.
-
-Esta unificación es **de navegación y entrada compartida**, no una afirmación
-de equivalencia física o integración automática de todos los solucionadores.
-No se han modificado las ecuaciones ni las condiciones de validez.
+- El flujo principal usa **presiones tabuladas CFE por claro**; no ofrece
+  cuatro procedimientos de cálculo elegibles por separado en `main.py`.
+- Las **cinco hipótesis CFE son restricciones** aplicadas a la misma
+  ejecución, no motores matemáticos alternativos.
+- Todos los estados de **cada condición** (inicial/final) conservan sus
+  longitudes naturales fijadas por vano durante el barrido climático.
+- Las condiciones **inicial y final** se obtienen con fichas y
+  longitudes naturales diferentes. El código **no ha validado una ley de
+  evolución constitutiva de creep** que una ambas condiciones. El motor
+  registra expresamente esa limitación y comprueba residuales por vano;
+  **no declara consistencia material integral** únicamente porque una
+  tensión extrema coincida.
+- El BVP no lineal, la regulación general, el tendido inverso y el
+  ensamblador global permanecen disponibles como implementaciones
+  internas para sus pruebas y futura integración, **sin alterar ecuaciones**.
+  La entrada ordinaria en `main.py` ya no los ofrece como recorridos
+  independientes. No se han integrado todavía como un mismo modelo
+  físico y estructural.
 
 ## 9. Ejecución y pruebas
 
