@@ -5,26 +5,28 @@ on:
     branches: [main]
     paths:
       - 'Analisis_mecanico_conductores/**'
+      - 'Analisis_mecanico_estructuras/**'
+      - 'comun/**'
+      - 'motor_general.py'
       - 'calculos/**'
-      - 'analisis/**'
       - 'entradas/**'
       - 'tests/**'
       - 'tools/**'
       - 'main.py'
       - 'app.py'
-      - 'salidas/**'
       - '.github/workflows/pruebas_motor.yml'
   pull_request:
     branches: [main]
     paths:
       - 'Analisis_mecanico_conductores/**'
+      - 'Analisis_mecanico_estructuras/**'
+      - 'comun/**'
+      - 'motor_general.py'
       - 'calculos/**'
-      - 'analisis/**'
       - 'entradas/**'
       - 'tests/**'
       - 'main.py'
       - 'app.py'
-      - 'salidas/**'
       - 'requirements.txt'
       - 'tools/**'
       - '.github/workflows/pruebas_motor.yml'
@@ -54,4 +56,4 @@ jobs:
           python -m pip install ruff
           ruff check . --select F401,F841 --output-format concise || true
       - name: Compilación sintáctica
-        run: python -m compileall -q Analisis_mecanico_conductores calculos entradas main.py
+        run: python -m compileall -q Analisis_mecanico_conductores Analisis_mecanico_estructuras comun calculos entradas motor_general.py main.py

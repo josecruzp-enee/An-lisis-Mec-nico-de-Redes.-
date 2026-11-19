@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 IGNORADOS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache"}
 INICIOS = {"main", "app", "mapa_proyecto"}
 CARPETAS_FUNCIONALES = {
-    "Analisis_mecanico_conductores", "analisis", "calculos", "entradas", "salidas"
+    "Analisis_mecanico_conductores", "Analisis_mecanico_estructuras",
+    "comun", "calculos", "entradas"
 }
 
 
