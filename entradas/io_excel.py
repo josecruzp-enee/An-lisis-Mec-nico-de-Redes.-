@@ -1,6 +1,5 @@
 
-# analisis/io_excel.py
-# -*- coding: utf-8 -*-
+# Entrada común de puntos georreferenciados; sin cálculos mecánicos.
 """
 Importación y normalización de puntos desde Excel.
 
