@@ -518,12 +518,38 @@ def ejecutar_corridas_cfe_por_vano(
         longitudes_fijadas=longitudes_fijadas,
         modelo_presion_cfe=modelo_presion_cfe,
     )
+    # Diagnostico del acoplamiento REAL publicado, no solo del optimizador.
+    # El ajuste experimental utiliza alpha_final para buscar la referencia
+    # inicial, mientras las tablas iniciales usan alpha_inicial. Por eso
+    # pueden diferir las tensiones extremas de las tablas emitidas.
+    extremo_final=next(h for h in fin if h.temperatura_C == -10. and "reducido" in h.nombre.lower())
+    t_extremos={}
+    for condicion in ("Inicial","Final"):
+        ev=_evaluador(xyz,propiedades,condicion,Cd,rho_kg_m3,
+                      longitudes_fijadas=longitudes_fijadas[condicion],
+                      modelo_presion_cfe=modelo_presion_cfe)
+        referencia=referencia_inicial if condicion == "Inicial" else referencia_final
+        _,ts,_,_,_=ev.evaluar_estado_con_hielo(
+            referencia["H_50_kN"],extremo_final.temperatura_C,
+            extremo_final.viento_kmh/3.6,extremo_final.hielo_mm,
+            densidad_hielo_kg_m3,
+        )
+        t_extremos[condicion]=max(map(float,ts))
+    diferencia_publicada=abs(t_extremos["Inicial"]-t_extremos["Final"])
+    diferencia_pct=100.*diferencia_publicada/max(t_extremos["Final"],1e-12)
+    tolerancia_acoplamiento_kN=max(1e-5,1e-6*t_extremos["Final"])
+    acoplamiento_publicado_cumple=diferencia_publicada<=tolerancia_acoplamiento_kN
     resumen=pd.DataFrame([
         {"Condición":"Inicial — vinculada por tensión extrema final",
          "Hipótesis aplicadas":"; ".join(h.nombre for h in ini),**referencia_inicial},
         {"Condición":"Final — referencia climática (sin creep validado)",
          "Hipótesis aplicadas":"; ".join(h.nombre for h in fin),**referencia_final},
     ])
+    resumen["Tensión extrema real inicial H4 (kN)"]=[t_extremos["Inicial"]]*2
+    resumen["Tensión extrema real final H4 (kN)"]=[t_extremos["Final"]]*2
+    resumen["Diferencia real de acoplamiento H4 (kN)"]=[diferencia_publicada]*2
+    resumen["Diferencia real de acoplamiento H4 (%)"]=[diferencia_pct]*2
+    resumen["Igualdad extrema publicada verificada"]=[acoplamiento_publicado_cumple]*2
     resumen["Claro regla convencional orientativo (m)"]=claro_regla_m
     resumen["Número de vanos"]=len(luces)
     # Diagnóstico, NO ley de creep: diferencias geométricas/constitutivas
