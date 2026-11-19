@@ -185,6 +185,24 @@ Streamlit: app.py -> main.py
 - Las propiedades de catalogación ACSR se comparten con `comun/`. El archivo `validaciones/validar_datos_fisicos.py` reexporta validadores compartidos para compatibilidad; **no crea otra física**.
 - El historial del código se conserva en Git. No borrar funciones de referencia, rutas no usadas en la pantalla principal o ensayos por el solo hecho de no tener consumidor directo en `main.py`.
 
+### Flujo de usuario unificado (interfaz)
+
+`main.py::main` presenta **una sola pantalla de trabajo**, con un Excel de puntos
+compartido para la ruta principal CFE y la regulación general. La ruta
+principal sigue `leer_puntos_excel → mostrar_corridas_cfe →
+motor_general.ejecutar_modulo("cfe") → ejecutar_corridas_cfe_por_vano`.
+
+La regulación general y el barrido BVP, el tendido inverso univano y el
+modelo de red están disponibles como **herramientas complementarias optativas**
+en la misma pantalla; ya no se presentan como cuatro modos mutuamente
+excluyentes en un selector lateral. El tendido inverso y la red mantienen
+sus propias plantillas Excel porque requieren conexiones o hipótesis
+específicas que no necesariamente están presentes en la hoja de puntos.
+
+Esta unificación es **de navegación y entrada compartida**, no una afirmación
+de equivalencia física o integración automática de todos los solucionadores.
+No se han modificado las ecuaciones ni las condiciones de validez.
+
 ## 9. Ejecución y pruebas
 
 Desde la raíz del repositorio:

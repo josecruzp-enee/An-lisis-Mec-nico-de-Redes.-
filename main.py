@@ -494,41 +494,9 @@ def mostrar_kpis(res: Dict[str, Any]) -> None:
 # ============================================================
 # Main
 # ============================================================
-def main() -> None:
-    st.set_page_config(page_title="Análisis Mecánico", layout="wide")
-    modo = st.sidebar.radio(
-        "Módulo de análisis",
-        ["CFE — cálculo por vano",
-         "Etapa 1 — conductores",
-         "Tendido inverso — hipótesis climáticas",
-         "Red completa — conectividad"],
-    )
-    if modo == "CFE — cálculo por vano":
-        st.title("Análisis mecánico CFE — validación por vano")
-        archivo = ui_cargar_excel()
-        if archivo is None:
-            st.stop()
-        try:
-            puntos = leer_puntos_excel(archivo)
-            from Analisis_mecanico_conductores.interfaz.mostrar_corridas_cfe_documentadas import (
-                mostrar_corridas_cfe,
-            )
-            mostrar_corridas_cfe(puntos)
-        except (ValueError, KeyError, TypeError) as exc:
-            st.error(f"Datos de geometría inválidos: {exc}")
-        return
-    if modo == "Red completa — conectividad":
-        from Analisis_mecanico_conductores.interfaz.mostrar_red_global import mostrar_modelo_red
-        st.title("Modelo mecánico de una red completa")
-        mostrar_modelo_red()
-        return
-    if modo == "Tendido inverso — hipótesis climáticas":
-        from Analisis_mecanico_conductores.interfaz.mostrar_tendido_inverso_un_vano import mostrar_tendido_inverso
-        st.title("Análisis Mecánico — Tensión y tabla de tendido")
-        mostrar_tendido_inverso()
-        return
-
-    st.title("Etapa 1 — Análisis mecánico de conductores")
+def _mostrar_regulacion_complementaria(archivo) -> None:
+    """Vista complementaria: conserva el flujo y cálculos ya existentes."""
+    st.subheader("Regulación general y verificación complementaria")
     st.info(
         "Etapa 1: tensiones y flechas por vano nivelado o desnivelado. "
         "El modelo 3D calcula las tensiones finales por cambio de estado "
@@ -554,10 +522,6 @@ def main() -> None:
             "resuelve el cambio de estado independiente de cada vano, "
             "incluidos los desniveles XYZ. No calcula fuerzas en postes."
         )
-    archivo = ui_cargar_excel()
-    if not archivo:
-        st.stop()
-
     try:
         df = leer_puntos_excel(archivo)
         # Activación explícita para no mezclar un segundo modelo en el
@@ -703,6 +667,71 @@ def main() -> None:
     except (ValueError,TypeError,KeyError) as e:
         st.warning(f"Cálculo mecánico pendiente: {e}")
         st.caption("El resumen geométrico no equivale a tensión o flecha calculada.")
+
+
+def main() -> None:
+    """Un único recorrido visible con operaciones adicionales optativas.
+
+    La interfaz no fusiona ecuaciones físicamente diferentes ni altera los
+    contratos de Excel de la red y del tendido inverso.
+    """
+    st.set_page_config(page_title="Análisis Mecánico", layout="wide")
+    st.title("Análisis mecánico de redes de distribución")
+    st.caption(
+        "Flujo principal: geometría → conductor → hipótesis CFE → "
+        "tendido y fijación por vano → tensiones y flechas → memoria. "
+        "Los modelos especializados permanecen disponibles sin cambiar "
+        "sus ecuaciones ni sus entradas."
+    )
+    archivo = ui_cargar_excel()
+    if archivo is not None:
+        try:
+            puntos = leer_puntos_excel(archivo)
+        except (ValueError, KeyError, TypeError) as exc:
+            st.error(f"Datos de geometría inválidos: {exc}")
+        else:
+            from Analisis_mecanico_conductores.interfaz.mostrar_corridas_cfe_documentadas import (
+                mostrar_corridas_cfe,
+            )
+            mostrar_corridas_cfe(puntos)
+    else:
+        st.info("Cargá el Excel de puntos para iniciar el análisis mecánico CFE.")
+
+    st.divider()
+    st.subheader("Herramientas complementarias")
+    st.caption(
+        "Estas operaciones se activan solo si se necesitan; no son "
+        "cuatro motores físicos equivalentes ni sustituyen el flujo "
+        "principal CFE. Conservan sus validaciones y resultados."
+    )
+
+    if st.checkbox(
+        "Regulación general y barrido BVP 3D",
+        key="flujo_unico_regulacion",
+        help="Utiliza el mismo Excel de puntos del análisis principal.",
+    ):
+        if archivo is None:
+            st.info("Para la regulación general, cargá primero el Excel de puntos.")
+        else:
+            _mostrar_regulacion_complementaria(archivo)
+
+    if st.checkbox(
+        "Tendido inverso de un vano (herramienta especializada)",
+        key="flujo_unico_inverso",
+    ):
+        from Analisis_mecanico_conductores.interfaz.mostrar_tendido_inverso_un_vano import (
+            mostrar_tendido_inverso,
+        )
+        mostrar_tendido_inverso()
+
+    if st.checkbox(
+        "Conectividad y equilibrio de red (modelo parcial)",
+        key="flujo_unico_red",
+    ):
+        from Analisis_mecanico_conductores.interfaz.mostrar_red_global import (
+            mostrar_modelo_red,
+        )
+        mostrar_modelo_red()
 
 
 if __name__ == "__main__":
