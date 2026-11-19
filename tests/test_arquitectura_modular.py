@@ -77,6 +77,27 @@ class TestArquitecturaModular(unittest.TestCase):
         self.assertIs(comun, modulo1)
         self.assertIs(comun, antiguo)
 
+    def test_entradas_no_dependen_de_interfaz_ni_motor_general(self):
+        """La lectura del Módulo 1 es reutilizable sin Streamlit."""
+        for archivo in (M1 / "entradas").rglob("*.py"):
+            arbol = ast.parse(archivo.read_text(encoding="utf-8-sig"))
+            for nodo in ast.walk(arbol):
+                if isinstance(nodo, ast.ImportFrom):
+                    nombre = nodo.module or ""
+                    self.assertFalse(
+                        nombre.startswith("Analisis_mecanico_conductores.interfaz")
+                        or nombre == "motor_general",
+                        f"{archivo}: dependencia de capa superior {nombre}",
+                    )
+                elif isinstance(nodo, ast.Import):
+                    for alias in nodo.names:
+                        self.assertFalse(
+                            alias.name.startswith("Analisis_mecanico_conductores.interfaz")
+                            or alias.name == "motor_general",
+                            f"{archivo}: dependencia de capa superior {alias.name}",
+                        )
+        self.assertTrue((M1 / "entradas/hipotesis_tendido.py").is_file())
+
     def test_motor_general_no_acepta_modulos_desconocidos(self):
         from motor_general import ejecutar_modulo
         with self.assertRaises(ValueError):

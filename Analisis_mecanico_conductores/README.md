@@ -119,10 +119,10 @@ poste, libramiento topográfico ni creep por cambio de módulo.
 
 ## Dependencias y compatibilidad
 
-Las rutas anteriores en `calculos/` y `entradas/` **no contienen ya
-los motores listados arriba**: son archivos pequeños que importan
-los mismos objetos desde este paquete. Conservan los importadores
-existentes mientras se adapta el software.
+Los cálculos de red pertenecen a `calculos/` dentro de este módulo.
+Las entradas específicas están en `entradas/`, sin depender de Streamlit.
+Los recursos comunes siguen en `comun/` y en la carpeta raíz `entradas/`.
+La aplicación coordina ambos módulos desde `motor_general.py`.
 
 No eliminar ni introducir nuevas ecuaciones en esos adaptadores.
 Para realizar un cambio técnico, editar únicamente la implementación

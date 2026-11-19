@@ -13,13 +13,13 @@ app.py → main.py → motor_general.py
                          │   └── salidas/PDF/
                          └── Analisis_mecanico_estructuras/
                              ├── entradas/
-                             ├── Analisis_mecanico_conductores/calculos/
+                             ├── calculos/
                              ├── motor.py
                              └── salidas/
 
 comun/         Catálogos ACSR compartidos y validación física única
 Analisis_mecanico_conductores/calculos/    Modelo de red, equilibrio, hipótesis y barrido global
-entradas/      Solo importación Excel, validación y contratos de red (sin interfaces ni catálogos duplicados)
+entradas/      Lectura Excel y validación compartida (sin interfaz ni catálogos duplicados)
 tests/         Pruebas de integración y regresión
 tools/         Auditoría estática reproducible
 ```

@@ -14,35 +14,12 @@ import streamlit as st
 
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.referencias_mecanicas_acsr_nexans import referencia_mecanica_nexans
-from Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano import HipotesisTendido, dimensionar_tension_tendido
+from Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano import dimensionar_tension_tendido
 
 
-COLUMNAS_HIPOTESIS = (
-    "Hipotesis", "Temperatura_C", "Viento_ms", "Azimut_deg",
-    "T_limite_kN", "Fuente_limite", "Criterio_diseno",
+from Analisis_mecanico_conductores.entradas.hipotesis_tendido import (
+    COLUMNAS_HIPOTESIS, leer_hipotesis_tabla,
 )
-
-
-def leer_hipotesis_tabla(tabla):
-    if not isinstance(tabla,pd.DataFrame) or tabla.empty:
-        raise ValueError("Hoja Hipotesis vacía")
-    falta=[c for c in COLUMNAS_HIPOTESIS if c not in tabla]
-    if falta:
-        raise ValueError("Hoja Hipotesis: faltan "+", ".join(falta))
-    if tabla[list(COLUMNAS_HIPOTESIS)].isna().any().any():
-        raise ValueError("Hoja Hipotesis: campos incompletos")
-    return [
-        HipotesisTendido(
-            nombre=str(r["Hipotesis"]).strip(),
-            temperatura_C=float(r["Temperatura_C"]),
-            viento_ms=float(r["Viento_ms"]),
-            azimut_viento_deg=float(r["Azimut_deg"]),
-            tension_limite_kN=float(r["T_limite_kN"]),
-            fuente_limite=str(r["Fuente_limite"]).strip(),
-            criterio_diseno=str(r["Criterio_diseno"]).strip(),
-        ) for _,r in tabla.iterrows()
-    ]
-
 
 def plantilla_tendido():
     """Excel sin límites de diseño ficticios: celdas en blanco."""

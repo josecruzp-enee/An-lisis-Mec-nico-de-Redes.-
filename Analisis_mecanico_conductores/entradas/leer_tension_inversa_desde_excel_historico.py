@@ -17,7 +17,7 @@ import pandas as pd
 
 from Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano import dimensionar_tension_tendido
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
-from Analisis_mecanico_conductores.interfaz.mostrar_tendido_inverso_un_vano import leer_hipotesis_tabla
+from Analisis_mecanico_conductores.entradas.hipotesis_tendido import leer_hipotesis_tabla
 from comun.catalogos_conductores import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 

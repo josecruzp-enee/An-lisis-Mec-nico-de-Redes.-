@@ -16,7 +16,7 @@ from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import fin
 from comun.catalogos_conductores import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
-from motor_general import ejecutar_modulo
+from Analisis_mecanico_conductores.tension_tendido.ejecutar_analisis_integral_de_conductores import ejecutar_analisis_integral
 
 
 def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225, configuracion_barrido=None):
@@ -100,7 +100,7 @@ def ejecutar_regulacion_fase1(archivo, puntos, calibre, *, Cd=1.2, rho=1.225, co
     perfil_tension=str(fila.get("Perfil_Tension","Manual")).strip()
     hip_manual=(libro.parse("Hipotesis")
                 if perfil_tension.upper() in ("","MANUAL") else None)
-    return ejecutar_modulo("conductores",
+    return ejecutar_analisis_integral(
         puntos,
         propiedades={
             "peso_kN_m":peso,"diametro_m":diametro,
