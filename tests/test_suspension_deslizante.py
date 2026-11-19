@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 from calculos.modelo_red import RedMecanica
-from calculos.suspension_deslizante import resolver_seccion_deslizante
+from Analisis_mecanico_conductores.tension_tendido.resolver_seccion_deslizante_ideal import resolver_seccion_deslizante
 
 
 def ejemplo(luz2=40.,desnivel=0.,tipo="DESLIZANTE"):

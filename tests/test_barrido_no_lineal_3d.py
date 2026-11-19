@@ -8,7 +8,7 @@ import numpy as np
 
 from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano
-from calculos.catenaria import resolver_catenaria
+from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 
 
 def datos():
@@ -72,7 +72,7 @@ class BarridoNoLinealTest(unittest.TestCase):
 
     def test_solucion_sin_viento_se_reutiliza_entre_azimuts(self):
         from unittest.mock import patch
-        from calculos.cable_no_lineal import resolver_cable_no_lineal
+        from Analisis_mecanico_conductores.catenaria.resolver_cable_tridimensional_bvp import resolver_cable_no_lineal
         vanos,args=datos()
         args.update(direcciones_viento_deg=[0,90,180,270],
                     viento_min_ms=0,viento_max_ms=0)

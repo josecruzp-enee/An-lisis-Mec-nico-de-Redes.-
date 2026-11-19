@@ -4,8 +4,8 @@ import unittest
 
 import numpy as np
 
-from calculos.catenaria import resolver_catenaria
-from calculos.cambio_estado import resolver_cambio_estado, longitud_natural
+from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
+from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import resolver_cambio_estado, longitud_natural
 from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_catenaria_3d import ejecutar_barrido_3d
 
 

@@ -18,10 +18,10 @@ import numpy as np
 from scipy.optimize import least_squares
 
 from .modelo_red import RedMecanica
-from .catenaria import resolver_catenaria
-from .cambio_estado import longitud_natural
-from .cable_no_lineal import resolver_cable_no_lineal
-from .suspension_deslizante import resolver_seccion_deslizante
+from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
+from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import longitud_natural
+from Analisis_mecanico_conductores.catenaria.resolver_cable_tridimensional_bvp import resolver_cable_no_lineal
+from Analisis_mecanico_conductores.tension_tendido.resolver_seccion_deslizante_ideal import resolver_seccion_deslizante
 from .validacion_mecanica import finito, vector3
 
 

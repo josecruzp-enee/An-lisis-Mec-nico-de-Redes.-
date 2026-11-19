@@ -7,8 +7,8 @@ perpendicular a la tangente LOCAL en los estados con viento.
 import unittest
 import numpy as np
 
-from calculos.catenaria import resolver_catenaria
-from calculos.cable_no_lineal import resolver_cable_no_lineal
+from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
+from Analisis_mecanico_conductores.catenaria.resolver_cable_tridimensional_bvp import resolver_cable_no_lineal
 
 
 def resolver(**cambios):

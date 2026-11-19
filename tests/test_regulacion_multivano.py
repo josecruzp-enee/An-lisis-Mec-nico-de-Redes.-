@@ -5,7 +5,7 @@ Todos los datos de los ensayos son SINTÉTICOS.
 import unittest
 import numpy as np
 import pandas as pd
-from calculos.cambio_estado import vano_regulador
+from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import vano_regulador
 from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import resolver_seccion_regulacion
 from Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano import HipotesisTendido, dimensionar_tension_tendido
 

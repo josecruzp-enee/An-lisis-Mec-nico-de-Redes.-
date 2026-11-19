@@ -9,9 +9,9 @@ curvas constitutivas reales ACSR.
 import unittest
 import numpy as np
 
-from calculos.cambio_estado import resolver_cambio_estado
-from calculos.catenaria import resolver_catenaria
-from calculos.cable_no_lineal import resolver_cable_no_lineal
+from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import resolver_cambio_estado
+from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
+from Analisis_mecanico_conductores.catenaria.resolver_cable_tridimensional_bvp import resolver_cable_no_lineal
 
 
 class ContrasteCambioEstadoBVP(unittest.TestCase):
