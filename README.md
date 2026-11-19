@@ -48,6 +48,6 @@ python tools/auditar_codigo.py
 python -m compileall -q Analisis_mecanico_conductores Analisis_mecanico_estructuras comun calculos entradas motor_general.py main.py
 ```
 
-Las pruebas automáticas de GitHub incluyen una regla explícita de ausencia de importaciones cruzadas entre módulos. Consulta `ayuda/DEPURACION_PRE_MODULO_2.md` para el historial de migración.
+Las pruebas automáticas de GitHub incluyen una regla explícita de ausencia de importaciones cruzadas entre módulos. Consulta `ayuda/METODOLOGIA_MECANICA.md` para la metodología y los límites; el historial de migración se conserva en Git.
 
 **La cantidad de archivos no es un criterio de calidad:** las pruebas, catálogos trazables, cálculos históricos útiles y ejemplos se conservan. Solo se retiran duplicaciones y rutas obsoletas después de comprobar consumidores y equivalencia.
