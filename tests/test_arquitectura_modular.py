@@ -62,6 +62,20 @@ class TestArquitecturaModular(unittest.TestCase):
             with self.subTest(nombre=nombre):
                 self.assertTrue((ROOT / "calculos" / f"{nombre}.py").is_file())
 
+    def test_entradas_raiz_sin_catalogos_ni_interfaces_heredadas(self):
+        esperados = {
+            "__init__.py", "io_excel.py", "validacion_entrada.py",
+            "importar_red.py", "importar_hipotesis_red.py",
+        }
+        encontrados = {p.name for p in (ROOT / "entradas").glob("*.py")}
+        self.assertEqual(encontrados, esperados)
+        self.assertTrue((M1 / "interfaz/mostrar_barrido_3d.py").is_file())
+        self.assertTrue((M1 / "interfaz/mostrar_red_global.py").is_file())
+        self.assertTrue((M1 / "entradas/catalogos/cfe_limitantes_estructuras_120kmh.csv").is_file())
+        self.assertTrue((M1 / "entradas/catalogos/cfe_limitantes_estructuras_H_120kmh.csv").is_file())
+        self.assertTrue((M2 / "entradas/catalogos_estructuras.py").is_file())
+        self.assertTrue((ROOT / "comun/catalogos_conductores.py").is_file())
+
     def test_catalogo_compartido_identico(self):
         from comun.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as comun
         from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as modulo1

@@ -17,9 +17,9 @@ app.py → main.py → motor_general.py
                              ├── motor.py
                              └── salidas/
 
-comun/         Catálogo físico compartido entre módulos, sin dependencia cruzada
+comun/         Catálogos ACSR compartidos y validación física única
 calculos/      Algoritmos globales y de red todavía en desarrollo
-entradas/      Interfaz y archivos de entrada comunes y de red
+entradas/      Solo importación Excel, validación y contratos de red (sin interfaces ni catálogos duplicados)
 tests/         Pruebas de integración y regresión
 tools/         Auditoría estática reproducible
 ```

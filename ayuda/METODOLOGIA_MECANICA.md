@@ -9,8 +9,8 @@ La aplicación se presenta desde `main.py`; `motor_general.py` coordina las llam
 - `Analisis_mecanico_conductores/`: catenaria, comportamiento termoelástico, hipótesis, tensiones, flechas, geometría y PDF.
 - `Analisis_mecanico_estructuras/`: entradas de postes, esfuerzos preliminares, retenidas, equilibrado, cimentación y salidas; **sin verificación estructural integral aprobada**.
 - `calculos/`: modelos de red y ensamblador global en desarrollo.
-- `comun/`: catálogo Viakon ACSR único compartido. Las fichas nominales no sustituyen módulos, coeficientes de dilatación o curvas de creep documentados.
-- `entradas/`: entradas comunes y conectividad de red.
+- `comun/`: catálogo Viakon ACSR único y alias históricos de conductor, más validación física compartida. Las fichas nominales no sustituyen módulos, coeficientes de dilatación o curvas de creep documentados.
+- `entradas/`: lectores y validación de Excel y contratos de conectividad de red; las interfaces están en el Módulo 1, las fichas de postes/retendidas en el Módulo 2 y las tablas CFE en las entradas del Módulo 1.
 
 La interfaz y el motor general deben pasar datos explícitos al módulo que corresponda; las conexiones entre etapas no autorizan emplear aproximaciones geométricas en lugar de resolver el equilibrio.
 
