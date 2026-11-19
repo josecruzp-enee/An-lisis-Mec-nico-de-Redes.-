@@ -256,3 +256,13 @@ La misma estructura física P3 es frontera de ambas secciones, pero no
 transfiere longitud natural entre ellas. La memoria PDF agrupa las
 secciones sin mezclar su tensión de tendido. Todavía no se certifica
 la capacidad estructural del poste ni sus retenidas.
+
+
+### Vista superior de apoyos y vanos
+
+La interfaz principal vuelve a mostrar el trazado en planta antes de
+las hipótesis climáticas. Dibuja los puntos X/Y del Excel, etiquetas de
+apoyos, claros horizontales y colores por sección de tendido; identifica
+remates sin inferir retenidas. El dibujo usa exactamente la segmentación
+`dividir_secciones_por_remates` del motor CFE y no modifica resultados
+mecánicos.

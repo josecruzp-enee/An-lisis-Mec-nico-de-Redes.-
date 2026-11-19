@@ -32,6 +32,25 @@ def mostrar_corridas_cfe(puntos):
         "P1 y último apoyo son remates por defecto; marcá SI en P3 "
         "si divide la línea. Cada sección se tiende independientemente."
     )
+    with st.expander("Vista superior — apoyos, vanos y remates", expanded=True):
+        try:
+            import matplotlib.pyplot as plt
+            from Analisis_mecanico_conductores.interfaz.trazado_geometrico_vanos import (
+                crear_figura_trazado,
+            )
+            figura, vanos_graficos, secciones_graficas = crear_figura_trazado(puntos)
+            st.pyplot(figura, use_container_width=True)
+            plt.close(figura)
+            st.dataframe(vanos_graficos, hide_index=True, use_container_width=True)
+            if len(secciones_graficas) > 1:
+                st.dataframe(secciones_graficas, hide_index=True, use_container_width=True)
+            st.caption(
+                "Croquis geométrico calculado desde el Excel. Las marcas de remate "
+                "son condiciones de conexión, no retenidas instaladas; "
+                "no representa deformaciones de postes ni cargas."
+            )
+        except (ValueError, KeyError, TypeError) as exc:
+            st.error(f"No se puede dibujar el trazado: {exc}")
     opciones=[(f["calibre"],f["nombre"]) for f in leer_catalogo_enee()
              if f["nombre"] in ("RAVEN","PIGEON","PARTRIDGE","LINNET","HAWK")]
     if not opciones:
