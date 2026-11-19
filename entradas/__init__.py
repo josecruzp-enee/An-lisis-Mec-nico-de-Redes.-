@@ -1,1 +1,1 @@
-"""Datos de entrada, catálogos y validaciones."""
+"""Lectores y validadores de entradas comunes y de red."""
