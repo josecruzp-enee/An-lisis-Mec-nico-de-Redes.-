@@ -48,4 +48,4 @@ Máximas diferencias por redondeo/tabulación: 0.51 kgf en H, 0.70 cm en flecha.
 - `ejecutar_analisis_integral(..., configuracion_cfe=...)`: opt-in; el solver histórico no cambia. Los valores no proporcionados quedan `NO VERIFICABLE`.
 - Pruebas en `tests/test_restricciones_cfe_documentadas.py` y `tests/test_regresion_catenaria_cfe_raven_50C.py`.
 
-**No se ha acreditado aún el cálculo completo de tensión de tendido inicial/final ni una solución constructiva ENEE. Ningún resultado provisional de los 5 vanos debe presentarse como diseño aprobado.**
+**Estado de aplicación:** el Módulo 1 ya implementa referencias inicial/final y verificaciones de las cinco hipótesis CFE, pero el acoplamiento constitutivo y la predicción de creep no están validados como ley material independiente. La extracción de estas tablas sigue siendo una referencia documental, no una aprobación constructiva ENEE. Ningún resultado provisional debe presentarse como diseño aprobado sin las verificaciones restantes.
