@@ -238,6 +238,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     historia.append(Spacer(1, 8*mm))
     historia.append(_p("MÓDULO 01 - ANÁLISIS MECÁNICO DE CONDUCTORES",
                       estilos["TituloM1"]))
+    linea("MEMORIA DE CÁLCULO INDEPENDIENTE")
     linea("RESUMEN EJECUTIVO · UNA SOLA LÍNEA / SECCIONES INDEPENDIENTES")
     titulo("Resultado general de la línea")
     linea(estado_ejecutivo)
@@ -313,7 +314,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                                 "Final":propiedades_final},clima,
         )
         historia.append(PageBreak())
-        titulo("Plano general de red y esfuerzos del conductor")
+        titulo("Red completa — plano general y esfuerzos del conductor")
         linea(
             "Las flechas muestran componentes horizontales de las fuerzas "
             "calculadas que ejercen los cables SOBRE cada apoyo en H4. "
@@ -330,7 +331,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
             "necesariamente a un viento de azimut único sobre toda la red. "
             "No incluyen peso ni viento del poste, cruceta o retenida.",nota,
         )
-        titulo("Fuerzas críticas por apoyo (envolvente H1–H5)")
+        titulo("Envolvente por apoyo — fuerzas críticas H1–H5")
         filas_env=[["Apoyo","Hipótesis","Fx (kN)","Fy (kN)","Fz (kN)",
                     "|F| (kN)"]]
         for _,r in envolventes.iterrows():
