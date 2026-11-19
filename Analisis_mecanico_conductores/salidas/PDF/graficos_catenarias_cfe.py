@@ -126,7 +126,20 @@ def graficar_perfiles_cfe(tabla: pd.DataFrame, xyz, propiedades: dict,
             lateral_min=min(lateral_min,float(np.min(lado)))
             lateral_max=max(lateral_max,float(np.max(lado)))
             ax.plot(recorrido,pos[:,2],color=color,ls=estilo,lw=1.7,
-                    label=f"{etiqueta} · f={flecha:.3f} m")
+                    label=(f"{etiqueta} · f={flecha:.3f} m · "
+                           f"T={float(row['T máx. (kN)']):.3f} kN"))
+            # Valor legible SOBRE la curva, en el punto de mayor flecha
+            # vertical relativo a la cuerda, calculado desde la geometría
+            # de la catenaria (sin supuesto parabólico).
+            cuerda_z=ini[2]+(fin[2]-ini[2])*(recorrido/horizontal)
+            pos_crit=int(np.argmax(cuerda_z-pos[:,2]))
+            ax.plot(recorrido[pos_crit],pos[pos_crit,2],"o",color=color,ms=3.5)
+            ax.annotate(f"f={flecha:.2f} m",
+                        (recorrido[pos_crit],pos[pos_crit,2]),
+                        xytext=(7, 7 if len(ax.lines)%2 else -10),
+                        textcoords="offset points",fontsize=7.1,color=color,
+                        bbox=dict(boxstyle="round,pad=0.12",
+                                  facecolor="white",edgecolor="none",alpha=.80))
             planta.plot(recorrido,lado,color=color,ls=estilo,lw=1.4)
         # Sólo apoyos reales: no inventar terreno ni despejes.
         ax.plot([0,horizontal],[ini[2],fin[2]],color="#777777",lw=.8,ls=":",

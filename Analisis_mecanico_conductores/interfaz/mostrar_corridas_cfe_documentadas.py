@@ -334,6 +334,7 @@ def mostrar_corridas_cfe(puntos):
             propiedades_inicial=ini,
             propiedades_final=fin,
             geometria_xyz=xyz_pdf,
+            puntos_apoyos=puntos_calculo,
             libramientos=tabla_libramientos,
             perfil_terreno=perfiles_terreno,
             clima={

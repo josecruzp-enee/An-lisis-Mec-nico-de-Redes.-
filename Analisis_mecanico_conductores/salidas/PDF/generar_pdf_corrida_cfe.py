@@ -148,7 +148,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                             proyecto: dict | None = None,
                             propiedades_inicial: dict | None = None,
                             propiedades_final: dict | None = None,
-                            geometria_xyz=None,
+                            geometria_xyz=None, puntos_apoyos=None,
                             libramientos=None, perfil_terreno=None) -> bytes:
     """Genera la memoria PDF desde DataFrames ya calculados, sin modificar valores."""
     if not isinstance(resumen, pd.DataFrame) or len(resumen) < 2 or len(resumen) % 2:
@@ -557,6 +557,57 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 _fmt(float(critico["Temperatura (°C)"]),0)+" °C. "+
                 "Cotas y mínimos de naturaleza preliminar.", nota,
             )
+
+    # Red completa: sumas de fuerzas en cada apoyo, con referencia a los
+    # dos extremos del cable y las secciones de tendido del mismo modelo.
+    if puntos_apoyos is not None:
+        if not (propiedades_inicial and propiedades_final):
+            raise ValueError("Faltan propiedades para obtener fuerzas de apoyos")
+        from Analisis_mecanico_conductores.salidas.PDF.fuerzas_apoyos_cfe import (
+            calcular_fuerzas_por_apoyo, grafico_red_y_fuerzas,
+        )
+        detalles, fuerzas, envolventes = calcular_fuerzas_por_apoyo(
+            tabla,puntos_apoyos,{"Inicial":propiedades_inicial,
+                                "Final":propiedades_final},clima,
+        )
+        historia.append(PageBreak())
+        titulo("Red completa — geometría y esfuerzos vectoriales del conductor")
+        linea(
+            "Las flechas muestran componentes horizontales de las fuerzas "
+            "calculadas que ejercen los cables SOBRE cada apoyo en H4. "
+            "Cada vano conserva su propia tensión de tendido según su sección. "
+            "Las flechas están amplificadas para visualizar su dirección; "
+            "no representan desplazamientos de los postes.",nota,
+        )
+        figura_red=grafico_red_y_fuerzas(puntos_apoyos,detalles,fuerzas,
+                                         hipotesis="H4")
+        historia.append(Image(figura_red,width=245*mm,height=120*mm))
+        linea(
+            "ATENCIÓN: el viento CFE se evalúa transversalmente en cada vano "
+            "como envolvente local; las resultantes H4/H5 NO corresponden "
+            "necesariamente a un viento de azimut único sobre toda la red. "
+            "No incluyen peso ni viento del poste, cruceta o retenida.",nota,
+        )
+        titulo("Envolvente por apoyo — máxima resultante")
+        filas_env=[["Apoyo","Hipótesis","Fx (kN)","Fy (kN)","Fz (kN)",
+                    "|F| (kN)"]]
+        for _,r in envolventes.iterrows():
+            filas_env.append([
+                r["Apoyo"],r["Hipótesis"],
+                _fmt(r["Fx (kN)"],3),_fmt(r["Fy (kN)"],3),
+                _fmt(r["Fz (kN)"],3),_fmt(r["F resultante (kN)"],3),
+            ])
+        datos_tabla(filas_env,[1,1,1,1,1,1.1],compacto=True)
+        titulo("Resultantes por apoyo y cinco hipótesis CFE")
+        filas_f=[["Apoyo","Caso","Fx (kN)","Fy (kN)","Fz (kN)","|F| (kN)"]]
+        for _,r in fuerzas.iterrows():
+            filas_f.append([r["Apoyo"],r["Hipótesis"],
+                            _fmt(r["Fx (kN)"],3),_fmt(r["Fy (kN)"],3),
+                            _fmt(r["Fz (kN)"],3),_fmt(r["F resultante (kN)"],3)])
+        datos_tabla(filas_f,[1,1,1,1,1,1.1],compacto=True)
+        linea("Convención: ejes globales X/Y del Excel, Z positivo hacia arriba. "
+              "Las sumas vectoriales se realizan por apoyo y por caso; "
+              "no se suman máximos independientes de diferentes casos.",nota)
 
     # Láminas de catenaria EXACTA por vano: H ya calculada, misma carga
     # del motor. Contrasta flecha/desplazamiento con la tabla antes de dibujar.
