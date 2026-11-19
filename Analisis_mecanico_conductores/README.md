@@ -48,7 +48,7 @@ Este documento describe **lo que realmente implementa el código**. Se distingue
 | **1. Leer geometría** | `A_i=(X_i,Y_i,Z_i)`, `L_i=sqrt((ΔX)^2+(ΔY)^2)`; rechazar vanos de luz cero y entradas parciales inconsistentes | `entradas/leer_datos_y_calcular_regulacion.py::ejecutar_regulacion_fase1`; `tension_tendido/calcular_tension_y_flechas_de_seccion.py::_geometria`; `geometria/resumir_vanos.py::resumen_geometrico` |
 | **2. Identificar conductor** | `EA = E·A` con conversión de unidades; seleccionar propiedades de una misma fuente para el estado inicial/final elegido | `conductores/seleccionar_propiedades_enee.py::seleccionar_conductor_enee`; `::seleccionar_desde_clave_viakon` |
 | **3. Preparar carga gravitatoria** | `q_g=(0,0,-w)` | `tension_tendido/evaluar_estados_de_la_seccion.py::calcular_cargas_transversales_por_vano` |
-| **4. Añadir viento convencional** | `w_v = 0.5·rho·Cd·D·V²/1000` [kN/m]; dirección perpendicular en planta a **cada** vano, no una dirección global constante | Misma función; opcionalmente `hipotesis_climaticas/presiones_cfe_por_claro.py::presion_cfe_por_claro` |
+| **4. Aplicar viento según el modo de cálculo** | **General:** `w_v = rho·Cd·D·V²/2000` [kN/m], sin dependencia explícita del claro. **CFE tabulado:** `w_v,i = p_CFE(L_i, V)·D/1000` [kN/m], con presión en Pa específica de la luz horizontal `L_i` de cada vano. En ambas rutas la carga convencional es perpendicular al vano en planta. | `tension_tendido/evaluar_estados_de_la_seccion.py::calcular_cargas_transversales_por_vano`; para CFE, `hipotesis_climaticas/presiones_cfe_por_claro.py::presion_cfe_por_claro` |
 | **5. Resolver catenaria exacta** | `a=H/|q|`; `z(x)=a[cosh((x-xc)/a)-cosh(xc/a)]`; `T(x)=H cosh((x-xc)/a)` | `catenaria/resolver_catenaria_exacta.py::resolver_catenaria`; métodos `Catenaria.puntos`, `.tension` |
 | **6. Fijar extremos desnivelados** | `xc=L/2 - a·asinh(Δz/[2a sinh(L/(2a))])`; la coordenada `z` es local y está orientada opuesta a `q` | `catenaria/resolver_catenaria_exacta.py::resolver_catenaria` |
 | **7. Obtener longitud de arco** | `S=2a sinh(L/(2a)) cosh((L/2-xc)/a)` | `catenaria/resolver_catenaria_exacta.py::Catenaria.longitud` |
@@ -69,6 +69,24 @@ Este documento describe **lo que realmente implementa el código**. Se distingue
 La **misma** `H_ref` propuesta sirve como condición de instalación para dimensionar todos los vanos. Después de fijarlos, **cada vano conserva su propia longitud natural** y el cambio de temperatura o viento produce tensiones individuales. El campo `vano_regulador_m` permanece únicamente por compatibilidad de salida histórica: **no condiciona las ecuaciones de este flujo**.
 
 La función `EvaluadorEstadosRegulacion.evaluar_estado` en `tension_tendido/evaluar_estados_de_la_seccion.py` conserva una **H común** por sección bajo guía ideal: constituye una formulación distinta, **no** la utilizada para el estado final de los vanos amarrados del paso 11.
+
+### 3.2 Selección correcta del viento para la ruta CFE
+
+**La ecuación aerodinámica general NO reproduce por sí sola las presiones CFE dependientes del claro.** Para reproducir esas tablas se activa explícitamente `modelo_presion_cfe=True`. La pantalla `interfaz/mostrar_corridas_cfe_documentadas.py` ya pasa ese parámetro al coordinador; en cambio, una invocación directa de `ejecutar_corridas_cfe_por_vano()` conserva `modelo_presion_cfe=False` como valor predeterminado y **no utiliza** las presiones tabuladas salvo que el llamador active la opción.
+
+Para la tabla registrada de CFE 05 00 03 (viento regional de 120 km/h):
+
+| Claro horizontal `L_i` | Presión máxima tabulada | Carga lineal sobre el conductor |
+|---:|---:|---|
+| 50 m | 414 Pa | `414·D/1000` kN/m |
+| 100 m | 386 Pa | `386·D/1000` kN/m |
+| 150 m | 368 Pa | `368·D/1000` kN/m |
+| 200 m | 355 Pa | `355·D/1000` kN/m |
+| 300 m | 337 Pa | `337·D/1000` kN/m |
+
+`presion_cfe_por_claro(L_i, velocidad_kmh)` devuelve presión en Pa para **120 km/h (máximo)** o **109 km/h (reducido)**, además de cero sin viento. Interpola linealmente entre claros documentados de **5 a 300 m**; **no extrapola** ni acepta otras velocidades. La presión ya incorpora el coeficiente CFE del conductor: **no se debe volver a multiplicar por `Cd` ni por `rho·V²/2`**. La carga para cada vano la aplica `calcular_cargas_transversales_por_vano()`.
+
+En la ruta CFE, las hipótesis de clima y el valor de viento reducido suministrado deben ser **compatibles con la tabla seleccionada**. Si se activa el modo tabulado para una velocidad distinta de las documentadas (excepto viento cero), el módulo rechaza el cálculo; no debe sustituirse en silencio por la fórmula general.
 
 ## 4. Recorrido específico: generación y verificación de tablas CFE
 
