@@ -196,9 +196,14 @@ def resolver_seccion_deslizante(
     longitud,cables,diferencia=resolver_configuracion(sol.x)
     err=float(np.max(np.abs(diferencia)))
     tol=finito(tolerancia_equilibrio_kN,"tolerancia",0,True)
-    if not sol.success or not np.isfinite(err) or err>tol:
+    # El indicador success del solver informa sobre progreso iterativo, no
+    # sustituye la verificacion fisica del equilibrio. Es posible alcanzar
+    # residuo de redondeo y obtener status=5 (sin progreso adicional).
+    if (not np.isfinite(err) or err > tol or
+        not np.isfinite(longitud).all() or (longitud <= 0).any() or
+        abs(float(np.sum(longitud)) - total) > 1e-8 * max(1., total)):
         raise ValueError(
-            f"Sección {seccion} sin equilibrio de tensión en guía: "
+            f"Sección {seccion} sin equilibrio/conservación de longitud: "
             f"{err:.6g} kN; estado solver: {sol.message}"
         )
     fuerzas={n:np.zeros(3) for n in red.apoyos}
