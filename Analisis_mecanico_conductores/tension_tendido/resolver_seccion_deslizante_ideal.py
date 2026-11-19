@@ -107,9 +107,6 @@ def resolver_seccion_deslizante(
     for nodo in desplazamientos:
         if nodo not in red.apoyos:
             raise ValueError(f"Desplazamiento de apoyo inexistente: {nodo}")
-    for v in red.vanos.values():
-        if (v.circuito,v.seccion_tendido)==(circuito,seccion):
-            continue
     nombre_cable=orden[0][0].conductor
     if nombre_cable not in materiales:
         raise ValueError("Propiedades del conductor inexistentes")
@@ -132,7 +129,6 @@ def resolver_seccion_deslizante(
         if i<len(orden)-1 and salida!="DESLIZANTE":
             raise ValueError("Solo se resuelve guía DESLIZANTE ideal")
     referencias=[]
-    extremos=[]
     puntos=[]
     for v,a,b,directo in orden:
         p=(np.asarray(red.apoyos[v.origen].base_m)
