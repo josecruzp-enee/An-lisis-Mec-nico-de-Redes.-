@@ -16,7 +16,9 @@ class ResumenGeométricoTest(unittest.TestCase):
         })
         r=resumen_geometrico(df)
         self.assertEqual(r["n_vanos"],2)
-        self.assertAlmostEqual(r["vano_regulador_m"],45.53,delta=.03)
+        self.assertEqual(len(r["tramos"]), 2)
+        self.assertAlmostEqual(float(r["tramos"]["Luz horizontal (m)"].iloc[0]), 45.53, delta=.03)
+        self.assertNotIn("vano_regulador_m", r)
         self.assertAlmostEqual(r["longitud_total_m"],91.06,delta=.05)
         self.assertEqual(len(r["tramos"]),2)
         self.assertFalse(r["nivelado_confirmado"])
@@ -29,7 +31,7 @@ class ResumenGeométricoTest(unittest.TestCase):
         })
         r=resumen_geometrico(df)
         self.assertTrue(r["nivelado_confirmado"])
-        self.assertAlmostEqual(r["vano_regulador_m"],40)
+        self.assertTrue((r["tramos"]["Luz horizontal (m)"] == 40).all())
 
     def test_different_height_not_treated_as_level(self):
         df=pd.DataFrame({
