@@ -6,7 +6,7 @@ import unittest
 
 import pandas as pd
 
-from calculos.resistencia_postes import (
+from Analisis_mecanico_estructuras.calculos.resistencia_postes import (
     cribar_resistencia_postes, resumen_resistencia_postes,
     validar_capacidades,
 )

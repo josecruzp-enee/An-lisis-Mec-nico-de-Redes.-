@@ -2,7 +2,7 @@
 import unittest
 import pandas as pd
 
-from calculos.analisis_retenidas_red import (
+from Analisis_mecanico_estructuras.calculos.analisis_retenidas_red import (
     leer_configuraciones_retenidas, evaluar_retenidas_en_barrido,
 )
 

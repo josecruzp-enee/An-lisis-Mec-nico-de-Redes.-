@@ -20,7 +20,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.optimize import lsq_linear
 
-from .validacion_mecanica import finito, vector3
+from comun.validacion_mecanica import finito, vector3
 
 
 @dataclass(frozen=True)

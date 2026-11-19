@@ -9,10 +9,10 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from calculos.verificacion_poste import (
+from Analisis_mecanico_estructuras.calculos.verificacion_poste import (
     calcular_secciones_poste, secciones_gobernantes,
 )
-from calculos.solicitaciones_poste import (
+from Analisis_mecanico_estructuras.calculos.solicitaciones_poste import (
     combinar_solicitaciones_postes,
 )
 

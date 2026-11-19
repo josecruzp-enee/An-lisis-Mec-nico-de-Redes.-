@@ -13,8 +13,8 @@ import math
 import numpy as np
 import pandas as pd
 
-from calculos.solicitaciones_poste import geometria_fuste
-from calculos.validacion_mecanica import finito
+from Analisis_mecanico_estructuras.calculos.solicitaciones_poste import geometria_fuste
+from comun.validacion_mecanica import finito
 
 
 def _cargas_fuste_sobre_corte(geometria, z_m, v_ms, azimut_deg,

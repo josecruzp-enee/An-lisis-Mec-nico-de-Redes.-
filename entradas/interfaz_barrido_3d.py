@@ -18,12 +18,12 @@ from calculos.diagnostico_tension_acsr import diagnosticar_tensiones, resumen_te
 from calculos.barrido_no_lineal_3d import ejecutar_barrido_no_lineal_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano
 from calculos.resumen_calidad_bvp import resumen_calidad_bvp
-from calculos.solicitaciones_poste import combinar_solicitaciones_postes
-from calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
-from calculos.resistencia_postes import (
+from Analisis_mecanico_estructuras.calculos.solicitaciones_poste import combinar_solicitaciones_postes
+from Analisis_mecanico_estructuras.calculos.verificacion_poste import calcular_secciones_poste, secciones_gobernantes
+from Analisis_mecanico_estructuras.calculos.resistencia_postes import (
     cribar_resistencia_postes, resumen_resistencia_postes, COLUMNAS_CAPACIDADES,
 )
-from calculos.analisis_retenidas_red import (
+from Analisis_mecanico_estructuras.calculos.analisis_retenidas_red import (
     leer_configuraciones_retenidas, evaluar_retenidas_en_barrido,
 )
 from calculos.envolventes_3d import (

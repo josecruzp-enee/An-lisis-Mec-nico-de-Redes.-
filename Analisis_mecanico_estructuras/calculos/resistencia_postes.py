@@ -19,7 +19,7 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 
-from .validacion_mecanica import finito
+from comun.validacion_mecanica import finito
 
 COLUMNAS_CAPACIDADES = (
     "Punto", "Altura_corte_m", "Mx_Rd_kNm", "My_Rd_kNm",

@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from calculos.solicitaciones_poste import (
+from Analisis_mecanico_estructuras.calculos.solicitaciones_poste import (
     geometria_fuste, viento_fuste, combinar_solicitaciones_postes,
 )
 from calculos.envolventes_3d import mayores_por_apoyo, envolventes_apoyos

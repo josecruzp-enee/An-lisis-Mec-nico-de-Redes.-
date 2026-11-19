@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from Analisis_mecanico_estructuras.entradas.norma_postes import obtener_ficha_poste
-from .validacion_mecanica import finito
+from comun.validacion_mecanica import finito
 
 
 def geometria_fuste(tipo_poste, empotramiento_m=None):

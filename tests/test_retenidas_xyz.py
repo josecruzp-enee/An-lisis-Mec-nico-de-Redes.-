@@ -2,7 +2,7 @@
 import unittest
 import numpy as np
 
-from calculos.retenidas_xyz import RetenidaXYZ, estudiar_equilibrio_retenidas
+from Analisis_mecanico_estructuras.calculos.retenidas_xyz import RetenidaXYZ, estudiar_equilibrio_retenidas
 
 
 class RetenidasXYZTest(unittest.TestCase):
