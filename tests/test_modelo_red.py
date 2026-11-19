@@ -1,7 +1,7 @@
 """Topología de secciones de tendido y conexiones mecánicas explícitas."""
 import unittest
 
-from calculos.modelo_red import RedMecanica
+from Analisis_mecanico_conductores.calculos.modelo_red import RedMecanica
 
 
 def ejemplo():

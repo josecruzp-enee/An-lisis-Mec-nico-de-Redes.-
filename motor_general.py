@@ -52,3 +52,9 @@ from Analisis_mecanico_estructuras.calculos.resistencia_postes import (
 from Analisis_mecanico_estructuras.calculos.analisis_retenidas_red import (
     leer_configuraciones_retenidas, evaluar_retenidas_en_barrido,
 )
+
+
+def calcular_hipotesis_red(*args, **kwargs):
+    """Coordina las hipótesis de la red del Módulo 1 sin alterar sus cálculos."""
+    from Analisis_mecanico_conductores.calculos.hipotesis_red import calcular_hipotesis_red as ejecutar
+    return ejecutar(*args, **kwargs)

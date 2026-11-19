@@ -31,8 +31,9 @@ class TestArquitecturaModular(unittest.TestCase):
                                                  f"{archivo}: importación cruzada {alias.name}")
 
     def test_sin_carpetas_historicas(self):
-        for ruta in ("analisis", "salidas", "calculos/engine.py",
-                     "calculos/fuerzas_nodo.py", "entradas/norma_postes.py"):
+        for ruta in ("analisis", "salidas", "calculos",
+                     "entradas/importar_red.py", "entradas/importar_hipotesis_red.py",
+                     "entradas/norma_postes.py"):
             self.assertFalse((ROOT / ruta).exists(), ruta)
 
     def test_salidas_y_entradas_por_modulo(self):
@@ -43,32 +44,21 @@ class TestArquitecturaModular(unittest.TestCase):
         self.assertTrue((M2 / "motor.py").is_file())
         self.assertTrue((ROOT / "motor_general.py").is_file())
 
-    def test_calculos_globales_sin_adaptadores_ni_estructuras(self):
-        # Los algoritmos globales se conservan; no se permite repoblar
-        # la carpeta con copias o adaptadores de los módulos.
-        eliminados = (
-            "analisis_retenidas_red", "resistencia_postes",
-            "retenidas_xyz", "solicitaciones_poste", "verificacion_poste",
-            "auditoria_cargas", "envolventes_3d", "catenaria",
-            "cambio_estado", "cable_no_lineal", "suspension_deslizante",
-            "barrido_no_lineal_3d", "diagnostico_tension_acsr",
-            "resumen_calidad_bvp", "validacion_mecanica",
-        )
-        for nombre in eliminados:
-            with self.subTest(nombre=nombre):
-                self.assertFalse((ROOT / "calculos" / f"{nombre}.py").exists())
+    def test_calculos_de_red_pertenecen_al_modulo_1(self):
+        self.assertFalse((ROOT / "calculos").exists())
         for nombre in ("modelo_red", "ensamblador_global",
                        "hipotesis_red", "barrido_global"):
             with self.subTest(nombre=nombre):
-                self.assertTrue((ROOT / "calculos" / f"{nombre}.py").is_file())
+                self.assertTrue((M1 / "calculos" / f"{nombre}.py").is_file())
 
     def test_entradas_raiz_sin_catalogos_ni_interfaces_heredadas(self):
         esperados = {
             "__init__.py", "io_excel.py", "validacion_entrada.py",
-            "importar_red.py", "importar_hipotesis_red.py",
         }
         encontrados = {p.name for p in (ROOT / "entradas").glob("*.py")}
         self.assertEqual(encontrados, esperados)
+        for nombre in ("importar_red.py", "importar_hipotesis_red.py"):
+            self.assertTrue((M1 / "entradas" / nombre).is_file())
         self.assertTrue((M1 / "interfaz/mostrar_barrido_3d.py").is_file())
         self.assertTrue((M1 / "interfaz/mostrar_red_global.py").is_file())
         self.assertTrue((M1 / "entradas/catalogos/cfe_limitantes_estructuras_120kmh.csv").is_file())

@@ -10,12 +10,12 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 
-from entradas.importar_red import leer_red_excel
-from entradas.importar_hipotesis_red import (
+from Analisis_mecanico_conductores.entradas.importar_red import leer_red_excel
+from Analisis_mecanico_conductores.entradas.importar_hipotesis_red import (
     COLUMNAS_MATERIALES, COLUMNAS_ESTADOS,
     leer_materiales_excel, leer_estados_excel,
 )
-from calculos.hipotesis_red import calcular_hipotesis_red
+from motor_general import calcular_hipotesis_red
 
 
 def _plantilla():

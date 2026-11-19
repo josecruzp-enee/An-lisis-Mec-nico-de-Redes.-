@@ -3,7 +3,7 @@ from io import BytesIO
 import unittest
 import pandas as pd
 
-from entradas.importar_red import leer_red_excel
+from Analisis_mecanico_conductores.entradas.importar_red import leer_red_excel
 
 
 def libro(continuo=True):

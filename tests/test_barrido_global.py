@@ -1,8 +1,8 @@
 """Barrido de estados acoplados con una red de anclajes fijos."""
 import unittest
 
-from calculos.modelo_red import RedMecanica
-from calculos.barrido_global import barrido_red_global
+from Analisis_mecanico_conductores.calculos.modelo_red import RedMecanica
+from Analisis_mecanico_conductores.calculos.barrido_global import barrido_red_global
 
 
 def datos():

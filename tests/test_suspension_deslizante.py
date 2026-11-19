@@ -6,7 +6,7 @@ fija NO pertenece a este modelo.
 import unittest
 import numpy as np
 
-from calculos.modelo_red import RedMecanica
+from Analisis_mecanico_conductores.calculos.modelo_red import RedMecanica
 from Analisis_mecanico_conductores.tension_tendido.resolver_seccion_deslizante_ideal import resolver_seccion_deslizante
 
 

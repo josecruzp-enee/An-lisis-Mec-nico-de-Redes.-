@@ -6,8 +6,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from calculos.modelo_red import RedMecanica
-from calculos.hipotesis_red import calcular_hipotesis_red
+from Analisis_mecanico_conductores.calculos.modelo_red import RedMecanica
+from Analisis_mecanico_conductores.calculos.hipotesis_red import calcular_hipotesis_red
 
 
 def red_fija():

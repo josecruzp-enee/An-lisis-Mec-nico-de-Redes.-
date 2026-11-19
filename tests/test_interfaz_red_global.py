@@ -3,7 +3,7 @@ from io import BytesIO
 import unittest
 
 from Analisis_mecanico_conductores.interfaz.mostrar_red_global import _plantilla
-from entradas.importar_red import leer_red_excel
+from Analisis_mecanico_conductores.entradas.importar_red import leer_red_excel
 
 
 class InterfazRedTest(unittest.TestCase):

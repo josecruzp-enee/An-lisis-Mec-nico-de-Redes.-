@@ -8,9 +8,9 @@ from io import BytesIO
 import pandas as pd
 
 from Analisis_mecanico_conductores.interfaz.mostrar_red_global import _plantilla_calculo
-from entradas.importar_red import leer_red_excel
-from entradas.importar_hipotesis_red import leer_materiales_excel, leer_estados_excel
-from calculos.hipotesis_red import calcular_hipotesis_red
+from Analisis_mecanico_conductores.entradas.importar_red import leer_red_excel
+from Analisis_mecanico_conductores.entradas.importar_hipotesis_red import leer_materiales_excel, leer_estados_excel
+from Analisis_mecanico_conductores.calculos.hipotesis_red import calcular_hipotesis_red
 
 
 class PlantillaRedCalculableTest(unittest.TestCase):

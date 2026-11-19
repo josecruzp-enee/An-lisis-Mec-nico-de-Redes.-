@@ -2,8 +2,8 @@
 import unittest
 import numpy as np
 
-from calculos.modelo_red import RedMecanica
-from calculos.ensamblador_global import resolver_equilibrio_global
+from Analisis_mecanico_conductores.calculos.modelo_red import RedMecanica
+from Analisis_mecanico_conductores.calculos.ensamblador_global import resolver_equilibrio_global
 
 
 def datos(tipo="DESLIZANTE"):

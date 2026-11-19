@@ -18,7 +18,7 @@ from __future__ import annotations
 import pandas as pd
 
 from entradas.io_excel import leer_puntos_excel
-from calculos.modelo_red import RedMecanica
+from Analisis_mecanico_conductores.calculos.modelo_red import RedMecanica
 
 
 COLUMNAS_VANOS = (
