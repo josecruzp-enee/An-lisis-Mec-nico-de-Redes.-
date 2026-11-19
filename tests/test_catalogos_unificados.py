@@ -1,8 +1,7 @@
-"""El motor preliminar y el módulo 01 comparten fichas ACSR Viakon."""
+"""Los análisis consumen un catálogo ACSR Viakon compartido."""
 import unittest
 
 from entradas.catalogos import CONDUCTORES_ACSR as raiz
-from analisis.catalogos import CONDUCTORES_ACSR as historico
 from entradas.catalogo_viakon_acsr import ficha_viakon_acsr
 
 
@@ -20,10 +19,9 @@ class CatalogosConsistentesTest(unittest.TestCase):
             "795 MCM":"795 MCM — DRAKE",
         }
         self.assertEqual(set(raiz),set(casos))
-        self.assertEqual(set(historico),set(casos))
         for alias,pajarito in casos.items():
             f=ficha_viakon_acsr(pajarito)
-            for catalogo in (raiz,historico):
+            for catalogo in (raiz,):
                 self.assertEqual(catalogo[alias]["codigo"],f["codigo"])
                 self.assertEqual(catalogo[alias]["TR_kgf"],f["TR_kgf"])
                 self.assertAlmostEqual(catalogo[alias]["peso_kg_m"],f["peso_kg_m"])

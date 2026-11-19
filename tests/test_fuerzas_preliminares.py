@@ -3,8 +3,8 @@ import math
 import unittest
 import pandas as pd
 
-from calculos.fuerzas_nodo import calcular_fuerzas_en_nodos
-from calculos.engine import ejecutar_todo
+from Analisis_mecanico_estructuras.calculos.fuerzas_nodo import calcular_fuerzas_en_nodos
+from motor_general import ejecutar_todo
 
 
 class TestFuerzasPreliminares(unittest.TestCase):

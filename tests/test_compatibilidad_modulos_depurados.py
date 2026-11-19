@@ -18,7 +18,7 @@ class TestModulosCanonicos(unittest.TestCase):
     def test_implementaciones_estructurales_presentes(self):
         for nombre in CALCULOS:
             with self.subTest(modulo=nombre):
-                modulo = import_module(f"analisis.calculos.{nombre}")
+                modulo = import_module(f"Analisis_mecanico_estructuras.calculos.{nombre}")
                 elementos = [
                     valor for valor in vars(modulo).values()
                     if getattr(valor, "__module__", None) == modulo.__name__
@@ -27,7 +27,7 @@ class TestModulosCanonicos(unittest.TestCase):
 
     def test_entradas_y_salidas_canonicas(self):
         for nombre in (
-            "entradas.catalogos", "entradas.norma_postes",
+            "entradas.catalogos", "Analisis_mecanico_estructuras.entradas.norma_postes",
             "entradas.validacion_entrada",
         ):
             with self.subTest(modulo=nombre):
