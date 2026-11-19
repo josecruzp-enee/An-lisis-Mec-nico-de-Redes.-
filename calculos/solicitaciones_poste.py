@@ -13,7 +13,7 @@ import math
 import numpy as np
 import pandas as pd
 
-from entradas.norma_postes import obtener_ficha_poste
+from Analisis_mecanico_estructuras.entradas.norma_postes import obtener_ficha_poste
 from .validacion_mecanica import finito
 
 
