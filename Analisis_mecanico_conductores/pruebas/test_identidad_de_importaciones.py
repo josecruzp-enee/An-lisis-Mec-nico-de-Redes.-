@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import unittest
 
-from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR as catalogo_heredado
+from comun.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as catalogo_heredado
 
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
 from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import (

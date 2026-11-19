@@ -1,8 +1,8 @@
 """Catálogo exportable sin asignar propiedades de Nexans a Viakon."""
 import unittest
 
-from entradas.tabla_catalogo_acsr import tabla_catalogo_acsr
-from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR
+from Analisis_mecanico_conductores.conductores.mostrar_tabla_catalogo_acsr import tabla_catalogo_acsr
+from comun.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 
 
 class TablaCatalogoACSRTest(unittest.TestCase):

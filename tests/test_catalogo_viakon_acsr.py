@@ -1,7 +1,7 @@
 """Catálogo Viakon ACSR: ave obligatoria y construcción distinguible."""
 import unittest
 
-from entradas.catalogo_viakon_acsr import (
+from comun.catalogo_acsr_viakon import (
     CONDUCTORES_VIAKON_ACSR, ficha_viakon_acsr,
     propiedades_mecanicas_documentadas,
 )

@@ -65,7 +65,7 @@ class TestArquitecturaModular(unittest.TestCase):
     def test_catalogo_compartido_identico(self):
         from comun.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as comun
         from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as modulo1
-        from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR as antiguo
+        from comun.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR as antiguo
         self.assertIs(comun, modulo1)
         self.assertIs(comun, antiguo)
 
