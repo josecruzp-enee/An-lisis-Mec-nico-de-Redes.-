@@ -9,7 +9,7 @@ from io import BytesIO
 import pandas as pd
 
 from entradas.catalogos import CONDUCTORES_ACSR
-from entradas.tension_automatica_fase1 import calcular_tension_desde_libro, plantilla_tension_automatica
+from Analisis_mecanico_conductores.entradas.leer_tension_inversa_desde_excel_historico import calcular_tension_desde_libro, plantilla_tension_automatica
 
 
 def _entrada(puntos=2, incluir_limites=True):

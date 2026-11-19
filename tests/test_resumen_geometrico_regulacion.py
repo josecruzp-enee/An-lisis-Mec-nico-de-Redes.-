@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from calculos.resumen_geometrico_regulacion import resumen_geometrico
+from Analisis_mecanico_conductores.geometria.resumir_vanos import resumen_geometrico
 
 
 class ResumenGeométricoTest(unittest.TestCase):

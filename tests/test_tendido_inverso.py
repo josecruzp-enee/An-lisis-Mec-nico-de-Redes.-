@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 import numpy as np
 
-from calculos.tendido_inverso import (
+from Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano import (
     HipotesisTendido, dimensionar_tension_tendido
 )
 

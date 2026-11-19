@@ -14,10 +14,7 @@ from calculos.cambio_estado import (
     vano_regulador as regulador_heredado,
 )
 from calculos.cable_no_lineal import resolver_cable_no_lineal as cable_heredado
-from calculos.tendido_inverso import dimensionar_tension_tendido as inverso_heredado
-from calculos.regulacion_multivano import resolver_seccion_regulacion as seccion_heredada
 from calculos.suspension_deslizante import resolver_seccion_deslizante as guia_heredada
-from entradas.regulacion_fase1 import ejecutar_regulacion_fase1 as excel_heredado
 from entradas.catalogo_viakon_acsr import CONDUCTORES_VIAKON_ACSR as catalogo_heredado
 
 from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
@@ -25,10 +22,7 @@ from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado impor
     resolver_cambio_estado, vano_regulador,
 )
 from Analisis_mecanico_conductores.catenaria.resolver_cable_tridimensional_bvp import resolver_cable_no_lineal
-from Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano import dimensionar_tension_tendido
-from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import resolver_seccion_regulacion
 from Analisis_mecanico_conductores.tension_tendido.resolver_seccion_deslizante_ideal import resolver_seccion_deslizante
-from Analisis_mecanico_conductores.entradas.leer_datos_y_calcular_regulacion import ejecutar_regulacion_fase1
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 
 
@@ -39,10 +33,7 @@ class CompatibilidadEtapa1Test(unittest.TestCase):
             (cambio_heredado,resolver_cambio_estado),
             (regulador_heredado,vano_regulador),
             (cable_heredado,resolver_cable_no_lineal),
-            (inverso_heredado,dimensionar_tension_tendido),
-            (seccion_heredada,resolver_seccion_regulacion),
             (guia_heredada,resolver_seccion_deslizante),
-            (excel_heredado,ejecutar_regulacion_fase1),
             (catalogo_heredado,CONDUCTORES_VIAKON_ACSR),
         )
         for antiguo,nuevo in pares:

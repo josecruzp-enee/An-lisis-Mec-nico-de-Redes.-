@@ -6,8 +6,8 @@ import unittest
 import numpy as np
 import pandas as pd
 from calculos.cambio_estado import vano_regulador
-from calculos.regulacion_multivano import resolver_seccion_regulacion
-from calculos.tendido_inverso import HipotesisTendido, dimensionar_tension_tendido
+from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import resolver_seccion_regulacion
+from Analisis_mecanico_conductores.tension_tendido.calcular_tension_inversa_de_un_vano import HipotesisTendido, dimensionar_tension_tendido
 
 
 def puntos(luces=(45.53,45.53)):

@@ -9,7 +9,7 @@ from io import BytesIO
 import pandas as pd
 
 from entradas.io_excel import leer_puntos_excel
-from entradas.regulacion_fase1 import (
+from Analisis_mecanico_conductores.entradas.leer_datos_y_calcular_regulacion import (
     plantilla_regulacion, ejecutar_regulacion_fase1
 )
 

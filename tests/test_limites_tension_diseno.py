@@ -2,7 +2,7 @@
 import unittest
 import pandas as pd
 
-from calculos.limites_tension_diseno import (
+from Analisis_mecanico_conductores.verificaciones.verificar_limites_documentados_de_tension import (
     evaluar_tensiones_diseno, resumen_tension_diseno,
     validar_criterios_tension,
 )

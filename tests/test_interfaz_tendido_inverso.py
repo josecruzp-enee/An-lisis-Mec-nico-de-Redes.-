@@ -3,7 +3,7 @@ import unittest
 from io import BytesIO
 import pandas as pd
 
-from entradas.interfaz_tendido_inverso import (
+from Analisis_mecanico_conductores.interfaz.mostrar_tendido_inverso_un_vano import (
     plantilla_tendido, leer_hipotesis_tabla,
     COLUMNAS_HIPOTESIS,
 )

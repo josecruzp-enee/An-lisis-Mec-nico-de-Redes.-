@@ -2,7 +2,7 @@
 from io import BytesIO
 import unittest
 import pandas as pd
-from analisis.io_excel import leer_puntos_excel
+from entradas.io_excel import leer_puntos_excel
 
 
 class TestExcelMain(unittest.TestCase):
