@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from calculos.barrido_3d import ejecutar_barrido_3d
+from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_catenaria_3d import ejecutar_barrido_3d
 from calculos.auditoria_cargas import auditar_reacciones_por_vano, COMPONENTES
 
 

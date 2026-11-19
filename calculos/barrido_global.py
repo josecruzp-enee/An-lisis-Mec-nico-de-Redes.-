@@ -33,7 +33,7 @@ def barrido_red_global(
     rho_kg_m3=1.225,Cd=1.2,limite_casos=100,
 ):
     """Evalúa la red completa soportada para todas las combinaciones."""
-    from calculos.barrido_3d import _secuencia_viento
+    from Analisis_mecanico_conductores.hipotesis_climaticas.evaluar_estados_climaticos_catenaria_3d import _secuencia_viento
 
     temperaturas=_lista(temperaturas_C,"temperaturas")
     tensiones=_lista(tensiones_iniciales_kN,"tensiones",True)
