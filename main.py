@@ -11,7 +11,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 
 from entradas.io_excel import leer_puntos_excel
-from entradas.catalogos import CONDUCTORES_ACSR
+from comun.catalogos_conductores import CONDUCTORES_ACSR
 from motor_general import ejecutar_todo
 
 

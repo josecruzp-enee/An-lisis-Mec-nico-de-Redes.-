@@ -13,7 +13,7 @@ from io import BytesIO
 import pandas as pd
 
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
-from entradas.catalogos import CONDUCTORES_ACSR
+from comun.catalogos_conductores import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import seleccionar_desde_clave_viakon
 from motor_general import ejecutar_modulo

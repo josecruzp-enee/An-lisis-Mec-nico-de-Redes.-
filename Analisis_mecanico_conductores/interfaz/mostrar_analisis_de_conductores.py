@@ -9,7 +9,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from entradas.catalogos import CONDUCTORES_ACSR
+from comun.catalogos_conductores import CONDUCTORES_ACSR
 from Analisis_mecanico_conductores.conductores.catalogo_acsr_viakon import CONDUCTORES_VIAKON_ACSR
 from Analisis_mecanico_conductores.conductores.referencias_mecanicas_acsr_nexans import referencia_mecanica_nexans
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import (

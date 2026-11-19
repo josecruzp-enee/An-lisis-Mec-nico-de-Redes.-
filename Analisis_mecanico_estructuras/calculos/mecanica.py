@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-from entradas.catalogos import CONDUCTORES_ACSR, RETENIDAS_RECOMENDADAS, CAP_RETENIDA_ULT_LBF
+from comun.catalogos_conductores import CONDUCTORES_ACSR
+from Analisis_mecanico_estructuras.entradas.catalogos_estructuras import RETENIDAS_RECOMENDADAS, CAP_RETENIDA_ULT_LBF
 from Analisis_mecanico_estructuras.calculos.unidades import kgf_to_kN, kg_m_to_kN_m, lbf_to_kN
 
 def tension_trabajo_kN(calibre: str, fraccion_trabajo: float) -> float:

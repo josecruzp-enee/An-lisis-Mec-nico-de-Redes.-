@@ -1,8 +1,8 @@
 """Los análisis consumen un catálogo ACSR Viakon compartido."""
 import unittest
 
-from entradas.catalogos import CONDUCTORES_ACSR as raiz
-from entradas.catalogo_viakon_acsr import ficha_viakon_acsr
+from comun.catalogos_conductores import CONDUCTORES_ACSR as raiz
+from comun.catalogo_acsr_viakon import ficha_viakon_acsr
 
 
 class CatalogosConsistentesTest(unittest.TestCase):

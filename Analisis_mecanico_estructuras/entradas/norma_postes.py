@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Dict, Any, Optional
 import re
 
-from entradas.catalogos import POSTES_CONCRETO_TABLA_1, POSTES_CLASES_APENDICE
+from Analisis_mecanico_estructuras.entradas.catalogos_estructuras import POSTES_CONCRETO_TABLA_1, POSTES_CLASES_APENDICE
 from Analisis_mecanico_estructuras.calculos.unidades import kgf_to_kN, lbf_to_kN
 
 

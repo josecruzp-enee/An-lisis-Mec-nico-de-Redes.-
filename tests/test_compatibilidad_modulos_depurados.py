@@ -27,7 +27,7 @@ class TestModulosCanonicos(unittest.TestCase):
 
     def test_entradas_y_salidas_canonicas(self):
         for nombre in (
-            "entradas.catalogos", "Analisis_mecanico_estructuras.entradas.norma_postes",
+            "comun.catalogos_conductores", "Analisis_mecanico_estructuras.entradas.norma_postes",
             "entradas.validacion_entrada",
         ):
             with self.subTest(modulo=nombre):
