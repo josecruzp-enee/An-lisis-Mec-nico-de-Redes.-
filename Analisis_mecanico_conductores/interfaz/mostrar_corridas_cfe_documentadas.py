@@ -323,60 +323,29 @@ def mostrar_corridas_cfe(puntos):
             tabla.to_csv(index=False).encode("utf-8-sig"),
             "cfe_corridas_por_vano.csv","text/csv",
         )
-        from io import BytesIO
-        from pypdf import PdfWriter
         from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
         from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
-        from Analisis_mecanico_conductores.motor_conductores import dividir_secciones_por_remates
-
-        clima_pdf = {
-            "viento_max_kmh": viento_max,
-            "viento_reducido_kmh": float(viento_reducido),
-            "hielo_mm": float(hielo),
-            "densidad_hielo_kg_m3": DENSIDAD_HIELO_ENSAYO_KG_M3,
-            "modelo_presion_cfe": True,
-            "rho_kg_m3": float(rho),
-            "Cd": 1.0,
-        }
-        secciones_pdf = dividir_secciones_por_remates(puntos_calculo)
-        pdfs = []
-        for codigo, puntos_seccion in secciones_pdf:
-            resumen_seccion = resumen[resumen["Sección"] == codigo].copy()
-            tabla_seccion = tabla[tabla["Sección"] == codigo].copy()
-            xyz_pdf, _ = _geometria(puntos_seccion)
-            vanos_seccion = set(tabla_seccion["Vano"].unique())
-            def _filtrar_perfil(datos):
-                if datos is None or "Vano" not in datos.columns:
-                    return None
-                return datos[datos["Vano"].isin(vanos_seccion)].copy()
-            datos_proyecto = dict(proyecto_pdf)
-            if len(secciones_pdf) > 1:
-                datos_proyecto["nombre"] = (
-                    f"{proyecto_pdf.get('nombre', 'Línea')} — {codigo} "
-                    f"({puntos_seccion.iloc[0]['Punto']} a "
-                    f"{puntos_seccion.iloc[-1]['Punto']})"
-                )
-            pdfs.append(generar_pdf_corrida_cfe(
-                resumen=resumen_seccion, tabla=tabla_seccion,
-                conductor=f"{conductor[0]} {conductor[1]}",
-                fuente_material=fuente_material,
-                proyecto=datos_proyecto,
-                propiedades_inicial=ini,
-                propiedades_final=fin,
-                geometria_xyz=xyz_pdf,
-                libramientos=_filtrar_perfil(tabla_libramientos),
-                perfil_terreno=_filtrar_perfil(perfiles_terreno),
-                clima=clima_pdf,
-            ))
-        if len(pdfs) == 1:
-            memoria_pdf = pdfs[0]
-        else:
-            writer = PdfWriter()
-            for documento in pdfs:
-                writer.append(BytesIO(documento))
-            destino = BytesIO()
-            writer.write(destino)
-            memoria_pdf = destino.getvalue()
+        xyz_pdf, _ = _geometria(puntos_calculo)
+        memoria_pdf = generar_pdf_corrida_cfe(
+            resumen=resumen, tabla=tabla,
+            conductor=f"{conductor[0]} {conductor[1]}",
+            fuente_material=fuente_material,
+            proyecto=proyecto_pdf,
+            propiedades_inicial=ini,
+            propiedades_final=fin,
+            geometria_xyz=xyz_pdf,
+            libramientos=tabla_libramientos,
+            perfil_terreno=perfiles_terreno,
+            clima={
+                "viento_max_kmh": viento_max,
+                "viento_reducido_kmh": float(viento_reducido),
+                "hielo_mm": float(hielo),
+                "densidad_hielo_kg_m3": DENSIDAD_HIELO_ENSAYO_KG_M3,
+                "modelo_presion_cfe": True,
+                "rho_kg_m3": float(rho),
+                "Cd": 1.0,
+            },
+        )
         st.download_button(
             "Descargar memoria independiente — Módulo 1 (PDF)",
             data=memoria_pdf,

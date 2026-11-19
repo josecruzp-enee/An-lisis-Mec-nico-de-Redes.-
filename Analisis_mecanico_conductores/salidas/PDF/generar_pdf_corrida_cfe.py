@@ -151,8 +151,13 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                             geometria_xyz=None,
                             libramientos=None, perfil_terreno=None) -> bytes:
     """Genera la memoria PDF desde DataFrames ya calculados, sin modificar valores."""
-    if not isinstance(resumen, pd.DataFrame) or len(resumen) != 2:
-        raise ValueError("Se necesitan las dos referencias inicial y final")
+    if not isinstance(resumen, pd.DataFrame) or len(resumen) < 2 or len(resumen) % 2:
+        raise ValueError("Se requieren referencias inicial/final para cada sección")
+    if "Sección" in resumen and "Sección" not in tabla:
+        raise ValueError("Falta el identificador de sección en la tabla")
+    por_secciones = "Sección" in resumen and resumen["Sección"].nunique() > 1
+    if por_secciones and not (resumen.groupby("Sección").size() == 2).all():
+        raise ValueError("Cada sección debe tener referencias inicial y final")
     if not isinstance(tabla, pd.DataFrame) or tabla.empty:
         raise ValueError("No hay resultados que documentar")
     falta = set(COLUMNAS) - set(tabla.columns)
@@ -219,20 +224,36 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
          _fmt(clima.get("rho_kg_m3"), 3)],
     ], [1, 1, 1, 1])
 
-    titulo("Estado de referencia y criterio gobernante")
+    if por_secciones:
+        titulo("Secciones de tendido de la línea")
+        f_secciones = [["Sección", "Remate inicial", "Remate final", "Vanos", "Longitud (m)"]]
+        for nombre, grupo in tabla.groupby("Sección", sort=False):
+            datos_vanos = grupo.drop_duplicates("Vano")
+            r0 = resumen[resumen["Sección"] == nombre].iloc[0]
+            f_secciones.append([
+                nombre, str(r0["Remate inicial"]), str(r0["Remate final"]),
+                str(len(datos_vanos)), _fmt(float(datos_vanos["Luz (m)"].sum()), 2),
+            ])
+        datos_tabla(f_secciones, [1,1.2,1.2,.8,1.3], compacto=True)
+        linea("Las secciones se tienden entre remates de forma independiente. "
+              "Una sola memoria reúne el cálculo y su envolvente global; "
+              "no se transfiere material entre secciones.", nota)
+
+    titulo("Referencias de tendido y criterio gobernante")
     rfilas = [[
-        "Condición", "H referencia 50 °C (kN)", "P referencia (m)",
+        "Sección", "Condición", "H referencia 50 °C (kN)", "P referencia (m)",
         "Hipótesis gobernante", "Utilización",
     ]]
     for _, r in resumen.iterrows():
         rfilas.append([
+            str(r.get("Sección", "S1")),
             "Inicial" if "Inicial" in str(r.get("Condición", "")) else "Final",
             _fmt(r.get("H_50_kN"), 4),
             _fmt(r.get("parametro_P_m"), 3),
             r.get("hipotesis_gobernante", "No informado"),
             _fmt(r.get("relacion_critica"), 4),
         ])
-    datos_tabla(rfilas, [1, 1.2, 1.2, 3.5, 1.2])
+    datos_tabla(rfilas, [.8,1,1.2,1.2,3.1,1.0],compacto=True)
     linea(
         "H referencia es el parámetro de entrada para distribuir longitud "
         "durante el tendido continuo. No equivale a una componente H común "
@@ -254,20 +275,17 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     # El diagnóstico toma la diferencia real de los estados publicados,
     # utilizando el alpha correspondiente a cada condición.
     if "Diferencia real de acoplamiento H4 (kN)" in resumen:
-        diagnostico=resumen.iloc[0]
-        diferencia=float(diagnostico["Diferencia real de acoplamiento H4 (kN)"])
-        porcentaje=float(diagnostico["Diferencia real de acoplamiento H4 (%)"])
-        cumple=bool(diagnostico["Igualdad extrema publicada verificada"])
-        linea(
-            ("Comparación de tensiones extremas H4 (NO es una condición "
-             "de igualdad): " if modo_sin_creep else
-             "Auditoría del antiguo acoplamiento H4: ")
-            + f"diferencia = {diferencia:.5f} kN ({porcentaje:.2f} %). "
-            + ("Las longitudes naturales son comunes por vano."
-               if modo_sin_creep else
-               "Igualdad verificada." if cumple else
-               "Igualdad no verificada."), nota,
-        )
+        for nombre, grupo in (resumen.groupby("Sección", sort=False)
+                              if por_secciones else [("S1", resumen)]):
+            diagnostico=grupo.iloc[0]
+            diferencia=float(diagnostico["Diferencia real de acoplamiento H4 (kN)"])
+            porcentaje=float(diagnostico["Diferencia real de acoplamiento H4 (%)"])
+            linea(
+                f"{nombre}: diferencia de tensión extrema inicial/final H4 "
+                f"= {diferencia:.5f} kN ({porcentaje:.2f} %). "
+                "No se impone igualdad de tensión; con creep adicional cero "
+                "la longitud natural de cada vano es común.", nota,
+            )
 
     residuo = float(tabla["Residual (m)"].abs().max())
     tension = float(tabla["T máx. (kN)"].max())
@@ -323,17 +341,16 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     ], [1, 1, 1, 1])
     if "Longitud natural fijada (m)" in tabla:
         titulo("Tendido continuo - longitudes naturales por vano")
-        datos=tabla[
-            ["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
-        ].drop_duplicates(["Condición","Vano"])
-        filas=[["Condición","Vano","Luz (m)","L0 fijada (m)"]]
+        campos=["Sección","Condición","Vano","Luz (m)","Longitud natural fijada (m)"] if por_secciones else ["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
+        datos=tabla[campos].drop_duplicates(["Condición","Vano"])
+        filas=[(["Sección"] if por_secciones else []) + ["Condición","Vano","Luz (m)","L0 fijada (m)"]]
         for _,fila in datos.iterrows():
-            filas.append([
+            filas.append(([fila["Sección"]] if por_secciones else []) + [
                 fila["Condición"],fila["Vano"],
                 _fmt(fila["Luz (m)"],2),
                 _fmt(fila["Longitud natural fijada (m)"],6),
             ])
-        datos_tabla(filas,[1,1.7,1,1.3],compacto=True)
+        datos_tabla(filas,([.6] if por_secciones else [])+[1,1.7,1,1.3],compacto=True)
     historia.append(PageBreak())
 
     # Página 2: supuestos, ecuaciones y curvas sin estimaciones inventadas.
@@ -418,13 +435,19 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     if propiedades_final and clima.get("viento_max_kmh") is not None:
         from Analisis_mecanico_conductores.salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
         clave = str(conductor).split()[-1].upper()
-        control = verificar_cinco_hipotesis(
-            tabla, ruptura_kN=float(propiedades_final["ruptura_kN"]),
-            nombre_conductor=clave,
-            viento_max_kmh=float(clima["viento_max_kmh"]),
-            viento_reducido_kmh=float(clima.get("viento_reducido_kmh", 0.)),
-            hielo_mm=float(clima.get("hielo_mm", 0.)),
-        )
+        controles=[]
+        for nombre, tabla_grupo in (tabla.groupby("Sección", sort=False)
+                                    if por_secciones else [("S1", tabla)]):
+            control_seccion=verificar_cinco_hipotesis(
+                tabla_grupo, ruptura_kN=float(propiedades_final["ruptura_kN"]),
+                nombre_conductor=clave,
+                viento_max_kmh=float(clima["viento_max_kmh"]),
+                viento_reducido_kmh=float(clima.get("viento_reducido_kmh", 0.)),
+                hielo_mm=float(clima.get("hielo_mm", 0.)),
+            )
+            control_seccion.insert(0,"Sección",nombre)
+            controles.append(control_seccion)
+        control=pd.concat(controles, ignore_index=True)
         historia.append(PageBreak())
         titulo("Control de las cinco hipótesis mecánicas CFE")
         linea("Se verifican dos magnitudes distintas: T total frente al "
@@ -432,14 +455,14 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
               "cuando corresponda. Uso % es el mayor de ambos cocientes; "
               "SIN EVALUAR indica estados no calculados.", nota)
         filas_control = [[
-            "Caso", "Estado", "Temp. °C", "Viento km/h", "Hielo mm",
+            "Sección", "Caso", "Estado", "Temp. °C", "Viento km/h", "Hielo mm",
             "T máx. kN", "Límite T kN", "H máx. kN", "Límite H kN",
             "Uso %", "Resultado",
         ]]
         for _, r in control.iterrows():
             uso = r["Utilización"]
             filas_control.append([
-                r["Código"], r["Condición"],
+                r["Sección"],r["Código"], r["Condición"],
                 _fmt(r["Temperatura (°C)"], 0),
                 _fmt(r["Viento (km/h)"], 0),
                 _fmt(r["Hielo (mm)"], 1),
@@ -450,9 +473,9 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 _fmt(uso*100, 2) if pd.notna(uso) else "—",
                 r["Estado"],
             ])
-        datos_tabla(filas_control, [0.6,0.8,0.75,0.9,0.75,1.0,1.0,0.95,1.0,0.8,1.05])
+        datos_tabla(filas_control, [0.6,0.6,0.8,0.75,0.9,0.75,1.0,1.0,0.95,1.0,0.8,1.05],compacto=True)
         for _, r in control.iterrows():
-            linea(f"{r['Código']}: {r['Hipótesis']}", nota)
+            linea(f"{r['Sección']} — {r['Código']}: {r['Hipótesis']}", nota)
         if (control["Estado"] == "SIN EVALUAR").any():
             linea("No se puede declarar que se satisficieron las cinco "
                   "hipótesis: existen estados sin evaluar.", nota)
@@ -567,7 +590,10 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     historia.append(PageBreak())
     titulo("Conclusiones técnicas de la corrida")
     linea(
-        f"Se analizaron {numero_vanos} vanos y {len(tabla)} registros de "
+        f"Se analizaron {numero_vanos} vanos "
+        + (f"distribuidos en {resumen['Sección'].nunique()} secciones mecánicas "
+           if por_secciones else "")
+        + f"y {len(tabla)} registros de "
         "estado inicial/final con las propiedades y cargas declaradas. "
         f"La máxima tensión total calculada es {_fmt(tension, 4)} kN "
         f"({fila_tmax['Vano']}, {fila_tmax['Condición']}, "
@@ -642,20 +668,22 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         linea(f"{len(subtabla)} registros. T = tensión máxima del conductor; "
               "H = componente de tracción perpendicular a la carga; "
               "f = flecha vertical. Residual de compatibilidad en metros.", nota)
-        encabezado = ["Vano", "Escenario", "Temp. °C", "Viento km/h", "Hielo mm",
-                      "H kN", "T máx. kN", "Flecha m", "Lateral m", "Residual m"]
+        encabezado = (["Sección"] if por_secciones else []) + [
+            "Vano", "Escenario", "Temp. °C", "Viento km/h", "Hielo mm",
+            "H kN", "T máx. kN", "Flecha m", "Lateral m", "Residual m"]
         filas = [encabezado]
         for _, r in subtabla.iterrows():
             escenario = ("Térmico" if str(r["Hipótesis"]) == "Tabla térmica"
                          else str(r["Hipótesis"]).replace("CFE ", ""))
-            filas.append([
+            filas.append(
+                ([r["Sección"]] if por_secciones else []) + [
                 r["Vano"], escenario, _fmt(r["Temperatura (°C)"], 0),
                 _fmt(r["Viento (km/h)"], 0), _fmt(r["Hielo (mm)"], 1),
                 _fmt(r["H (kN)"], 4), _fmt(r["T máx. (kN)"], 4),
                 _fmt(r["Flecha (m)"], 4), _fmt(r["Lateral (m)"], 4),
                 _fmt(r["Residual (m)"]),
             ])
-        datos_tabla(filas, [1.1, 1.7, .8, .8, .7, .95, 1.05, 1, 1, 1.3], compacto=True)
+        datos_tabla(filas, ([.65] if por_secciones else []) + [1.1, 1.7, .8, .8, .7, .95, 1.05, 1, 1, 1.3], compacto=True)
 
     historia.append(Spacer(1, 5*mm))
     titulo("Observaciones y alcance")

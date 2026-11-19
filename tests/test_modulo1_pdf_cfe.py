@@ -169,6 +169,46 @@ class PerfilesCFE(unittest.TestCase):
         )
         self.assertEqual(len(c),5)
         self.assertNotIn("SIN EVALUAR",set(c["Estado"]))
+    def test_un_solo_pdf_para_dos_secciones_con_remate(self):
+        """Un documento y diez verificaciones: cinco por sección."""
+        from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import (
+            generar_pdf_corrida_cfe,
+        )
+        datos=self.tabla.copy()
+        datos["Sección"]=datos["Vano"].map({
+            "P1 → P2":"S1", "P2 → P3":"S2",
+        })
+        referencias=pd.DataFrame([
+            {
+                "Sección":sec, "Condición":cond,
+                "Remate inicial":inicio, "Remate final":fin,
+                "H_50_kN":2.1 if sec=="S1" else 2.3,
+                "parametro_P_m":990. if sec=="S1" else 1080.,
+                "hipotesis_gobernante":"CFE H4",
+                "relacion_critica":.95,
+                "Creep adicional":0.,
+                "Diferencia real de acoplamiento H4 (kN)":.1,
+                "Diferencia real de acoplamiento H4 (%)":1.5,
+            }
+            for sec,inicio,fin in [("S1","P1","P2"),("S2","P2","P3")]
+            for cond in ["Inicial","Final"]
+        ])
+        resultado=generar_pdf_corrida_cfe(
+            resumen=referencias,tabla=datos,conductor="1/0 RAVEN",
+            fuente_material="CFE 07 FT 01",clima=self.clima,
+            propiedades_inicial=self.ini,propiedades_final=self.fin,
+            geometria_xyz=self.xyz,
+        )
+        lector=PdfReader(BytesIO(resultado))
+        texto=" ".join(p.extract_text() or "" for p in lector.pages)
+        self.assertEqual(texto.count("MEMORIA DE CÁLCULO INDEPENDIENTE"),1)
+        self.assertIn("Secciones de tendido de la línea",texto)
+        self.assertIn("Se analizaron 2 vanos",texto)
+        self.assertIn("S1",texto)
+        self.assertIn("S2",texto)
+        self.assertIn("Control de las cinco hipótesis",texto)
+        self.assertIn("Remate inicial",texto)
+
     def test_pdf_perfiles_y_cumplimiento(self):
         resumen=pd.DataFrame([
             {"Condición":"Inicial", "H_50_kN":760*self.ini["peso_kN_m"],

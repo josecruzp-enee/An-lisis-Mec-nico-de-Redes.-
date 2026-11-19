@@ -266,3 +266,13 @@ apoyos, claros horizontales y colores por sección de tendido; identifica
 remates sin inferir retenidas. El dibujo usa exactamente la segmentación
 `dividir_secciones_por_remates` del motor CFE y no modifica resultados
 mecánicos.
+
+
+### Memoria unificada de una línea con múltiples secciones
+
+La ruta principal genera **un solo informe de la línea completa**: portada,
+resumen y extremos globales, identificación de cada sección entre remates,
+referencias de tendido independientes por sección, control de las cinco
+hipótesis para cada sección, longitudes fijadas de todos los vanos,
+perfiles por vano y anexos conjuntos por condición. No concatena memorias
+independientes y no mezcla las tensiones de referencia de distintas secciones.
