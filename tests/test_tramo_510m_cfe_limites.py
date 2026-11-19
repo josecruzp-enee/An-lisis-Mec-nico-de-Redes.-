@@ -9,7 +9,7 @@ import pandas as pd
 from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
     seleccionar_propiedades_cfe_07_ft_01, ejecutar_corridas_cfe_por_vano,
 )
-from salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
+from Analisis_mecanico_conductores.salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
 
 
 class Tramo510CFE(unittest.TestCase):

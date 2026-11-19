@@ -6,8 +6,8 @@ import unittest
 import pandas as pd
 from pypdf import PdfReader
 
-from salidas.PDF import generar_memoria_pdf
-from salidas.PDF.coordinar_pdf import registrar_generador
+from Analisis_mecanico_conductores.salidas.PDF import generar_memoria_pdf
+from Analisis_mecanico_conductores.salidas.PDF.coordinar_pdf import registrar_generador
 
 
 class MemoriaPDFTest(unittest.TestCase):

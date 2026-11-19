@@ -39,5 +39,5 @@ def plantilla_regulacion(*args, **kwargs):
 
 
 def generar_memoria_pdf(*args, **kwargs):
-    from salidas.PDF import generar_memoria_pdf as generar
+    from Analisis_mecanico_conductores.salidas.PDF import generar_memoria_pdf as generar
     return generar(*args, **kwargs)

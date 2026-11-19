@@ -133,7 +133,7 @@ def calcular_libramientos_muestreados(
     """
     from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
     from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
-    from salidas.PDF.graficos_catenarias_cfe import _carga
+    from Analisis_mecanico_conductores.salidas.PDF.graficos_catenarias_cfe import _carga
     import pandas as pd
     if paso_m<=0 or not np.isfinite(paso_m):
         raise ValueError("Paso de perfil inválido")

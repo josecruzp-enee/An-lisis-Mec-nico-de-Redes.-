@@ -88,7 +88,7 @@ class TopografiaModulo1(unittest.TestCase):
         self.assertTrue((libr["Libramiento mínimo muestreado (m)"]>0).all())
         self.assertTrue((libr["Libramiento mínimo muestreado (m)"]<9.5).all())
         self.assertTrue((libr["Clasificación"]=="PRELIMINAR - DEM").all())
-        from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+        from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
         from pypdf import PdfReader
         resumen=pd.DataFrame([
             {"Condición":"Inicial","H_50_kN":760.*ini["peso_kN_m"],

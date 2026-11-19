@@ -12,9 +12,9 @@ from Analisis_mecanico_conductores.tension_tendido.calcular_tablas_cfe_inicial_f
     PropiedadesConductorCFE, EstadoReferenciaCFE, calcular_tablas_inicial_final,
 )
 from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
-from salidas.PDF.graficos_catenarias_cfe import graficar_perfiles_cfe
-from salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
-from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+from Analisis_mecanico_conductores.salidas.PDF.graficos_catenarias_cfe import graficar_perfiles_cfe
+from Analisis_mecanico_conductores.salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
+from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
 
 
 class PerfilesCFE(unittest.TestCase):

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pypdf import PdfReader
 
-from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
 from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
     seleccionar_propiedades_cfe_07_ft_01,
 )

@@ -292,7 +292,7 @@ def mostrar_corridas_cfe(puntos):
             tabla.to_csv(index=False).encode("utf-8-sig"),
             "cfe_corridas_por_vano.csv","text/csv",
         )
-        from salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
+        from Analisis_mecanico_conductores.salidas.PDF.generar_pdf_corrida_cfe import generar_pdf_corrida_cfe
         from Analisis_mecanico_conductores.tension_tendido.calcular_tension_y_flechas_de_seccion import _geometria
         xyz_pdf, _ = _geometria(puntos_calculo)
         memoria_pdf = generar_pdf_corrida_cfe(

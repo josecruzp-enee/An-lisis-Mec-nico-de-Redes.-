@@ -5,7 +5,7 @@ import pandas as pd
 from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
     construir_hipotesis_cfe,
 )
-from salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
+from Analisis_mecanico_conductores.salidas.PDF.verificacion_hipotesis_cfe import verificar_cinco_hipotesis
 
 
 class DobleLimiteCFE(unittest.TestCase):
