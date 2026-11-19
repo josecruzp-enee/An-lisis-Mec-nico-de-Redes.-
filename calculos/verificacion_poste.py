@@ -89,7 +89,6 @@ def calcular_secciones_poste(nodos_conductores, postes, *,
         f_cable=np.array([float(caso[k]) for k in (
             "Fx (kN)","Fy (kN)","Fz (kN)"
         )])
-        mz_cable=finito(caso["Mz (kN·m)"],"torsión")
         if not np.isfinite(f_cable).all():
             raise ValueError("Fuerzas del conductor no finitas")
         # M de cable en el origen es (r x F). Resta r_corte x F

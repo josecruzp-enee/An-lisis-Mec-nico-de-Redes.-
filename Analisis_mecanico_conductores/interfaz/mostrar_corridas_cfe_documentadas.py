@@ -1,14 +1,13 @@
 """Streamlit: ejecución CFE con hipótesis documentadas sobre vanos reales."""
 from __future__ import annotations
 
-import pandas as pd
 import streamlit as st
 
 from Analisis_mecanico_conductores.conductores.seleccionar_propiedades_enee import (
     leer_catalogo_enee, seleccionar_conductor_enee,
 )
 from Analisis_mecanico_conductores.tension_tendido.ejecutar_corridas_cfe_documentadas import (
-    ejecutar_corridas_cfe_por_vano,CFE_FUENTE,
+    ejecutar_corridas_cfe_por_vano,
     DENSIDAD_HIELO_ENSAYO_KG_M3,
     seleccionar_propiedades_cfe_07_ft_01,
 )

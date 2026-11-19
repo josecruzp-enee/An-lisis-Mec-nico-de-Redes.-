@@ -15,19 +15,16 @@ La condición común de instalación debe justificarse para una obra real.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import lru_cache
 
 import numpy as np
 import pandas as pd
 from scipy.optimize import brentq
 
-from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import resolver_cambio_estado, vano_regulador
-from Analisis_mecanico_conductores.catenaria.resolver_catenaria_exacta import resolver_catenaria
+from Analisis_mecanico_conductores.cambio_estado.resolver_cambio_de_estado import vano_regulador
 from Analisis_mecanico_conductores.validaciones.validar_datos_fisicos import finito
 from Analisis_mecanico_conductores.hipotesis_climaticas.generar_barrido_de_temperatura_viento_hielo import ejecutar_barrido_climatico
 from Analisis_mecanico_conductores.tension_tendido.evaluar_vanos_amarrados_independientes import EvaluadorVanosAmarrados
 from Analisis_mecanico_conductores.tension_tendido.evaluar_estados_de_la_seccion import (
-    EvaluadorEstadosRegulacion,
     calcular_cargas_transversales_por_vano as _cargas,
 )
 # Alias de compatibilidad con el paquete histórico calculos/.

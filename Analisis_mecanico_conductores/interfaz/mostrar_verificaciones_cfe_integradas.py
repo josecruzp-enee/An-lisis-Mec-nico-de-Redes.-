@@ -11,7 +11,7 @@ import streamlit as st
 from Analisis_mecanico_conductores.verificaciones.verificar_restricciones_documentadas_cfe import (
     verificar_tabla_estructura, verificar_fases, verificar_vertical_superficie,
     verificar_horizontal_construccion, verificar_traccion,
-    ALTURAS_MINIMAS_MT_M, SEPARACION_HORIZONTAL_CONSTRUCCIONES_M,
+    ALTURAS_MINIMAS_MT_M,
 )
 
 
@@ -62,12 +62,6 @@ def evaluar_corrida_documentada(tabla, puntos, *, estructura, conductor,
         final50=grupo.loc[(grupo["Condición"]=="Final")
                          & (grupo["Hipótesis"]=="Tabla térmica")
                          & ((grupo["Temperatura (°C)"]-50.).abs()<1e-7)]
-        tension_ini=grupo.loc[(grupo["Condición"]=="Inicial")
-                             & (grupo["Hipótesis"]=="Tabla térmica")
-                             & ((grupo["Temperatura (°C)"]).abs()<1e-7)]
-        final16=grupo.loc[(grupo["Condición"]=="Final")
-                         & (grupo["Hipótesis"]=="Tabla térmica")
-                         & ((grupo["Temperatura (°C)"]-16.).abs()<1e-7)]
         luz=float(grupo["Luz (m)"].iloc[0])
         luz_real=math.hypot(
             float(coordenadas[i+1,0]-coordenadas[i,0]),
