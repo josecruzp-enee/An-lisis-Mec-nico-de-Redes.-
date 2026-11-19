@@ -246,8 +246,8 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         "predicción de deformación permanente.", nota,
     )
 
-    # La igualdad del optimizador NO es necesariamente igualdad de la tabla
-    # emitida cuando el ajuste usa alpha_final y la tabla usa alpha_inicial.
+    # El diagnóstico toma la diferencia real de los estados publicados,
+    # utilizando el alpha correspondiente a cada condición.
     if "Diferencia real de acoplamiento H4 (kN)" in resumen:
         diagnostico=resumen.iloc[0]
         diferencia=float(diagnostico["Diferencia real de acoplamiento H4 (kN)"])
@@ -265,6 +265,49 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     residuo = float(tabla["Residual (m)"].abs().max())
     tension = float(tabla["T máx. (kN)"].max())
     flecha = float(tabla["Flecha (m)"].max())
+    fila_tmax = tabla.loc[tabla["T máx. (kN)"].idxmax()]
+    fila_fmax = tabla.loc[tabla["Flecha (m)"].idxmax()]
+    numero_vanos = int(tabla["Vano"].nunique())
+    # Estas magnitudes son envolventes de TODAS las filas, no solamente H1-H5.
+    # La hipótesis gobernante por utilización es un indicador distinto.
+    titulo("Valores críticos identificados")
+    datos_tabla([
+        ["Magnitud", "Valor", "Vano", "Estado", "Escenario / temperatura"],
+        ["Mayor tensión total", _fmt(tension, 4) + " kN",
+         str(fila_tmax["Vano"]), str(fila_tmax["Condición"]),
+         str(fila_tmax["Hipótesis"]) + " / " +
+         _fmt(fila_tmax["Temperatura (°C)"], 0) + " °C"],
+        ["Mayor flecha vertical", _fmt(flecha, 4) + " m",
+         str(fila_fmax["Vano"]), str(fila_fmax["Condición"]),
+         str(fila_fmax["Hipótesis"]) + " / " +
+         _fmt(fila_fmax["Temperatura (°C)"], 0) + " °C"],
+    ], [1.3, 1.0, 1.0, 0.8, 2.7], compacto=True)
+    linea("La condición que produce la mayor tensión absoluta no tiene "
+          "por qué coincidir con la hipótesis de mayor utilización: los "
+          "límites admisibles son distintos.", nota)
+    # Se extraen exclusivamente resultados ya existentes, sin recalcular.
+    termicos = tabla[
+        (tabla["Hipótesis"] == "Tabla térmica") &
+        (tabla["Viento (km/h)"] == 0) &
+        (tabla["Hielo (mm)"] == 0) &
+        (tabla["Temperatura (°C)"].isin([20., 50.]))
+    ]
+    if not termicos.empty:
+        titulo("Comparación de tensiones y flechas por vano")
+        filas_termicas = [["Vano", "Estado", "Temp. °C",
+                           "T máxima (kN)", "H (kN)", "Flecha (m)"]]
+        for _, r in termicos.sort_values(
+                ["Vano", "Condición", "Temperatura (°C)"]).iterrows():
+            filas_termicas.append([
+                r["Vano"], r["Condición"],
+                _fmt(r["Temperatura (°C)"], 0),
+                _fmt(r["T máx. (kN)"], 4),
+                _fmt(r["H (kN)"], 4),
+                _fmt(r["Flecha (m)"], 4),
+            ])
+        datos_tabla(filas_termicas, [1.3, .9, .9, 1.2, 1.0, 1.1], compacto=True)
+        linea("Se incluyen las temperaturas disponibles de 20 y 50 °C. "
+              "Las restantes condiciones figuran en los anexos.", nota)
     titulo("Resumen de resultados")
     datos_tabla([
         ["Estados calculados", "Tensión máxima (kN)",
@@ -488,6 +531,68 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 "distancia mínima de seguridad ni libramiento.", nota,
             )
 
+    # El dictamen se presenta ANTES de los anexos, para una lectura autónoma.
+    historia.append(PageBreak())
+    titulo("Conclusiones técnicas de la corrida")
+    linea(
+        f"Se analizaron {numero_vanos} vanos y {len(tabla)} registros de "
+        "estado inicial/final con las propiedades y cargas declaradas. "
+        f"La máxima tensión total calculada es {_fmt(tension, 4)} kN "
+        f"({fila_tmax['Vano']}, {fila_tmax['Condición']}, "
+        f"{fila_tmax['Hipótesis']}, "
+        f"{_fmt(fila_tmax['Temperatura (°C)'], 0)} °C); "
+        f"la mayor flecha vertical es {_fmt(flecha, 4)} m "
+        f"({fila_fmax['Vano']}, {fila_fmax['Condición']}, "
+        f"{fila_fmax['Hipótesis']}, "
+        f"{_fmt(fila_fmax['Temperatura (°C)'], 0)} °C)."
+    )
+    linea(
+        "Las longitudes naturales por vano se determinan para el tendido "
+        "continuo ideal y quedan fijadas por separado tras el amarre. "
+        "Los cambios de temperatura y carga se resuelven posteriormente "
+        "sin transferencia de material entre vanos. "
+        "Los residuos de compatibilidad indican convergencia de las "
+        "ecuaciones implementadas, no una validación física independiente."
+    )
+    linea(
+        f"El mayor residuo de compatibilidad registrado es "
+        f"{residuo:.3e} m. La relación entre referencias inicial y "
+        "final responde al criterio de acoplamiento definido por el "
+        "motor; no demuestra una ley constitutiva de creep."
+    )
+    if propiedades_final and clima.get("viento_max_kmh") is not None:
+        estado_control = list(control["Estado"])
+        if "SIN EVALUAR" in estado_control:
+            dictamen = ("Verificación incompleta: hay hipótesis CFE sin "
+                        "evaluar y no puede declararse cumplimiento de las cinco.")
+        elif "NO CUMPLE" in estado_control:
+            dictamen = ("La corrida NO CUMPLE al menos una de las cinco "
+                        "hipótesis mecánicas CFE implementadas.")
+        else:
+            critico = control.loc[control["Utilización"].idxmax()]
+            dictamen = (
+                "Las cinco hipótesis CFE implementadas cumplen sus límites. "
+                f"Gobierna {critico['Código']} "
+                f"({_fmt(float(critico['Utilización'])*100, 2)} % de utilización)."
+            )
+        linea(dictamen)
+    else:
+        linea("No se dispone de un cuadro completo de verificación CFE "
+              "en este reporte; no se declara cumplimiento de las cinco hipótesis.")
+    linea(
+        "Alcance: resultados mecánicos del conductor bajo las hipótesis "
+        "indicadas. No se verifican capacidades de postes, crucetas, "
+        "herrajes, retenidas, cimentaciones ni distancias de seguridad. "
+        "Tampoco se representa creep predictivo o suspensión móvil real."
+    )
+    titulo("Criterio de aceptación del informe")
+    linea(
+        "Este informe permite revisar las magnitudes calculadas y el "
+        "cumplimiento de las restricciones implementadas. No equivale "
+        "a certificación de diseño ni a validación general del motor "
+        "contra resultados experimentales o casos multivano independientes.",
+        nota,
+    )
     historia.append(PageBreak())
 
     # Anexos separados por estado, para evitar una página final de una sola fila.
