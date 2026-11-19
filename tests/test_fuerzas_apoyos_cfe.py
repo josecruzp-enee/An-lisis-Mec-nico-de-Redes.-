@@ -78,6 +78,15 @@ class FuerzasApoyoCFETest(unittest.TestCase):
         self.assertIn("Fz (kN)",texto)
         self.assertIn("S1",texto)
         self.assertIn("S2",texto)
+        paginas=[p.extract_text() or "" for p in lector.pages]
+        self.assertIn("RESUMEN EJECUTIVO",paginas[0])
+        self.assertIn("Red completa",paginas[1])
+        self.assertIn("Envolvente por apoyo",paginas[1],
+                      "El plano y la tabla de resultantes deben compartir página")
+        self.assertIn("Control de las cinco hipótesis",paginas[2],
+                      "Las verificaciones CFE deben ser visibles en la tercera página")
+        self.assertIn("Anexo A",texto)
+        self.assertNotIn("Anexo A", " ".join(paginas[:3]))
 
     def test_fuerzas_requieren_tensiones_reproducibles(self):
         tabla=self.tabla.copy()

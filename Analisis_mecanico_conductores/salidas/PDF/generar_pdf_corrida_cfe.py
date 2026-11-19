@@ -106,27 +106,26 @@ def _grafico(tabla, campo, titulo, ylabel):
     ]
     if datos.empty:
         return None, None
-    primer_vano = str(datos["Vano"].iloc[0])
-    datos = datos[datos["Vano"].astype(str) == primer_vano]
-    fig, ax = plt.subplots(figsize=(9.1, 2.55))
-    for estado, estilo in (("Inicial", "-"), ("Final", "--")):
-        serie = datos[datos["Condición"] == estado].sort_values("Temperatura (°C)")
-        if len(serie) >= 2:
-            ax.plot(serie["Temperatura (°C)"], serie[campo],
-                    linestyle=estilo, linewidth=1.5, marker="o",
-                    markersize=2.5, label=estado)
-    ax.set_title(titulo + " — " + primer_vano, fontsize=10)
+    fig, ax = plt.subplots(figsize=(9.1, 2.7))
+    for vano, conjunto in datos.groupby("Vano",sort=False):
+        for estado, estilo in (("Inicial", "-"), ("Final", "--")):
+            serie = conjunto[conjunto["Condición"] == estado].sort_values("Temperatura (°C)")
+            if len(serie) >= 2:
+                ax.plot(serie["Temperatura (°C)"], serie[campo],
+                        linestyle=estilo, linewidth=1.5,
+                        label=f"{vano} · {estado}")
+    ax.set_title(titulo + " — todos los vanos", fontsize=10)
     ax.set_xlabel("Temperatura del conductor (°C)", fontsize=8)
     ax.set_ylabel(ylabel, fontsize=8)
     ax.grid(True, alpha=.25)
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=6.5, ncol=2, loc="best")
     ax.tick_params(labelsize=7)
     fig.tight_layout(pad=1.2)
     buffer = BytesIO()
     fig.savefig(buffer, format="png", dpi=155, facecolor="white")
     plt.close(fig)
     buffer.seek(0)
-    return buffer, primer_vano
+    return buffer, "Todos"
 
 
 def _cabecera_pie(canvas, doc):
@@ -323,7 +322,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
         )
         figura_red=grafico_red_y_fuerzas(puntos_apoyos,detalles,fuerzas,
                                          hipotesis="H4")
-        historia.append(Image(figura_red,width=245*mm,height=95*mm))
+        historia.append(Image(figura_red,width=222*mm,height=73*mm))
         linea(
             "ATENCIÓN: el viento CFE se evalúa transversalmente en cada vano "
             "como envolvente local; las resultantes H4/H5 NO corresponden "
@@ -357,139 +356,23 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
             _fmt(r.get("relacion_critica"), 4),
         ])
     datos_tabla(rfilas, [.8,1,1.2,1.2,3.1,1.0],compacto=True)
-    linea(
-        "H referencia es el parámetro de entrada para distribuir longitud "
-        "durante el tendido continuo. No equivale a una componente H común "
-        "en todos los vanos ni a la tensión de tracción de los apoyos.", nota,
-    )
+    linea("H de referencia corresponde al tendido, no a una fuerza "
+          "común en todos los vanos ni a la reacción del apoyo.", nota)
     modo_sin_creep = (
         "Creep adicional" in resumen.columns
         and float(resumen.iloc[0]["Creep adicional"]) == 0.
     )
     linea(
-        ("Se mantiene la misma longitud natural por vano a 50 C en ambas "
-         "condiciones: creep adicional = 0. Se conservan E y alfa CFE por "
-         "condición; no se fuerza igualdad de tensión extrema."
+        ("Se fija una sola longitud natural por vano a 50 °C: creep "
+         "adicional = 0. Se conservan E y alfa propios de CFE."
          if modo_sin_creep else
-         "Condiciones inicial/final ajustadas por tensión extrema. "
-         "No se dispone de ley constitutiva de creep."), nota,
+         "El vínculo inicial/final no se presenta como modelo de creep."),
+        nota,
     )
-
-    # El diagnóstico toma la diferencia real de los estados publicados,
-    # utilizando el alpha correspondiente a cada condición.
-    if "Diferencia real de acoplamiento H4 (kN)" in resumen:
-        for nombre, grupo in (resumen.groupby("Sección", sort=False)
-                              if por_secciones else [("S1", resumen)]):
-            diagnostico=grupo.iloc[0]
-            diferencia=float(diagnostico["Diferencia real de acoplamiento H4 (kN)"])
-            porcentaje=float(diagnostico["Diferencia real de acoplamiento H4 (%)"])
-            linea(
-                f"{nombre}: diferencia de tensión extrema inicial/final H4 "
-                f"= {diferencia:.5f} kN ({porcentaje:.2f} %). "
-                "No se impone igualdad de tensión; con creep adicional cero "
-                "la longitud natural de cada vano es común.", nota,
-            )
-
-    # Estas magnitudes son envolventes de TODAS las filas, no solamente H1-H5.
-    # La hipótesis gobernante por utilización es un indicador distinto.
-    titulo("Valores críticos identificados")
-    datos_tabla([
-        ["Magnitud", "Valor", "Vano", "Estado", "Escenario / temperatura"],
-        ["Mayor tensión total", _fmt(tension, 4) + " kN",
-         str(fila_tmax["Vano"]), str(fila_tmax["Condición"]),
-         str(fila_tmax["Hipótesis"]) + " / " +
-         _fmt(fila_tmax["Temperatura (°C)"], 0) + " °C"],
-        ["Mayor flecha vertical", _fmt(flecha, 4) + " m",
-         str(fila_fmax["Vano"]), str(fila_fmax["Condición"]),
-         str(fila_fmax["Hipótesis"]) + " / " +
-         _fmt(fila_fmax["Temperatura (°C)"], 0) + " °C"],
-    ], [1.3, 1.0, 1.0, 0.8, 2.7], compacto=True)
-    linea("La condición que produce la mayor tensión absoluta no tiene "
-          "por qué coincidir con la hipótesis de mayor utilización: los "
-          "límites admisibles son distintos.", nota)
-    historia.append(PageBreak())
-
-    # Página 2: supuestos, ecuaciones y curvas sin estimaciones inventadas.
-    titulo("Datos mecánicos y metodología")
-    if propiedades_inicial and propiedades_final:
-        mecanica = [["Propiedad", "Condición inicial", "Condición final", "Unidad"]]
-        for etiqueta, key, unidad, escala in [
-            ("Peso propio", "peso_kN_m", "N/m", 1000),
-            ("Diámetro", "diametro_m", "mm", 1000),
-            ("Rigidez axial EA", "EA_kN", "kN", 1),
-            ("Dilatación térmica", "alpha_por_C", "1/°C", 1),
-            ("Carga de ruptura", "ruptura_kN", "kN", 1),
-        ]:
-            def v(prop):
-                dato = prop.get(key)
-                if dato is None:
-                    return "No informado"
-                if key == "alpha_por_C":
-                    return f"{float(dato):.5e}"
-                return _fmt(float(dato)*escala, 6)
-            mecanica.append([etiqueta, v(propiedades_inicial), v(propiedades_final), unidad])
-        datos_tabla(mecanica, [2, 1.5, 1.5, 1])
-    else:
-        linea("No se suministraron al generador las propiedades mecánicas "
-              "empleadas; la fuente seleccionada figura en la identificación.", nota)
-
-    linea("Modelo adoptado: conductor flexible, catenaria hiperbólica bajo carga "
-          "constante por unidad de longitud real; elasticidad axial lineal y "
-          "temperatura uniforme. Cambios de estado resueltos por compatibilidad "
-          "integral y búsqueda no lineal.", nota)
-    linea("Relaciones básicas (vano nivelado sin viento):", nota)
-    linea("P = H / q     |     f = P [cosh(L / 2P) - 1]     |     "
-          "S = 2P sinh(L / 2P)", nota)
-    linea("Compatibilidad: S0 = integral [ds / (1 + T(s)/EA)]. "
-          "La longitud térmica de referencia varía según alfa y temperatura. "
-          "Para geometría desnivelada se utiliza la solución de catenaria "
-          "en el plano de la carga resultante.", nota)
-    linea("Los resultados de referencia inicial/final se obtienen mediante "
-          "las hipótesis del motor. No se atribuye una ley de creep no modelada "
-          "ni se presentan límites de postes o retenidas como verificados.", nota)
-
-    # Las dos curvas se colocan juntas, evitando páginas casi vacías.
-    # La fuente de datos sigue siendo la misma tabla calculada por el motor.
-    graficos = []
-    for campo, titulo_g, unidad in [
-        ("H (kN)", "Tensión horizontal vs. temperatura", "H (kN)"),
-        ("Flecha (m)", "Flecha vs. temperatura", "Flecha (m)"),
-    ]:
-        png, vano = _grafico(tabla, campo, titulo_g, unidad)
-        if png is not None:
-            graficos.append((png, campo))
-    if graficos:
-        imagenes = [Image(png, width=115*mm, height=38*mm)
-                    for png, _ in graficos]
-        if len(imagenes) == 2:
-            composicion = Table([[imagenes[0], imagenes[1]]],
-                                colWidths=[ancho/2, ancho/2],
-                                hAlign="LEFT")
-            composicion.setStyle(TableStyle([
-                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-                ("LEFTPADDING", (0,0), (-1,-1), 1),
-                ("RIGHTPADDING", (0,0), (-1,-1), 1),
-                ("TOPPADDING", (0,0), (-1,-1), 1),
-                ("BOTTOMPADDING", (0,0), (-1,-1), 1),
-            ]))
-            historia.append(KeepTogether([
-                _p("Curvas de comportamiento térmico", sub),
-                composicion,
-            ]))
-        else:
-            titulo("Curvas de comportamiento térmico")
-            historia.extend(imagenes)
-        linea("Las curvas representan el primer vano de la corrida y "
-              "solamente las hipótesis térmicas sin viento ni hielo. "
-              "Todos los vanos y escenarios se incluyen en los anexos.", nota)
-    else:
-        titulo("Curvas de comportamiento térmico")
-        linea("No hay suficientes puntos de temperatura para dibujar curvas.", nota)
 
     # Control explícito de las CINCO hipótesis documentadas CFE.
     # Si no existe una fila calculada, se informa SIN EVALUAR.
     if control is not None:
-        historia.append(PageBreak())
         titulo("Control de las cinco hipótesis mecánicas CFE")
         linea("Se verifican dos magnitudes distintas: T total frente al "
               "porcentaje RTS y H frente al límite horizontal TH1/TH2 "
@@ -515,8 +398,9 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 r["Estado"],
             ])
         datos_tabla(filas_control, [0.6,0.6,0.8,0.75,0.9,0.75,1.0,1.0,0.95,1.0,0.8,1.05],compacto=True)
-        for _, r in control.iterrows():
-            linea(f"{r['Sección']} — {r['Código']}: {r['Hipótesis']}", nota)
+        linea("H1: 0 °C inicial sin viento; H2: 16 °C final sin viento; "
+              "H3: 0 °C final sin viento; H4: -10 °C viento reducido "
+              "más hielo; H5: 0 °C viento máximo.", nota)
         if (control["Estado"] == "SIN EVALUAR").any():
             linea("No se puede declarar que se satisficieron las cinco "
                   "hipótesis: existen estados sin evaluar.", nota)
@@ -696,9 +580,89 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     )
     historia.append(PageBreak())
 
+    titulo("Anexo A — Datos mecánicos, metodología y curvas térmicas")
+    # Detalle: supuestos, ecuaciones y curvas sin estimaciones inventadas.
+    titulo("Datos mecánicos y metodología")
+    if propiedades_inicial and propiedades_final:
+        mecanica = [["Propiedad", "Condición inicial", "Condición final", "Unidad"]]
+        for etiqueta, key, unidad, escala in [
+            ("Peso propio", "peso_kN_m", "N/m", 1000),
+            ("Diámetro", "diametro_m", "mm", 1000),
+            ("Rigidez axial EA", "EA_kN", "kN", 1),
+            ("Dilatación térmica", "alpha_por_C", "1/°C", 1),
+            ("Carga de ruptura", "ruptura_kN", "kN", 1),
+        ]:
+            def v(prop):
+                dato = prop.get(key)
+                if dato is None:
+                    return "No informado"
+                if key == "alpha_por_C":
+                    return f"{float(dato):.5e}"
+                return _fmt(float(dato)*escala, 6)
+            mecanica.append([etiqueta, v(propiedades_inicial), v(propiedades_final), unidad])
+        datos_tabla(mecanica, [2, 1.5, 1.5, 1])
+    else:
+        linea("No se suministraron al generador las propiedades mecánicas "
+              "empleadas; la fuente seleccionada figura en la identificación.", nota)
+
+    linea("Modelo adoptado: conductor flexible, catenaria hiperbólica bajo carga "
+          "constante por unidad de longitud real; elasticidad axial lineal y "
+          "temperatura uniforme. Cambios de estado resueltos por compatibilidad "
+          "integral y búsqueda no lineal.", nota)
+    linea("Relaciones básicas (vano nivelado sin viento):", nota)
+    linea("P = H / q     |     f = P [cosh(L / 2P) - 1]     |     "
+          "S = 2P sinh(L / 2P)", nota)
+    linea("Compatibilidad: S0 = integral [ds / (1 + T(s)/EA)]. "
+          "La longitud térmica de referencia varía según alfa y temperatura. "
+          "Para geometría desnivelada se utiliza la solución de catenaria "
+          "en el plano de la carga resultante.", nota)
+    linea("Los resultados de referencia inicial/final se obtienen mediante "
+          "las hipótesis del motor. No se atribuye una ley de creep no modelada "
+          "ni se presentan límites de postes o retenidas como verificados.", nota)
+
+    # Las dos curvas se colocan juntas, evitando páginas casi vacías.
+    # La fuente de datos sigue siendo la misma tabla calculada por el motor.
+    graficos = []
+    for campo, titulo_g, unidad in [
+        ("H (kN)", "Tensión horizontal vs. temperatura", "H (kN)"),
+        ("Flecha (m)", "Flecha vs. temperatura", "Flecha (m)"),
+    ]:
+        png, vano = _grafico(tabla, campo, titulo_g, unidad)
+        if png is not None:
+            graficos.append((png, campo))
+    if graficos:
+        imagenes = [Image(png, width=115*mm, height=38*mm)
+                    for png, _ in graficos]
+        if len(imagenes) == 2:
+            composicion = Table([[imagenes[0], imagenes[1]]],
+                                colWidths=[ancho/2, ancho/2],
+                                hAlign="LEFT")
+            composicion.setStyle(TableStyle([
+                ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                ("LEFTPADDING", (0,0), (-1,-1), 1),
+                ("RIGHTPADDING", (0,0), (-1,-1), 1),
+                ("TOPPADDING", (0,0), (-1,-1), 1),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+            ]))
+            historia.append(KeepTogether([
+                _p("Curvas de comportamiento térmico", sub),
+                composicion,
+            ]))
+        else:
+            titulo("Curvas de comportamiento térmico")
+            historia.extend(imagenes)
+        linea("Las curvas reúnen todos los vanos para hipótesis térmicas "
+              "sin viento ni hielo; las verificaciones adicionales se "
+              "presentan en los anexos de resultados.", nota)
+    else:
+        titulo("Curvas de comportamiento térmico")
+        linea("No hay suficientes puntos de temperatura para dibujar curvas.", nota)
+
+    historia.append(PageBreak())
+
     # Anexos de trazabilidad: primero esfuerzos por caso y material fijado.
     if puntos_apoyos is not None:
-        titulo("Anexo A — Resultantes vectoriales por apoyo y caso")
+        titulo("Anexo B — Resultantes vectoriales por apoyo y caso")
         filas_f=[["Apoyo","Caso","Fx (kN)","Fy (kN)","Fz (kN)","|F| (kN)"]]
         for _,r in fuerzas.iterrows():
             filas_f.append([r["Apoyo"],r["Hipótesis"],
@@ -709,7 +673,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
               "Las sumas vectoriales se realizan por apoyo y por caso; "
               "no se suman máximos independientes de diferentes casos.",nota)
 
-    titulo("Anexo B — Referencias longitudinales por vano")
+    titulo("Anexo C — Referencias longitudinales por vano")
     if "Longitud natural fijada (m)" in tabla:
         titulo("Longitudes naturales de referencia fijadas por vano")
         campos=["Sección","Condición","Vano","Luz (m)","Longitud natural fijada (m)"] if por_secciones else ["Condición","Vano","Luz (m)","Longitud natural fijada (m)"]
@@ -722,7 +686,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
                 _fmt(fila["Longitud natural fijada (m)"],6),
             ])
         datos_tabla(filas,([.6] if por_secciones else [])+[1,1.7,1,1.3],compacto=True)
-    titulo("Anexo C — Comparación térmica por vano")
+    titulo("Anexo D — Comparación térmica por vano")
     # Se extraen exclusivamente resultados ya existentes, sin recalcular.
     termicos = tabla[
         (tabla["Hipótesis"] == "Tabla térmica") &
@@ -752,7 +716,7 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
     for indice, estado in enumerate(("Inicial", "Final")):
         if indice:
             historia.append(PageBreak())
-        titulo("Anexo " + ("D" if indice == 0 else "E") +
+        titulo("Anexo " + ("E" if indice == 0 else "F") +
                " - Resultados completos, condición " + estado.lower())
         subtabla = tabla[tabla["Condición"] == estado]
         if subtabla.empty:
