@@ -48,7 +48,8 @@ class MotorUnicoConductoresTests(unittest.TestCase):
         self.assertEqual(solver.call_count, 1)
         self.assertTrue(solver.call_args.kwargs["modelo_presion_cfe"])
         self.assertTrue(solver.call_args.kwargs["longitud_comun_sin_creep"])
-        pd.testing.assert_frame_equal(out_tabla, tabla)
+        self.assertEqual(out_tabla["Sección"].unique().tolist(), ["S1"])
+        pd.testing.assert_frame_equal(out_tabla.drop(columns=["Sección"]), tabla)
         self.assertFalse(out_resumen["Evolución material validada"].any())
         self.assertEqual(len(out_resumen), 2)
 
