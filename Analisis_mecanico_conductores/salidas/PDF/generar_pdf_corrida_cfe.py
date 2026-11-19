@@ -313,7 +313,6 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
             tabla,puntos_apoyos,{"Inicial":propiedades_inicial,
                                 "Final":propiedades_final},clima,
         )
-        historia.append(PageBreak())
         titulo("Red completa — plano general y esfuerzos del conductor")
         linea(
             "Las flechas muestran componentes horizontales de las fuerzas "
@@ -699,7 +698,6 @@ def generar_pdf_corrida_cfe(*, resumen: pd.DataFrame, tabla: pd.DataFrame,
 
     # Anexos de trazabilidad: primero esfuerzos por caso y material fijado.
     if puntos_apoyos is not None:
-        historia.append(PageBreak())
         titulo("Anexo A — Resultantes vectoriales por apoyo y caso")
         filas_f=[["Apoyo","Caso","Fx (kN)","Fy (kN)","Fz (kN)","|F| (kN)"]]
         for _,r in fuerzas.iterrows():
